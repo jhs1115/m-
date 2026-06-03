@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: matchzzang-arena
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /var/data/db.json
+    disk:
+      name: matchzzang-data
+      mountPath: /var/data
+      sizeGB: 1
