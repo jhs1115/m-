@@ -146,6 +146,7 @@ let gameSpeed = 1;
 let selectedMode = "";
 let roomPollId = null;
 let roomRealtimeChannel = null;
+let matchSelectionTouched = false;
 
 function normalizePlayer(user) {
   return {
@@ -268,12 +269,17 @@ function renderLobby() {
     ui.playerList.appendChild(item);
   });
 
-  if (!getPlayer(matchPlayers.p1)) matchPlayers.p1 = players[0]?.id ?? "";
-  if (!getPlayer(matchPlayers.p2)) matchPlayers.p2 = players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
-  renderPlayerOptions(ui.lobbyPlayerOne, matchPlayers.p1);
-  renderPlayerOptions(ui.lobbyPlayerTwo, matchPlayers.p2);
+  reconcileMatchPlayers();
+  renderMatchSelectors();
   renderPlayerOptions(ui.gachaPlayer, ui.gachaPlayer.value || matchPlayers.p1);
   updateLobbyPreview();
+}
+
+function renderMatchSelectors(force = false) {
+  const pvpActive = screens.pvp.classList.contains("is-active");
+  if (pvpActive && matchSelectionTouched && !force) return;
+  renderPlayerOptions(ui.lobbyPlayerOne, matchPlayers.p1);
+  renderPlayerOptions(ui.lobbyPlayerTwo, matchPlayers.p2);
 }
 
 function renderPlayerOptions(select, selectedId) {
@@ -289,6 +295,7 @@ function renderPlayerOptions(select, selectedId) {
 }
 
 function setMatchPlayer(slot, playerId) {
+  matchSelectionTouched = true;
   const otherSlot = slot === "p1" ? "p2" : "p1";
   const previous = matchPlayers[slot];
   matchPlayers[slot] = playerId;
@@ -297,13 +304,13 @@ function setMatchPlayer(slot, playerId) {
       ? previous
       : players.find(player => player.id !== playerId)?.id ?? "";
   }
-  renderPlayerOptions(ui.lobbyPlayerOne, matchPlayers.p1);
-  renderPlayerOptions(ui.lobbyPlayerTwo, matchPlayers.p2);
+  renderMatchSelectors(true);
   updateLobbyPreview();
   updateBetFields();
 }
 
 function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2) {
+  if (matchSelectionTouched && getPlayer(matchPlayers.p1) && getPlayer(matchPlayers.p2)) return;
   matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
   matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
     ? previousP2
@@ -337,8 +344,7 @@ function openPvpSetup() {
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
   ui.modeMessage.textContent = "";
-  renderPlayerOptions(ui.lobbyPlayerOne, matchPlayers.p1);
-  renderPlayerOptions(ui.lobbyPlayerTwo, matchPlayers.p2);
+  renderMatchSelectors(true);
   updateLobbyPreview();
   updateBetFields();
   showScreen("pvp");
