@@ -288,6 +288,28 @@ function renderPlayerOptions(select, selectedId) {
   select.disabled = players.length === 0;
 }
 
+function setMatchPlayer(slot, playerId) {
+  const otherSlot = slot === "p1" ? "p2" : "p1";
+  const previous = matchPlayers[slot];
+  matchPlayers[slot] = playerId;
+  if (matchPlayers[otherSlot] === playerId) {
+    matchPlayers[otherSlot] = getPlayer(previous)
+      ? previous
+      : players.find(player => player.id !== playerId)?.id ?? "";
+  }
+  renderPlayerOptions(ui.lobbyPlayerOne, matchPlayers.p1);
+  renderPlayerOptions(ui.lobbyPlayerTwo, matchPlayers.p2);
+  updateLobbyPreview();
+  updateBetFields();
+}
+
+function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2) {
+  matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
+  matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
+    ? previousP2
+    : players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
+}
+
 function updateLobbyPreview() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
@@ -382,10 +404,7 @@ function applyRoom(room) {
       : [];
   currentRoom = { ...room, players: roomPlayers };
   players = roomPlayers;
-  matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
-  matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
-    ? previousP2
-    : players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
+  reconcileMatchPlayers(previousP1, previousP2);
   renderLobby();
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
@@ -1079,14 +1098,10 @@ ui.roomCodeInput.addEventListener("keydown", event => {
   if (event.key === "Enter") joinRoom();
 });
 ui.lobbyPlayerOne.addEventListener("change", () => {
-  matchPlayers.p1 = ui.lobbyPlayerOne.value;
-  updateLobbyPreview();
-  updateBetFields();
+  setMatchPlayer("p1", ui.lobbyPlayerOne.value);
 });
 ui.lobbyPlayerTwo.addEventListener("change", () => {
-  matchPlayers.p2 = ui.lobbyPlayerTwo.value;
-  updateLobbyPreview();
-  updateBetFields();
+  setMatchPlayer("p2", ui.lobbyPlayerTwo.value);
 });
 ui.gachaButton.addEventListener("click", drawCharacter);
 ui.openGachaButton.addEventListener("click", openGachaScreen);
