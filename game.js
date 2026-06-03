@@ -1,6 +1,7 @@
 ﻿const STORAGE_KEY = "matchzzang-arena-players";
 const DEFAULT_CHARACTER = "thrower";
 const GACHA_COST = 50;
+const APP_SESSION_KEY = "matchzzang-supabase-session";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -127,6 +128,7 @@ const characters = {
 const gachaPool = ["charger", "grabber"];
 
 let currentUser = null;
+let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
 let currentRoom = null;
 let players = [];
 let matchPlayers = {
@@ -157,17 +159,6 @@ function requireSupabase() {
     throw new Error("supabase-config.js에 Supabase URL과 anon key를 넣어주세요.");
   }
   return supabaseClient;
-}
-
-async function usernameToEmail(username) {
-  const normalized = username.trim().toLowerCase();
-  const bytes = new TextEncoder().encode(normalized);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  const hash = [...new Uint8Array(digest)]
-    .slice(0, 16)
-    .map(byte => byte.toString(16).padStart(2, "0"))
-    .join("");
-  return `u-${hash}@matchzzang-arena.com`;
 }
 
 async function rpc(name, args = {}) {
@@ -324,22 +315,22 @@ async function authenticate(mode) {
   }
 
   try {
-    const client = requireSupabase();
-    const email = await usernameToEmail(username);
-
     if (mode === "signup") {
-      const { error } = await client.auth.signUp({
-        email,
-        password,
-        options: { data: { username } }
-      });
-      if (error) throw new Error(error.message);
-      message.textContent = "회원가입 완료. 이제 로그인하세요.";
+      const data = await rpc("signup_user", { user_name: username, raw_password: password });
+      appSessionToken = data.token;
+      localStorage.setItem(APP_SESSION_KEY, appSessionToken);
+      currentUser = normalizePlayer(data.user);
+      players = [currentUser];
+      matchPlayers.p1 = currentUser.id;
+      matchPlayers.p2 = "";
+      renderLobby();
+      showScreen("lobby");
       return;
     }
 
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
+    const data = await rpc("login_user", { user_name: username, raw_password: password });
+    appSessionToken = data.token;
+    localStorage.setItem(APP_SESSION_KEY, appSessionToken);
     await loadCurrentUser();
     showScreen("lobby");
   } catch (error) {
@@ -348,7 +339,7 @@ async function authenticate(mode) {
 }
 
 async function loadCurrentUser() {
-  const data = await rpc("get_me");
+  const data = await rpc("get_me", { session_token: appSessionToken });
   currentUser = normalizePlayer(data);
   if (!currentRoom) {
     players = [currentUser];
@@ -374,7 +365,7 @@ function applyRoom(room) {
 
 async function createRoom() {
   try {
-    const room = await rpc("create_room");
+    const room = await rpc("create_room", { session_token: appSessionToken });
     applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
@@ -388,7 +379,7 @@ async function joinRoom() {
     return;
   }
   try {
-    const room = await rpc("join_room", { room_code: code });
+    const room = await rpc("join_room", { session_token: appSessionToken, room_code: code });
     applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
@@ -401,7 +392,7 @@ async function refreshRoom() {
     return;
   }
   try {
-    const room = await rpc("get_room", { room_code: currentRoom.code });
+    const room = await rpc("get_room", { session_token: appSessionToken, room_code: currentRoom.code });
     applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
@@ -453,7 +444,7 @@ async function drawCharacter() {
   await wait(1300);
 
   try {
-    const data = await rpc("draw_gacha");
+    const data = await rpc("draw_gacha", { session_token: appSessionToken });
     const picked = data.picked;
     currentUser = normalizePlayer(data.user);
     players = players.map(item => item.id === currentUser.id ? currentUser : item);
@@ -650,6 +641,7 @@ function finishGame(winner) {
 async function settleMatch(winnerPlayer, loserPlayer, loserBet) {
   try {
     const data = await rpc("settle_match", {
+      session_token: appSessionToken,
       winner_id: winnerPlayer.id,
       loser_id: loserPlayer.id,
       loser_bet: loserBet
@@ -996,11 +988,15 @@ function returnToLobby() {
 }
 
 async function logout() {
-  if (supabaseClient) await supabaseClient.auth.signOut();
+  if (supabaseClient && appSessionToken) {
+    await rpc("logout_user", { session_token: appSessionToken }).catch(() => {});
+  }
+  appSessionToken = "";
   currentUser = null;
   currentRoom = null;
   players = [];
   matchPlayers = { p1: "", p2: "" };
+  localStorage.removeItem(APP_SESSION_KEY);
   setRoomPolling(false);
   ui.authPassword.value = "";
   ui.authMessage.textContent = "";
@@ -1081,8 +1077,7 @@ async function boot() {
     return;
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  if (!data.session) {
+  if (!appSessionToken) {
     showScreen("auth");
     return;
   }
@@ -1091,7 +1086,8 @@ async function boot() {
     await loadCurrentUser();
     showScreen("lobby");
   } catch {
-    await supabaseClient.auth.signOut();
+    appSessionToken = "";
+    localStorage.removeItem(APP_SESSION_KEY);
     showScreen("auth");
   }
 }
