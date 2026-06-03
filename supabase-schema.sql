@@ -549,3 +549,5 @@ grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
+
+notify pgrst, 'reload schema';

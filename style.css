@@ -837,28 +837,6 @@ h2 {
   margin-top: 26px;
 }
 
-.ready-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  margin-top: 20px;
-}
-
-.ready-status {
-  min-height: 54px;
-  padding: 14px;
-  color: var(--gold);
-  background: #10131a;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-weight: 900;
-}
-
-.ready-panel .primary-button {
-  margin: 0;
-}
-
 .bet-actions .primary-button {
   margin: 0;
 }
