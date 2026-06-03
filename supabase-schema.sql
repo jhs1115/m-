@@ -27,6 +27,28 @@ alter table public.app_users enable row level security;
 alter table public.app_sessions enable row level security;
 alter table public.app_rooms enable row level security;
 
+drop policy if exists "app rooms are visible for realtime" on public.app_rooms;
+create policy "app rooms are visible for realtime"
+on public.app_rooms for select
+to anon, authenticated
+using (true);
+
+alter table public.app_rooms replica identity full;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'app_rooms'
+  ) then
+    alter publication supabase_realtime add table public.app_rooms;
+  end if;
+end;
+$$;
+
 create or replace function public.app_hash_password(raw_password text, salt text)
 returns text
 language sql
@@ -257,6 +279,48 @@ begin
 end;
 $$;
 
+create or replace function public.leave_room(session_token text, room_code text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  remaining_players uuid[];
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if not exists (select 1 from public.app_rooms where code = normalized_code) then
+    raise exception 'room not found';
+  end if;
+
+  update public.app_rooms
+  set player_ids = array_remove(player_ids, active_user.id)
+  where code = normalized_code
+  returning player_ids into remaining_players;
+
+  if remaining_players is null or array_length(remaining_players, 1) is null then
+    delete from public.app_rooms where code = normalized_code;
+    return jsonb_build_object('left', true, 'room', null);
+  end if;
+
+  update public.app_rooms
+  set host_user_id = case
+    when host_user_id = active_user.id then remaining_players[1]
+    else host_user_id
+  end
+  where code = normalized_code;
+
+  return jsonb_build_object('left', true, 'room', public.app_room_json(normalized_code));
+end;
+$$;
+
 create or replace function public.get_room(session_token text, room_code text)
 returns jsonb
 language plpgsql
@@ -330,7 +394,7 @@ begin
 end;
 $$;
 
-create or replace function public.settle_match(session_token text, winner_id uuid, loser_id uuid, loser_bet integer)
+create or replace function public.settle_match(session_token text, room_code text, winner_id uuid, loser_id uuid, loser_bet integer)
 returns jsonb
 language plpgsql
 volatile
@@ -341,6 +405,8 @@ declare
   active_user public.app_users;
   winner_user public.app_users;
   loser_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
   safe_bet integer := greatest(1, loser_bet);
 begin
   active_user := public.app_user_from_token(session_token);
@@ -352,8 +418,19 @@ begin
     raise exception 'winner and loser must be different';
   end if;
 
-  if active_user.id not in (winner_id, loser_id) then
-    raise exception 'not a match participant';
+  select player_ids into room_players
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null then
+    raise exception 'room not found';
+  end if;
+
+  if active_user.id <> all(room_players)
+    or winner_id <> all(room_players)
+    or loser_id <> all(room_players) then
+    raise exception 'players must be in the same room';
   end if;
 
   select * into loser_user from public.app_users where id = loser_id for update;
@@ -385,6 +462,7 @@ grant execute on function public.logout_user(text) to anon, authenticated;
 grant execute on function public.get_me(text) to anon, authenticated;
 grant execute on function public.create_room(text) to anon, authenticated;
 grant execute on function public.join_room(text, text) to anon, authenticated;
+grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
-grant execute on function public.settle_match(text, uuid, uuid, integer) to anon, authenticated;
+grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;

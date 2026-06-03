@@ -224,6 +224,15 @@ h2 {
   display: none;
 }
 
+#leaveRoomButton {
+  width: 100%;
+  margin: 0 0 18px;
+}
+
+#leaveRoomButton.is-hidden {
+  display: none;
+}
+
 .room-card-head {
   display: flex;
   justify-content: space-between;

@@ -47,6 +47,7 @@ const ui = {
   roomCodeInput: document.getElementById("roomCodeInput"),
   createRoomButton: document.getElementById("createRoomButton"),
   joinRoomButton: document.getElementById("joinRoomButton"),
+  leaveRoomButton: document.getElementById("leaveRoomButton"),
   roomCodeText: document.getElementById("roomCodeText"),
   roomCard: document.getElementById("roomCard"),
   roomCardCode: document.getElementById("roomCardCode"),
@@ -144,6 +145,7 @@ let animationId = null;
 let gameSpeed = 1;
 let selectedMode = "";
 let roomPollId = null;
+let roomRealtimeChannel = null;
 
 function normalizePlayer(user) {
   return {
@@ -196,6 +198,26 @@ function setRoomPolling(enabled) {
   }
 }
 
+function setRoomRealtime(roomCode) {
+  if (roomRealtimeChannel) {
+    supabaseClient?.removeChannel(roomRealtimeChannel);
+    roomRealtimeChannel = null;
+  }
+  if (!roomCode || !supabaseClient) return;
+
+  roomRealtimeChannel = supabaseClient
+    .channel(`room-${roomCode}`)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "app_rooms",
+      filter: `code=eq.${roomCode}`
+    }, () => {
+      refreshRoom();
+    })
+    .subscribe();
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -217,6 +239,7 @@ function renderLobby() {
   }
   ui.roomCodeText.textContent = currentRoom?.code ?? "없음";
   ui.roomCard.classList.toggle("is-hidden", !currentRoom);
+  ui.leaveRoomButton.classList.toggle("is-hidden", !currentRoom);
   ui.roomCardCode.textContent = currentRoom?.code ?? "없음";
   ui.roomPlayerList.innerHTML = "";
   players.forEach(player => {
@@ -350,6 +373,8 @@ async function loadCurrentUser() {
 }
 
 function applyRoom(room) {
+  const previousP1 = matchPlayers.p1;
+  const previousP2 = matchPlayers.p2;
   const roomPlayers = Array.isArray(room.players)
     ? room.players.map(normalizePlayer)
     : currentUser
@@ -357,10 +382,13 @@ function applyRoom(room) {
       : [];
   currentRoom = { ...room, players: roomPlayers };
   players = roomPlayers;
-  matchPlayers.p1 = players[0]?.id ?? "";
-  matchPlayers.p2 = players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
+  matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
+  matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
+    ? previousP2
+    : players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
   renderLobby();
   setRoomPolling(true);
+  setRoomRealtime(currentRoom.code);
 }
 
 async function createRoom() {
@@ -386,6 +414,22 @@ async function joinRoom() {
   }
 }
 
+async function leaveRoom() {
+  if (!currentRoom) return;
+  try {
+    await rpc("leave_room", { session_token: appSessionToken, room_code: currentRoom.code });
+    currentRoom = null;
+    players = currentUser ? [currentUser] : [];
+    matchPlayers.p1 = currentUser?.id ?? "";
+    matchPlayers.p2 = "";
+    setRoomRealtime(null);
+    setRoomPolling(false);
+    renderLobby();
+  } catch (error) {
+    ui.lobbyMessage.textContent = error.message;
+  }
+}
+
 async function refreshRoom() {
   if (!currentRoom) {
     await loadCurrentUser();
@@ -395,6 +439,16 @@ async function refreshRoom() {
     const room = await rpc("get_room", { session_token: appSessionToken, room_code: currentRoom.code });
     applyRoom(room);
   } catch (error) {
+    if (error.message.includes("room not found")) {
+      currentRoom = null;
+      players = currentUser ? [currentUser] : [];
+      matchPlayers.p1 = currentUser?.id ?? "";
+      matchPlayers.p2 = "";
+      setRoomRealtime(null);
+      setRoomPolling(false);
+      renderLobby();
+      return;
+    }
     ui.lobbyMessage.textContent = error.message;
   }
 }
@@ -642,6 +696,7 @@ async function settleMatch(winnerPlayer, loserPlayer, loserBet) {
   try {
     const data = await rpc("settle_match", {
       session_token: appSessionToken,
+      room_code: currentRoom?.code ?? "",
       winner_id: winnerPlayer.id,
       loser_id: loserPlayer.id,
       loser_bet: loserBet
@@ -997,6 +1052,7 @@ async function logout() {
   players = [];
   matchPlayers = { p1: "", p2: "" };
   localStorage.removeItem(APP_SESSION_KEY);
+  setRoomRealtime(null);
   setRoomPolling(false);
   ui.authPassword.value = "";
   ui.authMessage.textContent = "";
@@ -1018,6 +1074,7 @@ ui.signupPassword.addEventListener("keydown", event => {
 });
 ui.createRoomButton.addEventListener("click", createRoom);
 ui.joinRoomButton.addEventListener("click", joinRoom);
+ui.leaveRoomButton.addEventListener("click", leaveRoom);
 ui.roomCodeInput.addEventListener("keydown", event => {
   if (event.key === "Enter") joinRoom();
 });
