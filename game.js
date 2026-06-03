@@ -1,7 +1,17 @@
 ﻿const STORAGE_KEY = "matchzzang-arena-players";
 const DEFAULT_CHARACTER = "thrower";
 const GACHA_COST = 50;
-const API_BASE = location.port === "4173" ? "http://127.0.0.1:3000" : "";
+const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
+const SUPABASE_READY = Boolean(
+  window.supabase
+  && SUPABASE_CONFIG.url
+  && SUPABASE_CONFIG.anonKey
+  && !SUPABASE_CONFIG.url.includes("YOUR_SUPABASE")
+  && !SUPABASE_CONFIG.anonKey.includes("YOUR_SUPABASE")
+);
+const supabaseClient = SUPABASE_READY
+  ? window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey)
+  : null;
 
 const screens = {
   auth: document.getElementById("authScreen"),
@@ -116,7 +126,6 @@ const characters = {
 
 const gachaPool = ["charger", "grabber"];
 
-let authToken = localStorage.getItem("arena-auth-token") || "";
 let currentUser = null;
 let currentRoom = null;
 let players = [];
@@ -139,33 +148,30 @@ function normalizePlayer(user) {
     id: user.id,
     name: user.username ?? user.name,
     coins: user.coins,
-    ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || [])])]
+    ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
 }
 
-async function api(path, options = {}) {
-  try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-        ...(options.headers || {})
-      }
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "server error");
-    return data;
-  } catch (error) {
-    if (error.name === "TypeError") {
-      throw new Error("API 서버에 연결할 수 없습니다. http://127.0.0.1:3000 으로 열어주세요.");
-    }
-    throw error;
+function requireSupabase() {
+  if (!supabaseClient) {
+    throw new Error("supabase-config.js에 Supabase URL과 anon key를 넣어주세요.");
   }
+  return supabaseClient;
+}
+
+function usernameToEmail(username) {
+  return `${username.toLowerCase()}@matchzzang.local`;
+}
+
+async function rpc(name, args = {}) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc(name, args);
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 function savePlayers() {
-  // Online mode stores player data on the server.
+  // Supabase stores player data online.
 }
 
 function getPlayer(id) {
@@ -311,17 +317,22 @@ async function authenticate(mode) {
   }
 
   try {
-    const data = await api(mode === "signup" ? "/api/signup" : "/api/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password })
-    });
+    const client = requireSupabase();
+    const email = usernameToEmail(username);
 
     if (mode === "signup") {
+      const { error } = await client.auth.signUp({
+        email,
+        password,
+        options: { data: { username } }
+      });
+      if (error) throw new Error(error.message);
       message.textContent = "회원가입 완료. 이제 로그인하세요.";
       return;
     }
-    authToken = data.token;
-    localStorage.setItem("arena-auth-token", authToken);
+
+    const { error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
     await loadCurrentUser();
     showScreen("lobby");
   } catch (error) {
@@ -330,8 +341,8 @@ async function authenticate(mode) {
 }
 
 async function loadCurrentUser() {
-  const data = await api("/api/me");
-  currentUser = normalizePlayer(data.user);
+  const data = await rpc("get_me");
+  currentUser = normalizePlayer(data);
   if (!currentRoom) {
     players = [currentUser];
     matchPlayers.p1 = currentUser.id;
@@ -356,8 +367,8 @@ function applyRoom(room) {
 
 async function createRoom() {
   try {
-    const data = await api("/api/rooms", { method: "POST", body: "{}" });
-    applyRoom(data.room);
+    const room = await rpc("create_room");
+    applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
   }
@@ -370,8 +381,8 @@ async function joinRoom() {
     return;
   }
   try {
-    const data = await api(`/api/rooms/${code}/join`, { method: "POST", body: "{}" });
-    applyRoom(data.room);
+    const room = await rpc("join_room", { room_code: code });
+    applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
   }
@@ -383,8 +394,8 @@ async function refreshRoom() {
     return;
   }
   try {
-    const data = await api(`/api/rooms/${currentRoom.code}`);
-    applyRoom(data.room);
+    const room = await rpc("get_room", { room_code: currentRoom.code });
+    applyRoom(room);
   } catch (error) {
     ui.lobbyMessage.textContent = error.message;
   }
@@ -435,7 +446,7 @@ async function drawCharacter() {
   await wait(1300);
 
   try {
-    const data = await api("/api/gacha", { method: "POST", body: "{}" });
+    const data = await rpc("draw_gacha");
     const picked = data.picked;
     currentUser = normalizePlayer(data.user);
     players = players.map(item => item.id === currentUser.id ? currentUser : item);
@@ -623,12 +634,32 @@ function finishGame(winner) {
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
   const loserBet = loser === game.fighters[0] ? game.bets.p1 : game.bets.p2;
-  winnerPlayer.coins += loserBet;
-  loserPlayer.coins = Math.max(0, loserPlayer.coins - loserBet);
-  savePlayers();
   ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
-  ui.resultText.textContent = `${winner.name} 승. ${loserBet}C 획득. ${winnerPlayer.name} ${winnerPlayer.coins}C / ${loserPlayer.name} ${loserPlayer.coins}C`;
+  ui.resultText.textContent = `${winner.name} 승. 정산 중...`;
   ui.resultOverlay.classList.add("is-active");
+  settleMatch(winnerPlayer, loserPlayer, loserBet);
+}
+
+async function settleMatch(winnerPlayer, loserPlayer, loserBet) {
+  try {
+    const data = await rpc("settle_match", {
+      winner_id: winnerPlayer.id,
+      loser_id: loserPlayer.id,
+      loser_bet: loserBet
+    });
+    const updatedWinner = normalizePlayer(data.winner);
+    const updatedLoser = normalizePlayer(data.loser);
+    players = players.map(player => {
+      if (player.id === updatedWinner.id) return updatedWinner;
+      if (player.id === updatedLoser.id) return updatedLoser;
+      return player;
+    });
+    if (currentUser?.id === updatedWinner.id) currentUser = updatedWinner;
+    if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
+    ui.resultText.textContent = `${characters[game.fighters.find(item => item.ownerId === updatedWinner.id)?.kind || DEFAULT_CHARACTER].name} 승. ${data.amount}C 획득. ${updatedWinner.name} ${updatedWinner.coins}C / ${updatedLoser.name} ${updatedLoser.coins}C`;
+  } catch (error) {
+    ui.resultText.textContent = `정산 실패: ${error.message}`;
+  }
 }
 
 function finishDraw() {
@@ -957,13 +988,12 @@ function returnToLobby() {
   showScreen("lobby");
 }
 
-function logout() {
-  authToken = "";
+async function logout() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
   currentUser = null;
   currentRoom = null;
   players = [];
   matchPlayers = { p1: "", p2: "" };
-  localStorage.removeItem("arena-auth-token");
   setRoomPolling(false);
   ui.authPassword.value = "";
   ui.authMessage.textContent = "";
@@ -1038,7 +1068,14 @@ ui.toBetButton.addEventListener("click", startGame);
 ui.againButton.addEventListener("click", returnToLobby);
 
 async function boot() {
-  if (!authToken) {
+  if (!supabaseClient) {
+    ui.authMessage.textContent = "supabase-config.js 설정을 먼저 넣어주세요.";
+    showScreen("auth");
+    return;
+  }
+
+  const { data } = await supabaseClient.auth.getSession();
+  if (!data.session) {
     showScreen("auth");
     return;
   }
@@ -1047,8 +1084,7 @@ async function boot() {
     await loadCurrentUser();
     showScreen("lobby");
   } catch {
-    authToken = "";
-    localStorage.removeItem("arena-auth-token");
+    await supabaseClient.auth.signOut();
     showScreen("auth");
   }
 }

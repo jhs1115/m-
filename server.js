@@ -7,7 +7,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "db.json");
 const DATA_DIR = path.dirname(DB_PATH);
-const PUBLIC_FILES = new Set(["/", "/index.html", "/style.css", "/game.js"]);
+const PUBLIC_FILES = new Set(["/", "/index.html", "/style.css", "/game.js", "/supabase-config.js"]);
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });

@@ -220,6 +220,10 @@ h2 {
   box-shadow: 0 12px 28px rgba(242, 193, 78, 0.12);
 }
 
+.room-card.is-hidden {
+  display: none;
+}
+
 .room-card-head {
   display: flex;
   justify-content: space-between;
