@@ -84,6 +84,8 @@ const ui = {
   betP1Coins: document.getElementById("betP1Coins"),
   betP2Coins: document.getElementById("betP2Coins"),
   betMessage: document.getElementById("betMessage"),
+  readyButton: document.getElementById("readyButton"),
+  readyStatus: document.getElementById("readyStatus"),
   currentBet: document.getElementById("currentBet"),
   speedButtons: document.querySelectorAll(".speed-button"),
   hudP1Label: document.getElementById("hudP1Label"),
@@ -122,11 +124,33 @@ const characters = {
     accent: "#f2c14e",
     contactDamage: 0,
     canThrow: false,
-    canGrab: true
+    canGrab: true,
+    canPoker: false,
+    canStealth: false
+  },
+  poker: {
+    name: "포커하는 색히",
+    color: "#f7f4eb",
+    accent: "#ef476f",
+    contactDamage: 0,
+    canThrow: false,
+    canGrab: false,
+    canPoker: true,
+    canStealth: false
+  },
+  stealth: {
+    name: "은신하는 색히",
+    color: "#5b6cff",
+    accent: "#3dd6d0",
+    contactDamage: 0,
+    canThrow: false,
+    canGrab: false,
+    canPoker: false,
+    canStealth: true
   }
 };
 
-const gachaPool = ["charger", "grabber"];
+const gachaPool = ["charger", "grabber", "poker", "stealth"];
 
 let currentUser = null;
 let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
@@ -147,6 +171,7 @@ let selectedMode = "";
 let roomPollId = null;
 let roomRealtimeChannel = null;
 let matchSelectionTouched = false;
+let localMatchStartedAt = "";
 
 function normalizePlayer(user) {
   return {
@@ -273,6 +298,7 @@ function renderLobby() {
   renderMatchSelectors();
   renderPlayerOptions(ui.gachaPlayer, ui.gachaPlayer.value || matchPlayers.p1);
   updateLobbyPreview();
+  syncPrepStateToUi();
 }
 
 function renderMatchSelectors(force = false) {
@@ -339,6 +365,54 @@ function updateLobbyPreview() {
         : "";
 }
 
+function getPrepState() {
+  return currentRoom?.prepState || currentRoom?.prep_state || {};
+}
+
+function currentUserMatchSlot() {
+  if (!currentUser) return "";
+  if (matchPlayers.p1 === currentUser.id) return "p1";
+  if (matchPlayers.p2 === currentUser.id) return "p2";
+  return "";
+}
+
+function updateReadyUi() {
+  const prep = getPrepState();
+  const p1 = getPlayer(matchPlayers.p1);
+  const p2 = getPlayer(matchPlayers.p2);
+  const p1Ready = Boolean(prep.ready?.[matchPlayers.p1]);
+  const p2Ready = Boolean(prep.ready?.[matchPlayers.p2]);
+  const slot = currentUserMatchSlot();
+  const isParticipant = Boolean(slot);
+
+  ui.betP1Input.disabled = slot !== "p1";
+  ui.betP2Input.disabled = slot !== "p2";
+  document.querySelectorAll('[data-bet-player="p1"]').forEach(button => { button.disabled = slot !== "p1"; });
+  document.querySelectorAll('[data-bet-player="p2"]').forEach(button => { button.disabled = slot !== "p2"; });
+  ui.readyButton.disabled = !isParticipant || !p1 || !p2 || matchPlayers.p1 === matchPlayers.p2;
+  ui.readyButton.textContent = isParticipant && prep.ready?.[currentUser.id] ? "준비 취소" : "준비 완료";
+  ui.readyStatus.textContent = `${p1?.name ?? "PLAYER 1"} ${p1Ready ? "준비 완료" : "대기"} / ${p2?.name ?? "PLAYER 2"} ${p2Ready ? "준비 완료" : "대기"}`;
+}
+
+function syncPrepStateToUi() {
+  const prep = getPrepState();
+  if (prep.matchPlayers?.p1 && getPlayer(prep.matchPlayers.p1)) matchPlayers.p1 = prep.matchPlayers.p1;
+  if (prep.matchPlayers?.p2 && getPlayer(prep.matchPlayers.p2)) matchPlayers.p2 = prep.matchPlayers.p2;
+  if (prep.bets?.[matchPlayers.p1]) ui.betP1Input.value = prep.bets[matchPlayers.p1];
+  if (prep.bets?.[matchPlayers.p2]) ui.betP2Input.value = prep.bets[matchPlayers.p2];
+  updateReadyUi();
+}
+
+function maybeAutoStartMatch() {
+  const prep = getPrepState();
+  const ready = prep.ready || {};
+  const bothReady = matchPlayers.p1 && matchPlayers.p2 && ready[matchPlayers.p1] && ready[matchPlayers.p2];
+  const stamp = String(prep.updatedAt || "");
+  if (!bothReady || game || !screens.pvp.classList.contains("is-active") || localMatchStartedAt === stamp) return;
+  localMatchStartedAt = stamp;
+  startGame();
+}
+
 function openPvpSetup() {
   selectedMode = "pvp";
   ui.pvpModeButton.classList.add("is-selected");
@@ -347,6 +421,7 @@ function openPvpSetup() {
   renderMatchSelectors(true);
   updateLobbyPreview();
   updateBetFields();
+  syncPrepStateToUi();
   showScreen("pvp");
 }
 
@@ -414,6 +489,7 @@ function applyRoom(room) {
   renderLobby();
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
+  maybeAutoStartMatch();
 }
 
 async function createRoom() {
@@ -530,7 +606,7 @@ async function drawCharacter() {
 
     ui.gachaReveal.classList.remove("is-rolling");
     ui.gachaReveal.classList.add("is-hit");
-    ui.gachaReveal.querySelector("span").textContent = picked === "charger" ? "B" : "G";
+    ui.gachaReveal.querySelector("span").textContent = ({ charger: "B", grabber: "G", poker: "P", stealth: "S" })[picked] || "?";
     ui.gachaResultName.textContent = characters[picked].name;
     ui.gachaMessage.textContent = `${currentUser.name}: ${characters[picked].name} 획득!`;
     renderLobby();
@@ -581,6 +657,32 @@ function updateBetFields() {
   ui.betP1Input.value = clamp(Number(ui.betP1Input.value) || 10, 1, p1.coins);
   ui.betP2Input.value = clamp(Number(ui.betP2Input.value) || 10, 1, p2.coins);
   ui.betMessage.textContent = "각 플레이어가 자기 코인 안에서 따로 베팅합니다.";
+  updateReadyUi();
+}
+
+async function toggleReady() {
+  if (!currentRoom || !currentUser) return;
+  const slot = currentUserMatchSlot();
+  if (!slot) {
+    ui.betMessage.textContent = "대전 참가자만 준비할 수 있습니다.";
+    return;
+  }
+  const input = slot === "p1" ? ui.betP1Input : ui.betP2Input;
+  const prep = getPrepState();
+  const nextReady = !prep.ready?.[currentUser.id];
+  try {
+    const room = await rpc("set_match_ready", {
+      session_token: appSessionToken,
+      room_code: currentRoom.code,
+      player_one_id: matchPlayers.p1,
+      player_two_id: matchPlayers.p2,
+      bet_amount: Number(input.value) || 1,
+      is_ready: nextReady
+    });
+    applyRoom(room);
+  } catch (error) {
+    ui.betMessage.textContent = error.message;
+  }
 }
 
 function randomVelocity(speed) {
@@ -613,8 +715,17 @@ function makeFighter(kind, label, ownerId, x, y) {
     contactDamage: character.contactDamage,
     canThrow: character.canThrow,
     canGrab: character.canGrab,
+    canPoker: character.canPoker,
+    canStealth: character.canStealth,
     throwTimer: character.canThrow ? 180 : Infinity,
     grabTimer: character.canGrab ? 150 : Infinity,
+    pokerTimer: character.canPoker ? 150 : Infinity,
+    pokerHand: [],
+    pokerReveal: 0,
+    pokerLabel: "",
+    stealthTimer: character.canStealth ? 420 : Infinity,
+    stealthTime: 0,
+    stealthDamageCooldown: 0,
     hitFlash: 0
   };
 }
@@ -634,6 +745,7 @@ function resetGame() {
     ],
     balls: [],
     grapples: [],
+    pokerShots: [],
     damageTexts: [],
     contactLock: false,
     over: false,
@@ -670,6 +782,7 @@ function updateHud() {
 
 function damage(fighter, amount) {
   if (amount <= 0 || game.over) return;
+  if (fighter.stealthTime > 0) return;
   fighter.hp = clamp(fighter.hp - amount, 0, fighter.maxHp);
   fighter.hitFlash = 10;
   addDamageText(fighter.x, fighter.y - fighter.radius, amount);
@@ -679,6 +792,17 @@ function damage(fighter, amount) {
 
 function contactDamagePair(a, b) {
   if (game.over) return;
+  if (a.stealthTime > 0 || b.stealthTime > 0) {
+    if (a.stealthTime > 0 && a.stealthDamageCooldown <= 0) {
+      damage(b, 5);
+      a.stealthDamageCooldown = 24;
+    }
+    if (b.stealthTime > 0 && b.stealthDamageCooldown <= 0) {
+      damage(a, 5);
+      b.stealthDamageCooldown = 24;
+    }
+    return;
+  }
   const nextA = clamp(a.hp - b.contactDamage, 0, a.maxHp);
   const nextB = clamp(b.hp - a.contactDamage, 0, b.maxHp);
   if (b.contactDamage > 0) {
@@ -702,6 +826,10 @@ function contactDamagePair(a, b) {
 
 function addDamageText(x, y, amount) {
   game.damageTexts.push({ x, y, amount, life: 45, maxLife: 45, vy: -0.75 });
+}
+
+function addFloatingText(x, y, text, color = "#ff304f") {
+  game.damageTexts.push({ x, y, text, color, life: 70, maxLife: 70, vy: -0.5 });
 }
 
 function finishGame(winner) {
@@ -773,6 +901,23 @@ function moveFighter(fighter, dt) {
       throwGrapple(fighter);
       fighter.grabTimer = 150;
     }
+  }
+  if (fighter.canPoker) {
+    fighter.pokerTimer -= dt;
+    if (fighter.pokerTimer <= 0) {
+      dealPokerAttack(fighter);
+      fighter.pokerTimer = 300;
+    }
+    if (fighter.pokerReveal > 0) fighter.pokerReveal -= dt;
+  }
+  if (fighter.canStealth) {
+    fighter.stealthTimer -= dt;
+    if (fighter.stealthTimer <= 0) {
+      fighter.stealthTime = 180;
+      fighter.stealthTimer = 420;
+    }
+    if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
+    if (fighter.stealthDamageCooldown > 0) fighter.stealthDamageCooldown -= dt;
   }
   if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
 }
@@ -860,6 +1005,60 @@ function throwGrapple(owner) {
   });
 }
 
+function dealPokerAttack(owner) {
+  if (!owner.canPoker || game.over) return;
+  const ranks = ["A", "K", "Q", "J", "10", "9"];
+  const hand = Array.from({ length: 5 }, () => ranks[Math.floor(Math.random() * ranks.length)]);
+  const counts = Object.values(hand.reduce((acc, rank) => {
+    acc[rank] = (acc[rank] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b - a);
+  let multiplier = 1;
+  let label = "노페어";
+  if (counts[0] === 5) {
+    multiplier = 12;
+    label = "파이브카드";
+  } else if (counts[0] === 4) {
+    multiplier = 8;
+    label = "포카드";
+  } else if (counts[0] === 3 && counts[1] === 2) {
+    multiplier = 7;
+    label = "풀하우스";
+  } else if (counts[0] === 3) {
+    multiplier = 3;
+    label = "쓰리페어";
+  } else if (counts[0] === 2 && counts[1] === 2) {
+    multiplier = 5;
+    label = "투페어";
+  } else if (counts[0] === 2) {
+    multiplier = 2;
+    label = "원페어";
+  }
+
+  owner.pokerHand = hand;
+  owner.pokerReveal = 95;
+  owner.pokerLabel = `${label}! 데미지 x${multiplier}`;
+
+  const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  hand.forEach((rank, index) => {
+    const angle = Math.atan2(target.y - owner.y, target.x - owner.x) + (index - 2) * 0.12;
+    game.pokerShots.push({
+      owner,
+      target,
+      rank,
+      x: owner.x + Math.cos(angle) * (owner.radius + 18),
+      y: owner.y + Math.sin(angle) * (owner.radius + 18),
+      vx: Math.cos(angle) * 8,
+      vy: Math.sin(angle) * 8,
+      radius: 10,
+      damage: 3 * multiplier,
+      life: 220,
+      delay: index * 10
+    });
+  });
+  addFloatingText(owner.x, owner.y - owner.radius - 28, owner.pokerLabel, "#f7f4eb");
+}
+
 function updateBalls(dt) {
   game.balls = game.balls.filter(ball => {
     ball.x += ball.vx * dt;
@@ -876,8 +1075,10 @@ function updateBalls(dt) {
         const angle = Math.atan2(dy, dx);
         ball.vx = -Math.cos(angle) * 10.2;
         ball.vy = -Math.sin(angle) * 10.2;
-        target.vx += Math.cos(angle) * 2.0;
-        target.vy += Math.sin(angle) * 2.0;
+        if (target.stealthTime <= 0) {
+          target.vx += Math.cos(angle) * 2.0;
+          target.vy += Math.sin(angle) * 2.0;
+        }
         ball.hitCooldown = 18;
         break;
       }
@@ -896,6 +1097,7 @@ function updateGrapples(dt) {
     const hit = Math.hypot(target.x - endX, target.y - endY) < target.radius + 14;
 
     if (hit && !grapple.hit) {
+      if (target.stealthTime > 0) return false;
       grapple.hit = true;
       const pullAngle = Math.atan2(grapple.owner.y - target.y, grapple.owner.x - target.x);
       target.x += Math.cos(pullAngle) * 70;
@@ -907,6 +1109,27 @@ function updateGrapples(dt) {
       return false;
     }
     return grapple.length < grapple.maxLength && grapple.life > 0;
+  });
+}
+
+function updatePokerShots(dt) {
+  game.pokerShots = game.pokerShots.filter(card => {
+    card.delay -= dt;
+    if (card.delay > 0) return true;
+    card.life -= dt;
+    const angle = Math.atan2(card.target.y - card.y, card.target.x - card.x);
+    card.vx = card.vx * 0.92 + Math.cos(angle) * 1.25;
+    card.vy = card.vy * 0.92 + Math.sin(angle) * 1.25;
+    const speed = Math.hypot(card.vx, card.vy) || 1;
+    card.vx = (card.vx / speed) * 9.2;
+    card.vy = (card.vy / speed) * 9.2;
+    card.x += card.vx * dt;
+    card.y += card.vy * dt;
+    if (Math.hypot(card.target.x - card.x, card.target.y - card.y) < card.target.radius + card.radius) {
+      damage(card.target, card.damage);
+      return false;
+    }
+    return card.life > 0;
   });
 }
 
@@ -938,6 +1161,7 @@ function drawArena() {
   }
   game.grapples.forEach(drawGrapple);
   game.balls.forEach(drawBall);
+  game.pokerShots.forEach(drawPokerShot);
   game.fighters.forEach(drawFighter);
   game.damageTexts.forEach(drawDamageText);
 }
@@ -951,8 +1175,10 @@ function drawFighter(fighter) {
   ctx.fill();
   ctx.beginPath();
   ctx.arc(0, 0, fighter.radius, 0, Math.PI * 2);
+  ctx.globalAlpha = fighter.stealthTime > 0 ? 0.42 : 1;
   ctx.fillStyle = fighter.color;
   ctx.fill();
+  ctx.globalAlpha = 1;
   ctx.beginPath();
   ctx.arc(7, -7, 6, 0, Math.PI * 2);
   ctx.fillStyle = "#101319";
@@ -970,8 +1196,25 @@ function drawFighter(fighter) {
     ctx.arc(-9, 11, 9, 0, Math.PI * 2);
     ctx.stroke();
   }
+  if (fighter.canPoker) {
+    ctx.fillStyle = fighter.accent;
+    ctx.fillRect(-15, 8, 22, 16);
+    ctx.fillStyle = "#101319";
+    ctx.font = "900 11px Segoe UI, Arial";
+    ctx.fillText("P", -9, 20);
+  }
+  if (fighter.stealthTime > 0) {
+    ctx.strokeStyle = fighter.accent;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
   ctx.restore();
   drawFighterHealthBar(fighter);
+  drawPokerHand(fighter);
 }
 
 function drawFighterHealthBar(fighter) {
@@ -1000,6 +1243,42 @@ function drawBall(ball) {
   ctx.fill();
 }
 
+function drawPokerShot(card) {
+  if (card.delay > 0) return;
+  ctx.save();
+  ctx.translate(card.x, card.y);
+  ctx.rotate(Math.atan2(card.vy, card.vx));
+  ctx.fillStyle = "#f7f4eb";
+  ctx.fillRect(-12, -8, 24, 16);
+  ctx.strokeStyle = "#ef476f";
+  ctx.strokeRect(-12, -8, 24, 16);
+  ctx.fillStyle = "#101319";
+  ctx.font = "900 10px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(card.rank, 0, 0);
+  ctx.restore();
+}
+
+function drawPokerHand(fighter) {
+  if (!fighter.canPoker || fighter.pokerHand.length === 0) return;
+  const startX = fighter.x - 47;
+  const y = fighter.y + fighter.radius + 30;
+  fighter.pokerHand.forEach((rank, index) => {
+    const revealed = fighter.pokerReveal < 90 - index * 12;
+    const x = startX + index * 19;
+    ctx.fillStyle = revealed ? "#f7f4eb" : "#252a34";
+    ctx.fillRect(x, y, 16, 22);
+    ctx.strokeStyle = revealed ? fighter.accent : "#3b4352";
+    ctx.strokeRect(x, y, 16, 22);
+    ctx.fillStyle = revealed ? "#101319" : "#aeb6c6";
+    ctx.font = "900 8px Segoe UI, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(revealed ? rank : "?", x + 8, y + 11);
+  });
+}
+
 function drawGrapple(grapple) {
   const startX = grapple.owner.x;
   const startY = grapple.owner.y;
@@ -1026,9 +1305,10 @@ function drawDamageText(text) {
   ctx.textBaseline = "middle";
   ctx.lineWidth = 4;
   ctx.strokeStyle = "rgba(0, 0, 0, 0.78)";
-  ctx.fillStyle = "#ff304f";
-  ctx.strokeText(`-${text.amount}`, text.x, text.y);
-  ctx.fillText(`-${text.amount}`, text.x, text.y);
+  ctx.fillStyle = text.color || "#ff304f";
+  const label = text.text || `-${text.amount}`;
+  ctx.strokeText(label, text.x, text.y);
+  ctx.fillText(label, text.x, text.y);
   ctx.restore();
 }
 
@@ -1041,6 +1321,7 @@ function loop(now) {
     handleFighterCollision();
     updateBalls(dt);
     updateGrapples(dt);
+    updatePokerShots(dt);
     updateDamageTexts(dt);
   }
   drawArena();
@@ -1110,6 +1391,7 @@ ui.lobbyPlayerTwo.addEventListener("change", () => {
   setMatchPlayer("p2", ui.lobbyPlayerTwo.value);
 });
 ui.gachaButton.addEventListener("click", drawCharacter);
+ui.readyButton.addEventListener("click", toggleReady);
 ui.openGachaButton.addEventListener("click", openGachaScreen);
 ui.backFromGachaButton.addEventListener("click", () => {
   renderLobby();

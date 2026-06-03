@@ -20,8 +20,12 @@ create table if not exists public.app_rooms (
   code text primary key,
   host_user_id uuid not null references public.app_users(id) on delete cascade,
   player_ids uuid[] not null,
+  prep_state jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table public.app_rooms
+add column if not exists prep_state jsonb not null default '{}'::jsonb;
 
 alter table public.app_users enable row level security;
 alter table public.app_sessions enable row level security;
@@ -107,6 +111,7 @@ as $$
   select jsonb_build_object(
     'code', r.code,
     'hostUserId', r.host_user_id,
+    'prepState', r.prep_state,
     'players', coalesce(
       (
         select jsonb_agg(public.app_user_json(u) order by array_position(r.player_ids, u.id))
@@ -372,7 +377,7 @@ begin
   end if;
 
   select array_agg(kind) into available
-  from unnest(array['charger', 'grabber']::text[]) as kind
+  from unnest(array['charger', 'grabber', 'poker', 'stealth']::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
   if available is null or array_length(available, 1) = 0 then
@@ -391,6 +396,83 @@ begin
     'picked', picked,
     'user', public.app_user_json(active_user)
   );
+end;
+$$;
+
+create or replace function public.set_match_ready(
+  session_token text,
+  room_code text,
+  player_one_id uuid,
+  player_two_id uuid,
+  bet_amount integer,
+  is_ready boolean
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
+  safe_bet integer;
+  next_state jsonb;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select player_ids into room_players
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null then
+    raise exception 'room not found';
+  end if;
+
+  if active_user.id <> all(room_players)
+    or player_one_id <> all(room_players)
+    or player_two_id <> all(room_players) then
+    raise exception 'players must be in the same room';
+  end if;
+
+  select least(greatest(1, bet_amount), coins) into safe_bet
+  from public.app_users
+  where id = active_user.id;
+
+  select jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        jsonb_set(
+          coalesce(prep_state, '{}'::jsonb),
+          '{matchPlayers}',
+          jsonb_build_object('p1', player_one_id, 'p2', player_two_id),
+          true
+        ),
+        array['bets', active_user.id::text],
+        to_jsonb(safe_bet),
+        true
+      ),
+      array['ready', active_user.id::text],
+      to_jsonb(is_ready),
+      true
+    ),
+    array['updatedAt'],
+    to_jsonb(extract(epoch from now())),
+    true
+  ) into next_state
+  from public.app_rooms
+  where code = normalized_code;
+
+  update public.app_rooms
+  set prep_state = next_state
+  where code = normalized_code;
+
+  return public.app_room_json(normalized_code);
 end;
 $$;
 
@@ -465,4 +547,5 @@ grant execute on function public.join_room(text, text) to anon, authenticated;
 grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
+grant execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;

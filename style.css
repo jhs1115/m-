@@ -711,6 +711,14 @@ h2 {
   background: var(--green);
 }
 
+.fighter-icon.poker {
+  background: #f7f4eb;
+}
+
+.fighter-icon.stealth {
+  background: #9b7cff;
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;
@@ -827,6 +835,28 @@ h2 {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 26px;
+}
+
+.ready-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.ready-status {
+  min-height: 54px;
+  padding: 14px;
+  color: var(--gold);
+  background: #10131a;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.ready-panel .primary-button {
+  margin: 0;
 }
 
 .bet-actions .primary-button {
