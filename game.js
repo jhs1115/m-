@@ -159,8 +159,15 @@ function requireSupabase() {
   return supabaseClient;
 }
 
-function usernameToEmail(username) {
-  return `${username.toLowerCase()}@matchzzang.local`;
+async function usernameToEmail(username) {
+  const normalized = username.trim().toLowerCase();
+  const bytes = new TextEncoder().encode(normalized);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = [...new Uint8Array(digest)]
+    .slice(0, 16)
+    .map(byte => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return `u-${hash}@matchzzang-arena.com`;
 }
 
 async function rpc(name, args = {}) {
@@ -318,7 +325,7 @@ async function authenticate(mode) {
 
   try {
     const client = requireSupabase();
-    const email = usernameToEmail(username);
+    const email = await usernameToEmail(username);
 
     if (mode === "signup") {
       const { error } = await client.auth.signUp({
