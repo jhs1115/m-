@@ -1,26 +1,26 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>留욎㎟ ?꾨젅??/title>
+  <title>맞짱 아레나</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
     <section id="authScreen" class="screen is-active">
       <div class="panel auth-panel">
-        <h1 class="screen-title">濡쒓렇??/h1>
-        <label class="bet-label" for="authUsername">?꾩씠??/label>
+        <h1 class="screen-title">로그인</h1>
+        <label class="bet-label" for="authUsername">아이디</label>
         <input id="authUsername" class="text-input" type="text" maxlength="20" autocomplete="username">
-        <label class="bet-label" for="authPassword">鍮꾨?踰덊샇</label>
+        <label class="bet-label" for="authPassword">비밀번호</label>
         <div class="password-row">
           <input id="authPassword" class="text-input" type="password" autocomplete="current-password">
-          <button id="toggleLoginPassword" class="ghost-button" type="button">蹂닿린</button>
+          <button id="toggleLoginPassword" class="ghost-button" type="button">보기</button>
         </div>
         <div class="bet-actions">
-          <button id="openSignupButton" class="ghost-button">?뚯썝媛??/button>
-          <button id="loginButton" class="primary-button">濡쒓렇??/button>
+          <button id="openSignupButton" class="ghost-button">회원가입</button>
+          <button id="loginButton" class="primary-button">로그인</button>
         </div>
         <p id="authMessage" class="status-message"></p>
       </div>
@@ -28,39 +28,39 @@
 
     <section id="signupScreen" class="screen">
       <div class="panel auth-panel">
-        <h1 class="screen-title">?뚯썝媛??/h1>
-        <label class="bet-label" for="signupUsername">?꾩씠??/label>
+        <h1 class="screen-title">회원가입</h1>
+        <label class="bet-label" for="signupUsername">아이디</label>
         <input id="signupUsername" class="text-input" type="text" maxlength="20" autocomplete="username">
-        <label class="bet-label" for="signupPassword">鍮꾨?踰덊샇</label>
+        <label class="bet-label" for="signupPassword">비밀번호</label>
         <div class="password-row">
           <input id="signupPassword" class="text-input" type="password" autocomplete="new-password">
-          <button id="toggleSignupPassword" class="ghost-button" type="button">蹂닿린</button>
+          <button id="toggleSignupPassword" class="ghost-button" type="button">보기</button>
         </div>
         <div class="bet-actions">
-          <button id="backToLoginButton" class="ghost-button">濡쒓렇?몄쑝濡?/button>
-          <button id="signupButton" class="primary-button">媛?낇븯湲?/button>
+          <button id="backToLoginButton" class="ghost-button">로그인으로</button>
+          <button id="signupButton" class="primary-button">가입하기</button>
         </div>
         <p id="signupMessage" class="status-message"></p>
       </div>
     </section>
 
     <section id="lobbyScreen" class="screen">
-      <button id="logoutButton" class="logout-button">濡쒓렇?꾩썐</button>
+      <button id="logoutButton" class="logout-button">로그아웃</button>
       <div class="top-copy">
-        <h1>留욎㎟ ?꾨컯??/h1>
+        <h1>맞짱 아레나</h1>
       </div>
 
       <div class="lobby-shell">
         <div class="lobby-grid">
           <div class="panel lobby-panel">
-            <h2>諛?/h2>
+            <h2>플레이어</h2>
             <div class="account-box">
-              <span id="currentUserName">濡쒓렇???꾩슂</span>
+              <span id="currentUserName">로그인이 필요합니다</span>
               <strong><span id="currentUserCoins">0</span>C</strong>
             </div>
             <div class="room-code-box">
-              <span>?꾩옱 諛?肄붾뱶</span>
-              <strong id="roomCodeText">?놁쓬</strong>
+              <span>현재 방 코드</span>
+              <strong id="roomCodeText">없음</strong>
             </div>
             <div class="add-player">
               <input id="roomCodeInput" type="text" maxlength="8" placeholder="방 코드 입력">
@@ -72,8 +72,8 @@
             </div>
             <div id="roomCard" class="room-card is-hidden">
               <div class="room-card-head">
-                <span>?앹꽦??諛?/span>
-                <strong id="roomCardCode">?놁쓬</strong>
+                <span>생성된 방</span>
+                <strong id="roomCardCode">없음</strong>
               </div>
               <div id="roomPlayerList" class="room-player-list"></div>
             </div>
@@ -82,26 +82,26 @@
 
           <div class="lobby-side">
             <div class="panel lobby-panel match-panel">
-              <h2>寃뚯엫 ?쒖옉</h2>
+              <h2>게임 시작</h2>
               <div class="mode-grid">
                 <button id="pvpModeButton" class="mode-button" type="button">
                   <strong>PVP</strong>
-                  <span>?뚮젅?댁뼱?쇰━ ???/span>
+                  <span>플레이어끼리 대전</span>
                 </button>
                 <button id="pveModeButton" class="mode-button" type="button">
                   <strong>PVE</strong>
-                  <span>怨듭궗以?/span>
+                  <span>공사중</span>
                 </button>
               </div>
               <p id="modeMessage" class="status-message"></p>
             </div>
 
             <div class="panel gacha-panel">
-              <h2>罹먮┃??戮묎린</h2>
+              <h2>캐릭터 뽑기</h2>
               <div class="gacha-box">
                 <strong>50C</strong>
-                <span>??罹먮┃?곕? ?살쓣 ???덉뒿?덈떎.</span>
-                <button id="openGachaButton" class="primary-button">戮묎린?섎윭 媛湲?/button>
+                <span>새 캐릭터를 얻을 수 있습니다.</span>
+                <button id="openGachaButton" class="primary-button">뽑기하러 가기</button>
               </div>
             </div>
           </div>
@@ -111,7 +111,7 @@
 
     <section id="gachaScreen" class="screen">
       <div class="panel gacha-stage">
-        <h1 class="screen-title">罹먮┃??戮묎린</h1>
+        <h1 class="screen-title">캐릭터 뽑기</h1>
         <div class="gacha-stage-grid">
           <div class="gacha-machine">
             <div id="gachaReveal" class="gacha-reveal">
@@ -121,16 +121,16 @@
           </div>
 
           <div class="gacha-controls">
-            <label class="bet-label" for="gachaPlayer">戮묒쓣 ?뚮젅?댁뼱</label>
+            <label class="bet-label" for="gachaPlayer">뽑을 플레이어</label>
             <select id="gachaPlayer" class="player-select"></select>
             <div class="gacha-price">
-              <span>媛寃?/span>
+              <span>가격</span>
               <strong>50C</strong>
             </div>
             <p id="gachaMessage" class="status-message"></p>
             <div class="bet-actions gacha-actions">
-              <button id="backFromGachaButton" class="ghost-button">濡쒕퉬濡?/button>
-              <button id="gachaButton" class="primary-button">戮묎린</button>
+              <button id="backFromGachaButton" class="ghost-button">로비로</button>
+              <button id="gachaButton" class="primary-button">뽑기</button>
             </div>
           </div>
         </div>
@@ -139,11 +139,11 @@
 
     <section id="pvpScreen" class="screen">
       <div class="panel pvp-panel">
-        <h1 class="screen-title">???以鍮?/h1>
+        <h1 class="screen-title">대전 준비</h1>
 
         <div class="pvp-layout">
           <div class="pvp-section">
-            <h2>?뚮젅?댁뼱 ?좏깮</h2>
+            <h2>플레이어 선택</h2>
             <label class="bet-label" for="lobbyPlayerOne">PLAYER 1</label>
             <select id="lobbyPlayerOne" class="player-select"></select>
 
@@ -152,12 +152,12 @@
 
             <div class="match-preview">
               <div>
-                <span id="lobbyP1Name">?뚮젅?댁뼱 1</span>
+                <span id="lobbyP1Name">플레이어 1</span>
                 <strong><span id="lobbyP1Coins">100</span>C</strong>
               </div>
               <b>VS</b>
               <div>
-                <span id="lobbyP2Name">?뚮젅?댁뼱 2</span>
+                <span id="lobbyP2Name">플레이어 2</span>
                 <strong><span id="lobbyP2Coins">100</span>C</strong>
               </div>
             </div>
@@ -165,7 +165,7 @@
           </div>
 
           <div class="pvp-section">
-            <h2>踰좏똿</h2>
+            <h2>베팅</h2>
             <div class="wallet-row">
               <span id="betP1Name">PLAYER 1</span>
               <strong><span id="betP1Coins">100</span>C</strong>
@@ -177,7 +177,7 @@
 
             <div class="split-bet-grid">
               <div>
-                <label class="bet-label" for="betP1Input">PLAYER 1 踰좏똿</label>
+                <label class="bet-label" for="betP1Input">PLAYER 1 베팅</label>
                 <div class="bet-control player-bet-control">
                   <input id="betP1Input" type="number" min="1" max="100" step="1" value="10">
                   <button class="chip-button" data-bet-player="p1" data-chip="5">+5</button>
@@ -186,7 +186,7 @@
               </div>
 
               <div>
-                <label class="bet-label" for="betP2Input">PLAYER 2 踰좏똿</label>
+                <label class="bet-label" for="betP2Input">PLAYER 2 베팅</label>
                 <div class="bet-control player-bet-control">
                   <input id="betP2Input" type="number" min="1" max="100" step="1" value="10">
                   <button class="chip-button" data-bet-player="p2" data-chip="5">+5</button>
@@ -199,16 +199,15 @@
         </div>
 
         <div class="bet-actions">
-          <button id="backFromPvpButton" class="ghost-button">濡쒕퉬濡?/button>
-          <button id="lobbyStartButton" class="primary-button">罹먮┃???좏깮</button>
+          <button id="backFromPvpButton" class="ghost-button">로비로</button>
+          <button id="lobbyStartButton" class="primary-button">캐릭터 선택</button>
         </div>
       </div>
     </section>
 
     <section id="selectScreen" class="screen">
       <div class="top-copy">
-        <h1>罹먮┃???좏깮</h1>
-        <p>???뚮젅?댁뼱媛 罹먮┃?곕? 怨좊Ⅴ硫??쒕뜡 諛⑺뼢?쇰줈 ?뺢꺼 ?섍?硫??먮룞?쇰줈 ?몄썎?덈떎.</p>
+        <h1>캐릭터 선택</h1>
       </div>
 
       <div class="player-select-grid">
@@ -217,15 +216,15 @@
           <div class="character-grid compact">
             <button class="fighter-card is-selected" data-player="p1" data-character="charger">
               <span class="fighter-icon punch">B</span>
-              <strong data-name="?뚯쭊?섎뒗 ?됲엳">?뚯쭊?섎뒗 ?됲엳</strong>
+              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
             </button>
             <button class="fighter-card" data-player="p1" data-character="thrower">
               <span class="fighter-icon throw">T</span>
-              <strong data-name="怨듬뜕吏???됲엳">怨듬뜕吏???됲엳</strong>
+              <strong data-name="공던지는 색히">공던지는 색히</strong>
             </button>
             <button class="fighter-card" data-player="p1" data-character="grabber">
               <span class="fighter-icon grab">G</span>
-              <strong data-name="洹몃옪?섎뒗 ?됲엳">洹몃옪?섎뒗 ?됲엳</strong>
+              <strong data-name="그랩하는 색히">그랩하는 색히</strong>
             </button>
           </div>
         </div>
@@ -235,23 +234,23 @@
           <div class="character-grid compact">
             <button class="fighter-card" data-player="p2" data-character="charger">
               <span class="fighter-icon punch">B</span>
-              <strong data-name="?뚯쭊?섎뒗 ?됲엳">?뚯쭊?섎뒗 ?됲엳</strong>
+              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
             </button>
             <button class="fighter-card is-selected" data-player="p2" data-character="thrower">
               <span class="fighter-icon throw">T</span>
-              <strong data-name="怨듬뜕吏???됲엳">怨듬뜕吏???됲엳</strong>
+              <strong data-name="공던지는 색히">공던지는 색히</strong>
             </button>
             <button class="fighter-card" data-player="p2" data-character="grabber">
               <span class="fighter-icon grab">G</span>
-              <strong data-name="洹몃옪?섎뒗 ?됲엳">洹몃옪?섎뒗 ?됲엳</strong>
+              <strong data-name="그랩하는 색히">그랩하는 색히</strong>
             </button>
           </div>
         </div>
       </div>
 
       <div class="bet-actions center-actions">
-        <button id="backToLobbyButton" class="ghost-button">???以鍮꾨줈</button>
-        <button id="toBetButton" class="primary-button">?꾪닾 ?쒖옉</button>
+        <button id="backToLobbyButton" class="ghost-button">대전 준비로</button>
+        <button id="toBetButton" class="primary-button">전투 시작</button>
       </div>
     </section>
 
@@ -259,16 +258,16 @@
       <header class="hud">
         <div class="hud-card player">
           <span id="hudP1Label">PLAYER 1</span>
-          <strong id="playerOneName">怨듬뜕吏???됲엳</strong>
+          <strong id="playerOneName">공던지는 색히</strong>
           <div class="health-bar"><span id="playerOneHealthBar"></span></div>
           <b id="playerOneHealthText">100</b>
         </div>
 
         <div class="center-hud">
           <div class="speed-controls">
-            <button class="speed-button is-active" data-speed="1" type="button">1諛곗냽</button>
-            <button class="speed-button" data-speed="2" type="button">2諛곗냽</button>
-            <button class="speed-button" data-speed="3" type="button">3諛곗냽</button>
+            <button class="speed-button is-active" data-speed="1" type="button">1배속</button>
+            <button class="speed-button" data-speed="2" type="button">2배속</button>
+            <button class="speed-button" data-speed="3" type="button">3배속</button>
           </div>
           <div class="round-info">
             <span>BETS</span>
@@ -278,26 +277,26 @@
 
         <div class="hud-card enemy">
           <span id="hudP2Label">PLAYER 2</span>
-          <strong id="playerTwoName">怨듬뜕吏???됲엳</strong>
+          <strong id="playerTwoName">공던지는 색히</strong>
           <div class="health-bar"><span id="playerTwoHealthBar"></span></div>
           <b id="playerTwoHealthText">100</b>
         </div>
       </header>
 
-      <canvas id="arena" width="620" height="520" aria-label="留욎㎟ ?꾨젅??寃뚯엫 ?꾨뱶"></canvas>
+      <canvas id="arena" width="620" height="520" aria-label="맞짱 아레나 게임 필드"></canvas>
 
       <div id="resultOverlay" class="result-overlay">
         <div class="result-box">
-          <p id="resultTitle">PLAYER 1 ?밸━!</p>
-          <span id="resultText">?먮룉??媛?멸컩?덈떎.</span>
-          <button id="againButton" class="primary-button">濡쒕퉬濡??뚯븘媛湲?/button>
+          <p id="resultTitle">PLAYER 1 승리!</p>
+          <span id="resultText">정산이 완료되었습니다.</span>
+          <button id="againButton" class="primary-button">로비로 돌아가기</button>
         </div>
       </div>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260603d"></script>
-  <script src="game.js?v=20260603d"></script>
+  <script src="supabase-config.js?v=20260603e"></script>
+  <script src="game.js?v=20260603e"></script>
 </body>
 </html>
