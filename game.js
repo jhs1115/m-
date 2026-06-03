@@ -598,11 +598,16 @@ function updateBetFields() {
   ui.betP2Name.textContent = p2.name;
   ui.betP1Coins.textContent = p1.coins;
   ui.betP2Coins.textContent = p2.coins;
+  ui.betP1Input.disabled = false;
+  ui.betP2Input.disabled = false;
+  document.querySelectorAll(".chip-button").forEach(button => {
+    button.disabled = false;
+  });
   ui.betP1Input.max = p1.coins;
   ui.betP2Input.max = p2.coins;
   ui.betP1Input.value = clamp(Number(ui.betP1Input.value) || 10, 1, p1.coins);
   ui.betP2Input.value = clamp(Number(ui.betP2Input.value) || 10, 1, p2.coins);
-  ui.betMessage.textContent = "각 플레이어가 자기 코인 안에서 따로 베팅합니다.";
+  ui.betMessage.textContent = "한 사람이 양쪽 판돈을 모두 정합니다. 각 판돈은 해당 플레이어 코인 안에서만 가능합니다.";
 }
 
 function randomVelocity(speed) {
@@ -967,19 +972,20 @@ function dealPokerAttack(owner) {
 
   const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
   hand.forEach((rank, index) => {
-    const angle = Math.atan2(target.y - owner.y, target.x - owner.x) + (index - 2) * 0.12;
     game.pokerShots.push({
       owner,
       target,
       rank,
-      x: owner.x + Math.cos(angle) * (owner.radius + 18),
-      y: owner.y + Math.sin(angle) * (owner.radius + 18),
-      vx: Math.cos(angle) * 8,
-      vy: Math.sin(angle) * 8,
+      x: owner.x,
+      y: owner.y,
+      vx: 0,
+      vy: 0,
       radius: 10,
       damage: 1.5 * multiplier,
-      life: 220,
-      delay: index * 10
+      life: 190,
+      delay: index * 9,
+      spread: (index - 2) * 0.1,
+      launched: false
     });
   });
   addFloatingText(owner.x, owner.y - owner.radius - 28, owner.pokerLabel, "#f7f4eb");
@@ -1042,6 +1048,14 @@ function updatePokerShots(dt) {
   game.pokerShots = game.pokerShots.filter(card => {
     card.delay -= dt;
     if (card.delay > 0) return true;
+    if (!card.launched) {
+      const angle = Math.atan2(card.target.y - card.owner.y, card.target.x - card.owner.x) + card.spread;
+      card.x = card.owner.x + Math.cos(angle) * (card.owner.radius + 18);
+      card.y = card.owner.y + Math.sin(angle) * (card.owner.radius + 18);
+      card.vx = Math.cos(angle) * 13.5;
+      card.vy = Math.sin(angle) * 13.5;
+      card.launched = true;
+    }
     card.life -= dt;
     card.x += card.vx * dt;
     card.y += card.vy * dt;
