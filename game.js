@@ -189,6 +189,7 @@ let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
 let pendingSkillUse = false;
+let lastPublishedTick = 0;
 
 function normalizePlayer(user) {
   return {
@@ -588,6 +589,7 @@ function applyRoom(room) {
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
   processSkillEvents(prep);
+  applyGameStateSnapshot(prep.gameState || prep.game_state);
   maybeStartReadyMatch();
 }
 
@@ -892,6 +894,7 @@ function resetGame() {
   };
   appliedSkillEvents = new Set();
   pendingSkillUse = false;
+  lastPublishedTick = 0;
 
   ui.currentBet.textContent = "+14 LP";
   ui.hudP1Label.textContent = p1.name;
@@ -985,6 +988,7 @@ function finishGame(winner) {
   ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
   ui.resultText.textContent = `${winner.name} 승. 정산 중...`;
   ui.resultOverlay.classList.add("is-active");
+  publishGameStateIfNeeded(true);
   settleMatch(winnerPlayer, loserPlayer);
 }
 
@@ -1018,10 +1022,115 @@ function finishDraw() {
   ui.resultTitle.textContent = "무승부!";
   ui.resultText.textContent = "돌진하는 색히끼리 끝까지 맞짱. 코인은 그대로 유지됩니다.";
   ui.resultOverlay.classList.add("is-active");
+  publishGameStateIfNeeded(true);
 }
 
 function opponentOf(fighter) {
   return fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+}
+
+function isAuthoritativeClient() {
+  return Boolean(currentUser && currentUser.id === matchPlayers.p1);
+}
+
+function fighterIndex(fighter) {
+  return game?.fighters.indexOf(fighter) ?? -1;
+}
+
+function serializeFighter(fighter) {
+  const copy = {};
+  [
+    "kind", "label", "ownerId", "ownerName", "name", "color", "accent",
+    "x", "y", "vx", "vy", "radius", "hp", "maxHp", "contactDamage",
+    "canThrow", "canGrab", "canPoker", "canStealth", "throwTimer", "grabTimer",
+    "pokerTimer", "pokerReveal", "pokerLabel", "pokerBoostMultiplier",
+    "stealthTimer", "stealthTime", "stealthDamage", "hyperStealthActive",
+    "hyperStealthNext", "stealthDamageCooldown", "skillTimer", "ultimateTimer",
+    "rageTime", "unstoppableTime", "unstoppableHit", "stunTime", "slowTime",
+    "hasteTime", "hitFlash"
+  ].forEach(key => {
+    copy[key] = fighter[key];
+  });
+  copy.pokerHand = [...fighter.pokerHand];
+  return copy;
+}
+
+function serializeGameState() {
+  if (!game) return null;
+  return {
+    tick: game.tick,
+    over: game.over,
+    fighters: game.fighters.map(serializeFighter),
+    balls: game.balls.map(ball => {
+      const copy = stripRefs(ball);
+      copy.ownerIndex = fighterIndex(ball.owner);
+      copy.homeTargetIndex = fighterIndex(ball.homeTarget);
+      return copy;
+    }),
+    grapples: game.grapples.map(grapple => {
+      const copy = stripRefs(grapple);
+      copy.ownerIndex = fighterIndex(grapple.owner);
+      return copy;
+    }),
+    pokerShots: game.pokerShots.map(card => {
+      const copy = stripRefs(card);
+      copy.ownerIndex = fighterIndex(card.owner);
+      copy.targetIndex = fighterIndex(card.target);
+      return copy;
+    }),
+    shockwaves: game.shockwaves.map(wave => {
+      const copy = stripRefs(wave);
+      copy.ownerIndex = fighterIndex(wave.owner);
+      return copy;
+    }),
+    damageTexts: game.damageTexts
+  };
+}
+
+function stripRefs(item) {
+  const copy = { ...item };
+  delete copy.owner;
+  delete copy.homeTarget;
+  delete copy.target;
+  return copy;
+}
+
+function applyGameStateSnapshot(snapshot) {
+  if (!game || !snapshot || isAuthoritativeClient()) return;
+  game.tick = snapshot.tick ?? game.tick;
+  game.over = Boolean(snapshot.over);
+  game.fighters = (snapshot.fighters || []).map(fighter => ({ ...fighter, pokerHand: fighter.pokerHand || [] }));
+  game.balls = (snapshot.balls || []).map(ball => {
+    const copy = stripRefs(ball);
+    copy.owner = game.fighters[ball.ownerIndex] || game.fighters[0];
+    copy.homeTarget = game.fighters[ball.homeTargetIndex] || null;
+    return copy;
+  });
+  game.grapples = (snapshot.grapples || []).map(grapple => {
+    const copy = stripRefs(grapple);
+    copy.owner = game.fighters[grapple.ownerIndex] || game.fighters[0];
+    return copy;
+  });
+  game.pokerShots = (snapshot.pokerShots || []).map(card => {
+    const copy = stripRefs(card);
+    copy.owner = game.fighters[card.ownerIndex] || game.fighters[0];
+    copy.target = game.fighters[card.targetIndex] || game.fighters[1];
+    return copy;
+  });
+  game.shockwaves = (snapshot.shockwaves || []).map(wave => {
+    const copy = stripRefs(wave);
+    copy.owner = game.fighters[wave.ownerIndex] || game.fighters[0];
+    return copy;
+  });
+  game.damageTexts = snapshot.damageTexts || [];
+  updateHud();
+  updateSkillHud();
+  if (game.over && !ui.resultOverlay.classList.contains("is-active")) {
+    const winner = game.fighters.reduce((best, fighter) => fighter.hp > best.hp ? fighter : best, game.fighters[0]);
+    ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
+    ui.resultText.textContent = "상대 화면과 같은 전투 결과를 불러왔습니다.";
+    ui.resultOverlay.classList.add("is-active");
+  }
 }
 
 function startStealth(fighter) {
@@ -1950,13 +2059,32 @@ function stepGame(dt) {
   }
 }
 
+async function publishGameStateIfNeeded(force = false) {
+  if (!game || !currentRoom || !isAuthoritativeClient()) return;
+  if (!force && game.tick - lastPublishedTick < 6) return;
+  lastPublishedTick = game.tick;
+  try {
+    const room = await rpc("publish_game_state", {
+      session_token: appSessionToken,
+      room_code: currentRoom.code,
+      game_state: serializeGameState()
+    });
+    currentRoom = { ...currentRoom, ...room };
+  } catch {
+    // The next polling/realtime update will recover if a publish fails.
+  }
+}
+
 function loop(now) {
   if (!game) return;
-  const targetTick = Math.max(0, Math.floor((Date.now() - game.startTimeMs) / FIXED_STEP_MS));
-  let steps = 0;
-  while (game.tick < targetTick && steps < 12) {
-    stepGame(gameSpeed);
-    steps += 1;
+  if (isAuthoritativeClient()) {
+    const targetTick = Math.max(0, Math.floor((Date.now() - game.startTimeMs) / FIXED_STEP_MS));
+    let steps = 0;
+    while (game.tick < targetTick && steps < 12) {
+      stepGame(gameSpeed);
+      steps += 1;
+    }
+    publishGameStateIfNeeded();
   }
 
   drawArena();

@@ -654,6 +654,50 @@ begin
 end;
 $$;
 
+create or replace function public.publish_game_state(session_token text, room_code text, game_state jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
+  current_state jsonb;
+  next_state jsonb;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select player_ids, coalesce(prep_state, '{}'::jsonb)
+  into room_players, current_state
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null or active_user.id <> room_players[1] then
+    raise exception 'only player 1 can publish game state';
+  end if;
+
+  next_state := jsonb_set(
+    current_state,
+    array['gameState'],
+    coalesce(game_state, '{}'::jsonb),
+    true
+  );
+
+  update public.app_rooms
+  set prep_state = next_state
+  where code = normalized_code;
+
+  return public.app_room_json(normalized_code);
+end;
+$$;
+
 create or replace function public.leave_room(session_token text, room_code text)
 returns jsonb
 language plpgsql
@@ -991,6 +1035,7 @@ grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
 grant execute on function public.set_character_ready(text, text, text, boolean) to anon, authenticated;
 grant execute on function public.use_skill_event(text, text, text, integer) to anon, authenticated;
+grant execute on function public.publish_game_state(text, text, jsonb) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
 
 notify pgrst, 'reload schema';
