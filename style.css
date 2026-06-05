@@ -946,6 +946,83 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.skill-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 220px));
+  justify-content: center;
+  gap: 12px;
+  margin: 14px auto 0;
+}
+
+.skill-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 10px 14px;
+  overflow: hidden;
+  color: var(--text);
+  text-align: left;
+  background: rgba(28, 32, 41, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+}
+
+.skill-button span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #17120a;
+  background: var(--gold);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.skill-button strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-button.ultimate {
+  border-color: rgba(242, 193, 78, 0.45);
+}
+
+.skill-button b {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  color: var(--text);
+  background: rgba(5, 8, 14, 0.76);
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+.skill-button.is-cooling b {
+  display: grid;
+}
+
+.skill-button.is-cooling,
+.skill-button.is-locked {
+  filter: grayscale(0.35);
+}
+
+.skill-button:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.skill-button.is-locked {
+  opacity: 0.45;
+}
+
 .control-strip {
   display: flex;
   justify-content: center;

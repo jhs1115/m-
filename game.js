@@ -87,6 +87,12 @@ const ui = {
   playerTwoHealthBar: document.getElementById("playerTwoHealthBar"),
   playerOneHealthText: document.getElementById("playerOneHealthText"),
   playerTwoHealthText: document.getElementById("playerTwoHealthText"),
+  normalSkillButton: document.getElementById("normalSkillButton"),
+  ultimateSkillButton: document.getElementById("ultimateSkillButton"),
+  normalSkillName: document.getElementById("normalSkillName"),
+  ultimateSkillName: document.getElementById("ultimateSkillName"),
+  normalSkillCooldown: document.getElementById("normalSkillCooldown"),
+  ultimateSkillCooldown: document.getElementById("ultimateSkillCooldown"),
   resultOverlay: document.getElementById("resultOverlay"),
   resultTitle: document.getElementById("resultTitle"),
   resultText: document.getElementById("resultText")
@@ -143,6 +149,14 @@ const characters = {
 
 const gachaPool = ["charger", "grabber", "poker", "stealth"];
 
+const skillNames = {
+  thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
+  charger: { normal: "격노", ultimate: "불가항력" },
+  grabber: { normal: "그랩", ultimate: "충격파" },
+  poker: { normal: "드로우", ultimate: "힐 다이스" },
+  stealth: { normal: "암살", ultimate: "하이퍼 히든" }
+};
+
 let currentUser = null;
 let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
 let currentRoom = null;
@@ -169,6 +183,8 @@ let selectDeadline = 0;
 let matchmakingActive = false;
 let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
+let appliedSkillEvents = new Set();
+let pendingSkillUse = false;
 
 function normalizePlayer(user) {
   return {
@@ -440,7 +456,7 @@ async function startMatchmaking() {
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
   ui.cancelMatchButton.classList.remove("is-hidden");
-  ui.modeMessage.textContent = `${tierForLp(currentUser.lp)} 매칭중...`;
+  ui.modeMessage.textContent = "매칭중...";
   ui.pvpModeButton.disabled = true;
   await checkMatchmaking();
   if (matchmakingActive) setMatchmakingPolling(true);
@@ -452,7 +468,7 @@ async function checkMatchmaking() {
     const data = await rpc("find_pvp_match", { session_token: appSessionToken });
     if (!matchmakingActive) return;
     if (!data.matched) {
-      ui.modeMessage.textContent = `${data.tier ?? tierForLp(currentUser.lp)} 매칭중... ${data.elapsed ?? 0}초`;
+      ui.modeMessage.textContent = `매칭중... ${data.elapsed ?? 0}초`;
       return;
     }
     resetMatchmakingUi("");
@@ -552,6 +568,7 @@ function applyRoom(room) {
   renderLobby();
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
+  processSkillEvents(prep);
   maybeStartReadyMatch();
 }
 
@@ -744,6 +761,26 @@ function randomVelocity(speed) {
   };
 }
 
+function normalSkillCooldown(kind) {
+  return {
+    thrower: 720,
+    charger: 600,
+    grabber: 900,
+    poker: 600,
+    stealth: 900
+  }[kind] ?? Infinity;
+}
+
+function ultimateCooldown(kind) {
+  return {
+    thrower: 1800,
+    charger: 1380,
+    grabber: 2100,
+    poker: 2400,
+    stealth: 2400
+  }[kind] ?? Infinity;
+}
+
 function makeFighter(kind, label, ownerId, x, y) {
   const character = characters[kind];
   const velocity = randomVelocity(6.5);
@@ -774,9 +811,20 @@ function makeFighter(kind, label, ownerId, x, y) {
     pokerHand: [],
     pokerReveal: 0,
     pokerLabel: "",
+    pokerBoostMultiplier: 1,
     stealthTimer: character.canStealth ? 420 : Infinity,
     stealthTime: 0,
+    stealthDamage: 15,
+    hyperStealthNext: false,
     stealthDamageCooldown: 0,
+    skillTimer: 0,
+    ultimateTimer: 0,
+    rageTime: 0,
+    unstoppableTime: 0,
+    unstoppableHit: false,
+    stunTime: 0,
+    slowTime: 0,
+    hasteTime: 0,
     hitFlash: 0
   };
 }
@@ -800,12 +848,15 @@ function resetGame() {
     balls: [],
     grapples: [],
     pokerShots: [],
+    shockwaves: [],
     damageTexts: [],
     contactLock: false,
     over: false,
     lastTime: performance.now(),
     accumulator: 0
   };
+  appliedSkillEvents = new Set();
+  pendingSkillUse = false;
 
   ui.currentBet.textContent = "+14 LP";
   ui.hudP1Label.textContent = p1.name;
@@ -826,6 +877,7 @@ function startGame() {
   showScreen("game");
   if (animationId) cancelAnimationFrame(animationId);
   game.lastTime = performance.now();
+  updateSkillHud();
   animationId = requestAnimationFrame(loop);
 }
 
@@ -852,11 +904,11 @@ function contactDamagePair(a, b) {
   if (game.over) return;
   if (a.stealthTime > 0 || b.stealthTime > 0) {
     if (a.stealthTime > 0 && a.stealthDamageCooldown <= 0) {
-      damage(b, 15);
+      damage(b, a.stealthDamage);
       a.stealthDamageCooldown = 24;
     }
     if (b.stealthTime > 0 && b.stealthDamageCooldown <= 0) {
-      damage(a, 15);
+      damage(a, b.stealthDamage);
       b.stealthDamageCooldown = 24;
     }
     return;
@@ -934,22 +986,266 @@ function finishDraw() {
   ui.resultOverlay.classList.add("is-active");
 }
 
+function opponentOf(fighter) {
+  return fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+}
+
+function startStealth(fighter) {
+  const hyper = fighter.hyperStealthNext;
+  fighter.stealthTime = hyper ? 240 : 180;
+  fighter.stealthDamage = hyper ? 20 : 15;
+  fighter.hyperStealthNext = false;
+  addFloatingText(fighter.x, fighter.y - fighter.radius - 44, hyper ? "하이퍼 히든!" : "은신", fighter.accent);
+}
+
+function heal(fighter, amount) {
+  if (amount <= 0 || game.over) return;
+  fighter.hp = clamp(fighter.hp + amount, 0, fighter.maxHp);
+  addFloatingText(fighter.x, fighter.y - fighter.radius - 28, `+${amount}`, "#7bd88f");
+  updateHud();
+}
+
+function triggerNormalSkill(fighter) {
+  if (fighter.kind === "thrower") {
+    const target = opponentOf(fighter);
+    let count = 0;
+    game.balls.forEach(ball => {
+      if (ball.owner === fighter) {
+        ball.homing = true;
+        ball.homeTarget = target;
+        ball.color = "#ffe28a";
+        count += 1;
+      }
+    });
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, count ? "룩 온!" : "룩 온", fighter.accent);
+    fighter.skillTimer = 720;
+    return;
+  }
+
+  if (fighter.kind === "charger") {
+    fighter.rageTime = 180;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "격노!", fighter.accent);
+    fighter.skillTimer = 600;
+    return;
+  }
+
+  if (fighter.kind === "grabber") {
+    throwGrapple(fighter);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "그랩!", fighter.accent);
+    fighter.skillTimer = 900;
+    return;
+  }
+
+  if (fighter.kind === "poker") {
+    throwDrawCard(fighter);
+    fighter.skillTimer = 600;
+    return;
+  }
+
+  if (fighter.kind === "stealth") {
+    if (fighter.stealthTime <= 0) return;
+    assassinate(fighter);
+    fighter.skillTimer = 900;
+  }
+}
+
+function triggerUltimate(fighter) {
+  if (fighter.kind === "thrower") {
+    fireStarStrike(fighter);
+    fighter.ultimateTimer = 1800;
+    return;
+  }
+
+  if (fighter.kind === "charger") {
+    const speed = Math.hypot(fighter.vx, fighter.vy) || 1;
+    fighter.vx = (fighter.vx / speed) * 18;
+    fighter.vy = (fighter.vy / speed) * 18;
+    fighter.unstoppableTime = 55;
+    fighter.unstoppableHit = false;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "불가항력!", fighter.accent);
+    fighter.ultimateTimer = 1380;
+    return;
+  }
+
+  if (fighter.kind === "grabber") {
+    createShockwave(fighter);
+    fighter.ultimateTimer = 2100;
+    return;
+  }
+
+  if (fighter.kind === "poker") {
+    const roll = Math.floor(seededRandom() * 6) + 1;
+    heal(fighter, roll * 5);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 54, `힐 다이스 ${roll}`, fighter.accent);
+    fighter.ultimateTimer = 2400;
+    return;
+  }
+
+  if (fighter.kind === "stealth") {
+    fighter.hyperStealthNext = true;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "하이퍼 히든!", fighter.accent);
+    fighter.ultimateTimer = 2400;
+  }
+}
+
+function myFighter() {
+  if (!game || !currentUser) return null;
+  if (currentUser.id === matchPlayers.p2) return game.fighters[1];
+  return game.fighters[0];
+}
+
+function fighterByOwnerId(ownerId) {
+  if (!game) return null;
+  return game.fighters.find(fighter => fighter.ownerId === ownerId) || null;
+}
+
+function skillAvailable(fighter, type) {
+  if (!fighter || game?.over || fighter.stunTime > 0) return false;
+  if (type === "normal") {
+    if (fighter.skillTimer > 0) return false;
+    if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
+    return true;
+  }
+  return fighter.ultimateTimer <= 0;
+}
+
+function executeSkill(fighter, type) {
+  if (!skillAvailable(fighter, type)) return false;
+  if (type === "normal") {
+    triggerNormalSkill(fighter);
+  } else {
+    triggerUltimate(fighter);
+  }
+  updateSkillHud();
+  return true;
+}
+
+async function useSkill(type) {
+  const fighter = myFighter();
+  if (!skillAvailable(fighter, type)) {
+    updateSkillHud();
+    return;
+  }
+  if (currentRoom) {
+    if (pendingSkillUse) return;
+    pendingSkillUse = true;
+    try {
+      const room = await rpc("use_skill_event", {
+        session_token: appSessionToken,
+        room_code: currentRoom.code,
+        skill_type: type
+      });
+      applyRoom(room);
+    } catch (error) {
+      addFloatingText(fighter.x, fighter.y - fighter.radius - 44, error.message, "#ef476f");
+    } finally {
+      pendingSkillUse = false;
+      updateSkillHud();
+    }
+    return;
+  }
+  executeSkill(fighter, type);
+}
+
+function processSkillEvents(prep) {
+  if (!game || !prep) return;
+  const events = prep.skillEvents || prep.skill_events || [];
+  if (!Array.isArray(events)) return;
+  events.forEach(event => {
+    const eventId = event.id || `${event.actorId || event.actor_id}-${event.type}-${event.createdAt || event.created_at}`;
+    if (!eventId || appliedSkillEvents.has(eventId)) return;
+    const actorId = event.actorId || event.actor_id;
+    const skillType = event.type;
+    const fighter = fighterByOwnerId(actorId);
+    if (!fighter) return;
+    executeSkill(fighter, skillType);
+    appliedSkillEvents.add(eventId);
+  });
+  updateSkillHud();
+}
+
+function cooldownSeconds(ticks) {
+  return Math.max(0, Math.ceil(ticks / 60));
+}
+
+function updateSkillHud() {
+  const fighter = myFighter();
+  if (!fighter) return;
+  const names = skillNames[fighter.kind] || { normal: "일반스킬", ultimate: "궁극기" };
+  const normalCooldown = cooldownSeconds(fighter.skillTimer);
+  const ultimateCooldown = cooldownSeconds(fighter.ultimateTimer);
+  const normalLocked = fighter.kind === "stealth" && fighter.stealthTime <= 0 && normalCooldown === 0;
+
+  ui.normalSkillName.textContent = names.normal;
+  ui.ultimateSkillName.textContent = names.ultimate;
+  ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
+  ui.ultimateSkillCooldown.textContent = ultimateCooldown > 0 ? ultimateCooldown : "";
+  ui.normalSkillButton.classList.toggle("is-cooling", normalCooldown > 0);
+  ui.ultimateSkillButton.classList.toggle("is-cooling", ultimateCooldown > 0);
+  ui.normalSkillButton.classList.toggle("is-locked", normalLocked);
+  ui.ultimateSkillButton.classList.toggle("is-locked", false);
+  ui.normalSkillButton.disabled = !skillAvailable(fighter, "normal");
+  ui.ultimateSkillButton.disabled = !skillAvailable(fighter, "ultimate");
+}
+
+function updateSkills(fighter, dt) {
+  if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
+  if (fighter.ultimateTimer > 0) fighter.ultimateTimer -= dt;
+}
+
 function moveFighter(fighter, dt) {
+  if (fighter.stunTime > 0) {
+    fighter.stunTime -= dt;
+    if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
+    if (fighter.ultimateTimer > 0) fighter.ultimateTimer -= dt;
+    if (fighter.rageTime > 0) fighter.rageTime -= dt;
+    if (fighter.unstoppableTime > 0) fighter.unstoppableTime -= dt;
+    if (fighter.slowTime > 0) fighter.slowTime -= dt;
+    if (fighter.hasteTime > 0) fighter.hasteTime -= dt;
+    if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
+    if (fighter.stealthDamageCooldown > 0) fighter.stealthDamageCooldown -= dt;
+    fighter.vx *= 0.82;
+    fighter.vy *= 0.82;
+    if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
+    return;
+  }
   fighter.x += fighter.vx * dt;
   fighter.y += fighter.vy * dt;
   const speed = Math.hypot(fighter.vx, fighter.vy);
-  const targetSpeed = fighter.stealthTime > 0
-    ? 12.5
+  const baseSpeed = fighter.stealthTime > 0
+    ? fighter.stealthDamage >= 20 ? 20.4 : 12.5
     : fighter.canThrow
       ? 5.9
       : fighter.canGrab
         ? 6.2
         : 6.8;
+  const targetSpeed = baseSpeed
+    * (fighter.rageTime > 0 ? 1.95 : 1)
+    * (fighter.hasteTime > 0 ? 1.35 : 1)
+    * (fighter.slowTime > 0 ? 0.58 : 1)
+    * (fighter.unstoppableTime > 0 ? 1.35 : 1);
   if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
+  } else {
+    const velocity = randomVelocity(targetSpeed);
+    fighter.vx = velocity.vx;
+    fighter.vy = velocity.vy;
   }
   bounceOnWalls(fighter);
+  updateSkills(fighter, dt);
+
+  if (fighter.rageTime > 0) fighter.rageTime -= dt;
+  if (fighter.unstoppableTime > 0) {
+    fighter.unstoppableTime -= dt;
+    const target = opponentOf(fighter);
+    if (!fighter.unstoppableHit && Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
+      damage(target, 40);
+      fighter.unstoppableHit = true;
+    }
+  }
+  if (fighter.slowTime > 0) fighter.slowTime -= dt;
+  if (fighter.hasteTime > 0) fighter.hasteTime -= dt;
 
   if (fighter.canThrow) {
     fighter.throwTimer -= dt;
@@ -976,7 +1272,7 @@ function moveFighter(fighter, dt) {
   if (fighter.canStealth) {
     fighter.stealthTimer -= dt;
     if (fighter.stealthTimer <= 0) {
-      fighter.stealthTime = 180;
+      startStealth(fighter);
       fighter.stealthTimer = 420;
     }
     if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
@@ -1016,6 +1312,11 @@ function handleFighterCollision() {
     return;
   }
 
+  if (a.stealthTime > 0 || b.stealthTime > 0) {
+    contactDamagePair(a, b);
+    return;
+  }
+
   const nx = dx / (dist || 1);
   const ny = dy / (dist || 1);
   const overlap = minDist - dist;
@@ -1049,8 +1350,36 @@ function throwBall(owner) {
     life: 420,
     hitCooldown: 0,
     damage: 5,
-    color: owner.accent
+    speed: 10.2,
+    color: owner.accent,
+    homing: false,
+    star: false
   });
+}
+
+function fireStarStrike(owner) {
+  if (!owner.canThrow || game.over) return;
+  const target = opponentOf(owner);
+  const baseAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  [-0.18, 0.18].forEach(spread => {
+    const angle = baseAngle + spread;
+    game.balls.push({
+      owner,
+      x: owner.x + Math.cos(angle) * (owner.radius + 22),
+      y: owner.y + Math.sin(angle) * (owner.radius + 22),
+      vx: Math.cos(angle) * 11.6,
+      vy: Math.sin(angle) * 11.6,
+      radius: 14,
+      life: 1260,
+      hitCooldown: 0,
+      damage: 10,
+      speed: 11.6,
+      color: "#ffe28a",
+      homing: false,
+      star: true
+    });
+  });
+  addFloatingText(owner.x, owner.y - owner.radius - 44, "스타 스트라이크!", owner.accent);
 }
 
 function throwGrapple(owner) {
@@ -1066,6 +1395,71 @@ function throwGrapple(owner) {
     hit: false,
     life: 50
   });
+}
+
+function createShockwave(owner) {
+  const target = opponentOf(owner);
+  const range = 128;
+  game.shockwaves.push({
+    owner,
+    x: owner.x,
+    y: owner.y,
+    radius: 24,
+    maxRadius: range,
+    life: 34,
+    color: owner.accent
+  });
+  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
+    damage(target, 20);
+    target.stunTime = Math.max(target.stunTime, 60);
+    target.vx *= 0.25;
+    target.vy *= 0.25;
+  }
+  addFloatingText(owner.x, owner.y - owner.radius - 44, "충격파!", owner.accent);
+}
+
+function throwDrawCard(owner) {
+  const target = opponentOf(owner);
+  const cards = ["JOKER", "A", "K", "Q", "J"];
+  const type = cards[Math.floor(seededRandom() * cards.length)];
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const damageByType = {
+    JOKER: Math.floor(seededRandom() * 30) + 1,
+    A: 5,
+    K: 0,
+    Q: 5,
+    J: 3
+  };
+  game.pokerShots.push({
+    owner,
+    target,
+    rank: type,
+    effect: type,
+    x: owner.x + Math.cos(angle) * (owner.radius + 18),
+    y: owner.y + Math.sin(angle) * (owner.radius + 18),
+    vx: Math.cos(angle) * 16.5,
+    vy: Math.sin(angle) * 16.5,
+    radius: 10,
+    damage: damageByType[type],
+    life: 170,
+    delay: 0,
+    spread: 0,
+    launched: true
+  });
+  addFloatingText(owner.x, owner.y - owner.radius - 44, `드로우 ${type}`, owner.accent);
+}
+
+function assassinate(owner) {
+  const target = opponentOf(owner);
+  const targetSpeed = Math.hypot(target.vx, target.vy);
+  const nx = targetSpeed > 0.2 ? target.vx / targetSpeed : (target.x - owner.x) / (Math.hypot(target.x - owner.x, target.y - owner.y) || 1);
+  const ny = targetSpeed > 0.2 ? target.vy / targetSpeed : (target.y - owner.y) / (Math.hypot(target.x - owner.x, target.y - owner.y) || 1);
+  owner.x = target.x - nx * (target.radius + owner.radius + 10);
+  owner.y = target.y - ny * (target.radius + owner.radius + 10);
+  owner.vx = nx * 13;
+  owner.vy = ny * 13;
+  bounceOnWalls(owner);
+  addFloatingText(owner.x, owner.y - owner.radius - 44, "암살!", owner.accent);
 }
 
 function dealPokerAttack(owner) {
@@ -1097,6 +1491,11 @@ function dealPokerAttack(owner) {
     multiplier = 2;
     label = "원페어";
   }
+  multiplier *= owner.pokerBoostMultiplier;
+  if (owner.pokerBoostMultiplier > 1) {
+    label = `${label} + 킹`;
+    owner.pokerBoostMultiplier = 1;
+  }
 
   owner.pokerHand = hand;
   owner.pokerReveal = 95;
@@ -1125,6 +1524,15 @@ function dealPokerAttack(owner) {
 
 function updateBalls(dt) {
   game.balls = game.balls.filter(ball => {
+    if (ball.homing && ball.homeTarget && !game.over) {
+      const angle = Math.atan2(ball.homeTarget.y - ball.y, ball.homeTarget.x - ball.x);
+      const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
+      ball.vx = ball.vx * 0.88 + Math.cos(angle) * speed * 0.12;
+      ball.vy = ball.vy * 0.88 + Math.sin(angle) * speed * 0.12;
+      const currentSpeed = Math.hypot(ball.vx, ball.vy) || speed;
+      ball.vx = (ball.vx / currentSpeed) * speed;
+      ball.vy = (ball.vy / currentSpeed) * speed;
+    }
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
     ball.life -= dt;
@@ -1137,8 +1545,9 @@ function updateBalls(dt) {
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
         if (target !== ball.owner) damage(target, ball.damage);
         const angle = Math.atan2(dy, dx);
-        ball.vx = -Math.cos(angle) * 10.2;
-        ball.vy = -Math.sin(angle) * 10.2;
+        const speed = ball.speed || 10.2;
+        ball.vx = -Math.cos(angle) * speed;
+        ball.vy = -Math.sin(angle) * speed;
         if (target.stealthTime <= 0) {
           target.vx += Math.cos(angle) * 2.0;
           target.vy += Math.sin(angle) * 2.0;
@@ -1184,15 +1593,15 @@ function updatePokerShots(dt) {
       const angle = Math.atan2(card.target.y - card.owner.y, card.target.x - card.owner.x) + card.spread;
       card.x = card.owner.x + Math.cos(angle) * (card.owner.radius + 18);
       card.y = card.owner.y + Math.sin(angle) * (card.owner.radius + 18);
-      card.vx = Math.cos(angle) * 13.5;
-      card.vy = Math.sin(angle) * 13.5;
+      card.vx = Math.cos(angle) * 15.8;
+      card.vy = Math.sin(angle) * 15.8;
       card.launched = true;
     }
     card.life -= dt;
     card.x += card.vx * dt;
     card.y += card.vy * dt;
     if (Math.hypot(card.target.x - card.x, card.target.y - card.y) < card.target.radius + card.radius) {
-      damage(card.target, card.damage);
+      applyPokerCardHit(card);
       return false;
     }
     return card.life > 0
@@ -1200,6 +1609,29 @@ function updatePokerShots(dt) {
       && card.x < canvas.width + 40
       && card.y > -40
       && card.y < canvas.height + 40;
+  });
+}
+
+function applyPokerCardHit(card) {
+  if (card.effect === "K") {
+    card.owner.pokerBoostMultiplier = 2;
+    addFloatingText(card.owner.x, card.owner.y - card.owner.radius - 44, "킹 x2 준비", card.owner.accent);
+    return;
+  }
+  damage(card.target, card.damage);
+  if (card.effect === "A") {
+    card.target.slowTime = Math.max(card.target.slowTime, 180);
+  }
+  if (card.effect === "Q") {
+    card.owner.hasteTime = Math.max(card.owner.hasteTime, 180);
+  }
+}
+
+function updateShockwaves(dt) {
+  game.shockwaves = game.shockwaves.filter(wave => {
+    wave.life -= dt;
+    wave.radius = Math.min(wave.maxRadius, wave.radius + 7.2 * dt);
+    return wave.life > 0;
   });
 }
 
@@ -1230,6 +1662,7 @@ function drawArena() {
     ctx.stroke();
   }
   game.grapples.forEach(drawGrapple);
+  game.shockwaves.forEach(drawShockwave);
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.fighters.forEach(drawFighter);
@@ -1272,6 +1705,15 @@ function drawFighter(fighter) {
     ctx.fillStyle = "#101319";
     ctx.font = "900 11px Segoe UI, Arial";
     ctx.fillText("P", -9, 20);
+  }
+  if (fighter.unstoppableTime > 0) {
+    ctx.strokeStyle = "rgba(239, 71, 111, 0.9)";
+    ctx.fillStyle = "rgba(239, 71, 111, 0.13)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 52, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
   if (fighter.stealthTime > 0) {
     ctx.strokeStyle = fighter.accent;
@@ -1327,6 +1769,25 @@ function drawFighterHealthBar(fighter) {
 }
 
 function drawBall(ball) {
+  if (ball.star) {
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(Math.atan2(ball.vy, ball.vx));
+    ctx.fillStyle = ball.color;
+    ctx.beginPath();
+    for (let index = 0; index < 10; index += 1) {
+      const radius = index % 2 === 0 ? ball.radius + 5 : ball.radius * 0.48;
+      const angle = -Math.PI / 2 + index * Math.PI / 5;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = ball.color;
@@ -1335,6 +1796,19 @@ function drawBall(ball) {
   ctx.arc(ball.x - 3, ball.y - 4, 3, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.fill();
+}
+
+function drawShockwave(wave) {
+  ctx.save();
+  ctx.strokeStyle = wave.color;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  ctx.globalAlpha = clamp(wave.life / 34, 0, 1);
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawPokerShot(card) {
@@ -1413,7 +1887,9 @@ function stepGame(dt) {
     updateBalls(dt);
     updateGrapples(dt);
     updatePokerShots(dt);
+    updateShockwaves(dt);
     updateDamageTexts(dt);
+    updateSkillHud();
   }
 }
 
@@ -1512,6 +1988,19 @@ ui.backFromGachaButton.addEventListener("click", () => {
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
+ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
+ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
+document.addEventListener("keydown", event => {
+  if (!game || screens.auth.classList.contains("is-active") || screens.signup.classList.contains("is-active")) return;
+  if (event.key === "1") {
+    event.preventDefault();
+    useSkill("normal");
+  }
+  if (event.key === "2") {
+    event.preventDefault();
+    useSkill("ultimate");
+  }
+});
 
 ui.cards.forEach(card => {
   card.addEventListener("click", () => {

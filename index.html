@@ -186,13 +186,13 @@
         <div class="select-panel">
           <p class="player-label" id="selectP1Label">PLAYER 1</p>
           <div class="character-grid compact">
-            <button class="fighter-card is-selected" data-player="p1" data-character="charger">
-              <span class="fighter-icon punch">B</span>
-              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
-            </button>
-            <button class="fighter-card" data-player="p1" data-character="thrower">
+            <button class="fighter-card is-selected" data-player="p1" data-character="thrower">
               <span class="fighter-icon throw">T</span>
               <strong data-name="공던지는 색히">공던지는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p1" data-character="charger">
+              <span class="fighter-icon punch">B</span>
+              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
             </button>
             <button class="fighter-card" data-player="p1" data-character="grabber">
               <span class="fighter-icon grab">G</span>
@@ -212,13 +212,13 @@
         <div class="select-panel">
           <p class="player-label" id="selectP2Label">PLAYER 2</p>
           <div class="character-grid compact">
-            <button class="fighter-card" data-player="p2" data-character="charger">
-              <span class="fighter-icon punch">B</span>
-              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
-            </button>
             <button class="fighter-card is-selected" data-player="p2" data-character="thrower">
               <span class="fighter-icon throw">T</span>
               <strong data-name="공던지는 색히">공던지는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p2" data-character="charger">
+              <span class="fighter-icon punch">B</span>
+              <strong data-name="돌진하는 색히">돌진하는 색히</strong>
             </button>
             <button class="fighter-card" data-player="p2" data-character="grabber">
               <span class="fighter-icon grab">G</span>
@@ -267,6 +267,19 @@
 
       <canvas id="arena" width="620" height="520" aria-label="M zzang 게임 필드"></canvas>
 
+      <div class="skill-bar" aria-label="스킬">
+        <button id="normalSkillButton" class="skill-button" type="button">
+          <span>1</span>
+          <strong id="normalSkillName">일반스킬</strong>
+          <b id="normalSkillCooldown"></b>
+        </button>
+        <button id="ultimateSkillButton" class="skill-button ultimate" type="button">
+          <span>2</span>
+          <strong id="ultimateSkillName">궁극기</strong>
+          <b id="ultimateSkillCooldown"></b>
+        </button>
+      </div>
+
       <div id="resultOverlay" class="result-overlay">
         <div class="result-box">
           <p id="resultTitle">PLAYER 1 승리!</p>
@@ -278,7 +291,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260605f"></script>
-  <script src="game.js?v=20260605f"></script>
+  <script src="supabase-config.js?v=20260605k"></script>
+  <script src="game.js?v=20260605k"></script>
 </body>
 </html>
