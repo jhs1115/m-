@@ -44,6 +44,9 @@ const ui = {
   logoutButton: document.getElementById("logoutButton"),
   currentUserName: document.getElementById("currentUserName"),
   currentUserCoins: document.getElementById("currentUserCoins"),
+  globalCoinAmount: document.getElementById("globalCoinAmount"),
+  matchOverlay: document.getElementById("matchOverlay"),
+  matchOverlayText: document.getElementById("matchOverlayText"),
   roomCodeInput: document.getElementById("roomCodeInput"),
   createRoomButton: document.getElementById("createRoomButton"),
   joinRoomButton: document.getElementById("joinRoomButton"),
@@ -169,14 +172,25 @@ let selectedMode = "";
 let roomPollId = null;
 let roomRealtimeChannel = null;
 let matchSelectionTouched = false;
+let matchmakingPollId = null;
+let selectedCharacterReady = false;
 
 function normalizePlayer(user) {
   return {
     id: user.id,
     name: user.username ?? user.name,
     coins: user.coins,
+    lp: user.lp ?? 1000,
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
+}
+
+function tierForLp(lp) {
+  if (lp >= 1800) return "다이아";
+  if (lp >= 1600) return "플레";
+  if (lp >= 1400) return "골드";
+  if (lp >= 1200) return "실버";
+  return "브론즈";
 }
 
 function requireSupabase() {
@@ -213,7 +227,9 @@ function setRoomPolling(enabled) {
   }
   if (enabled) {
     roomPollId = setInterval(() => {
-      const shouldPoll = screens.lobby.classList.contains("is-active") || screens.pvp.classList.contains("is-active");
+      const shouldPoll = screens.lobby.classList.contains("is-active")
+        || screens.pvp.classList.contains("is-active")
+        || screens.select.classList.contains("is-active");
       if (currentRoom && shouldPoll) {
         refreshRoom();
       }
@@ -241,6 +257,21 @@ function setRoomRealtime(roomCode) {
     .subscribe();
 }
 
+function setMatchmakingPolling(enabled) {
+  if (matchmakingPollId) {
+    clearInterval(matchmakingPollId);
+    matchmakingPollId = null;
+  }
+  if (enabled) {
+    matchmakingPollId = setInterval(checkMatchmaking, 2000);
+  }
+}
+
+function showMatchOverlay(text, active = true) {
+  ui.matchOverlayText.textContent = text;
+  ui.matchOverlay.classList.toggle("is-active", active);
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -257,8 +288,9 @@ function escapeHtml(value) {
 
 function renderLobby() {
   if (currentUser) {
-    ui.currentUserName.textContent = currentUser.name;
-    ui.currentUserCoins.textContent = currentUser.coins;
+    ui.currentUserName.textContent = `${currentUser.name} · ${tierForLp(currentUser.lp)}`;
+    ui.currentUserCoins.textContent = currentUser.lp;
+    ui.globalCoinAmount.textContent = currentUser.coins;
   }
   ui.roomCodeText.textContent = currentRoom?.code ?? "없음";
   ui.roomCard.classList.toggle("is-hidden", !currentRoom);
@@ -268,7 +300,7 @@ function renderLobby() {
   players.forEach(player => {
     const chip = document.createElement("div");
     chip.className = "room-player-chip";
-    chip.innerHTML = `<span>${escapeHtml(player.name)}</span><strong>${player.coins}C</strong>`;
+    chip.innerHTML = `<span>${escapeHtml(player.name)}</span><strong>${player.lp} LP</strong>`;
     ui.roomPlayerList.appendChild(chip);
   });
 
@@ -286,7 +318,7 @@ function renderLobby() {
     item.className = "player-row";
     item.innerHTML = `
       <span title="${escapeHtml(ownedText)}">${escapeHtml(player.name)}</span>
-      <strong>${player.coins}C</strong>
+      <strong>${player.lp} LP</strong>
     `;
     ui.playerList.appendChild(item);
   });
@@ -309,7 +341,7 @@ function renderPlayerOptions(select, selectedId) {
   players.forEach(player => {
     const option = document.createElement("option");
     option.value = player.id;
-    option.textContent = `${player.name} (${player.coins}C)`;
+    option.textContent = `${player.name} (${player.lp} LP)`;
     select.appendChild(option);
   });
   select.value = getPlayer(selectedId) ? selectedId : players[0]?.id ?? "";
@@ -345,31 +377,54 @@ function updateLobbyPreview() {
 
   ui.lobbyP1Name.textContent = p1?.name ?? "PLAYER 1";
   ui.lobbyP2Name.textContent = p2?.name ?? "PLAYER 2";
-  ui.lobbyP1Coins.textContent = p1?.coins ?? 0;
-  ui.lobbyP2Coins.textContent = p2?.coins ?? 0;
+  ui.lobbyP1Coins.textContent = p1?.lp ?? 0;
+  ui.lobbyP2Coins.textContent = p2?.lp ?? 0;
 
   const notEnoughPlayers = players.length < 2;
   const samePlayer = matchPlayers.p1 === matchPlayers.p2;
-  const brokePlayer = (p1?.coins ?? 0) <= 0 || (p2?.coins ?? 0) <= 0;
-  ui.lobbyStartButton.disabled = notEnoughPlayers || samePlayer || brokePlayer;
+  const brokePlayer = false;
+  ui.lobbyStartButton.disabled = notEnoughPlayers || samePlayer;
   ui.lobbyMessage.textContent = notEnoughPlayers
     ? "플레이어를 2명 이상 추가하세요."
     : samePlayer
       ? "서로 다른 플레이어를 골라야 합니다."
-      : brokePlayer
-        ? "코인이 0C인 플레이어는 참가할 수 없습니다."
-        : "";
+      : "";
 }
 
 function openPvpSetup() {
+  startMatchmaking();
+}
+
+async function startMatchmaking() {
+  if (!currentUser) return;
   selectedMode = "pvp";
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
-  ui.modeMessage.textContent = "";
-  renderMatchSelectors(true);
-  updateLobbyPreview();
-  updateBetFields();
-  showScreen("pvp");
+  ui.modeMessage.textContent = `${tierForLp(currentUser.lp)} 매칭중...`;
+  ui.pvpModeButton.disabled = true;
+  await checkMatchmaking();
+  setMatchmakingPolling(true);
+}
+
+async function checkMatchmaking() {
+  try {
+    const data = await rpc("find_pvp_match", { session_token: appSessionToken });
+    if (!data.matched) {
+      ui.modeMessage.textContent = `${data.tier ?? tierForLp(currentUser.lp)} 매칭중... ${data.elapsed ?? 0}초`;
+      return;
+    }
+    setMatchmakingPolling(false);
+    ui.pvpModeButton.disabled = false;
+    applyRoom(data.room);
+    showMatchOverlay("게임이 시작됩니다", true);
+    await wait(2000);
+    showMatchOverlay("", false);
+    prepareCharacterSelect();
+  } catch (error) {
+    setMatchmakingPolling(false);
+    ui.pvpModeButton.disabled = false;
+    ui.modeMessage.textContent = error.message;
+  }
 }
 
 function selectPveMode() {
@@ -432,10 +487,17 @@ function applyRoom(room) {
       : [];
   currentRoom = { ...room, players: roomPlayers };
   players = roomPlayers;
-  reconcileMatchPlayers(previousP1, previousP2);
+  const prep = currentRoom.prepState || currentRoom.prep_state || {};
+  if (prep.matchPlayers?.p1 && prep.matchPlayers?.p2) {
+    matchPlayers.p1 = prep.matchPlayers.p1;
+    matchPlayers.p2 = prep.matchPlayers.p2;
+  } else {
+    reconcileMatchPlayers(previousP1, previousP2);
+  }
   renderLobby();
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
+  maybeStartReadyMatch();
 }
 
 async function createRoom() {
@@ -582,11 +644,49 @@ function updateCharacterCards(playerKey, player) {
 function prepareCharacterSelect() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  const mySlot = currentUser?.id === matchPlayers.p1 ? "p1" : currentUser?.id === matchPlayers.p2 ? "p2" : "p1";
   ui.selectP1Label.textContent = `PLAYER 1 - ${p1.name}`;
   ui.selectP2Label.textContent = `PLAYER 2 - ${p2.name}`;
   updateCharacterCards("p1", p1);
   updateCharacterCards("p2", p2);
+  document.querySelectorAll(".select-panel").forEach(panel => {
+    const label = panel.querySelector(".player-label");
+    const isMine = label?.id === (mySlot === "p1" ? "selectP1Label" : "selectP2Label");
+    panel.classList.toggle("is-hidden", !isMine);
+  });
+  ui.toBetButton.textContent = "준비 완료";
   showScreen("select");
+}
+
+async function submitCharacterReady() {
+  if (!currentRoom || !currentUser) return;
+  const mySlot = currentUser.id === matchPlayers.p1 ? "p1" : currentUser.id === matchPlayers.p2 ? "p2" : "";
+  if (!mySlot) return;
+  try {
+    ui.toBetButton.disabled = true;
+    const room = await rpc("set_character_ready", {
+      session_token: appSessionToken,
+      room_code: currentRoom.code,
+      character_kind: selections[mySlot],
+      is_ready: true
+    });
+    applyRoom(room);
+    ui.toBetButton.textContent = "상대 준비 대기중";
+  } catch (error) {
+    ui.toBetButton.disabled = false;
+    ui.toBetButton.textContent = error.message;
+  }
+}
+
+function maybeStartReadyMatch() {
+  if (!currentRoom || !screens.select.classList.contains("is-active") || game) return;
+  const prep = currentRoom.prepState || currentRoom.prep_state || {};
+  if (!prep.started) return;
+  const charSelections = prep.characterSelections || {};
+  selections.p1 = charSelections[matchPlayers.p1] || selections.p1;
+  selections.p2 = charSelections[matchPlayers.p2] || selections.p2;
+  ui.toBetButton.disabled = false;
+  startGame();
 }
 
 function updateBetFields() {
@@ -596,8 +696,8 @@ function updateBetFields() {
 
   ui.betP1Name.textContent = p1.name;
   ui.betP2Name.textContent = p2.name;
-  ui.betP1Coins.textContent = p1.coins;
-  ui.betP2Coins.textContent = p2.coins;
+  ui.betP1Coins.textContent = p1.lp;
+  ui.betP2Coins.textContent = p2.lp;
   ui.betP1Input.disabled = false;
   ui.betP2Input.disabled = false;
   document.querySelectorAll(".chip-button").forEach(button => {
@@ -658,10 +758,6 @@ function makeFighter(kind, label, ownerId, x, y) {
 function resetGame() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
-  const p1Bet = clamp(Number(ui.betP1Input.value) || 1, 1, p1.coins);
-  const p2Bet = clamp(Number(ui.betP2Input.value) || 1, 1, p2.coins);
-  ui.betP1Input.value = p1Bet;
-  ui.betP2Input.value = p2Bet;
 
   game = {
     fighters: [
@@ -675,10 +771,10 @@ function resetGame() {
     contactLock: false,
     over: false,
     lastTime: performance.now(),
-    bets: { p1: p1Bet, p2: p2Bet }
+    bets: { p1: 0, p2: 0 }
   };
 
-  ui.currentBet.textContent = `${game.bets.p1} / ${game.bets.p2}`;
+  ui.currentBet.textContent = "+14 LP";
   ui.hudP1Label.textContent = p1.name;
   ui.hudP2Label.textContent = p2.name;
   ui.playerOneName.textContent = game.fighters[0].name;
@@ -689,7 +785,7 @@ function resetGame() {
 
 function startGame() {
   resetGame();
-  setGameSpeed(1);
+  gameSpeed = 1;
   showScreen("game");
   if (animationId) cancelAnimationFrame(animationId);
   game.lastTime = performance.now();
@@ -763,21 +859,20 @@ function finishGame(winner) {
   const loser = winner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
-  const loserBet = loser === game.fighters[0] ? game.bets.p1 : game.bets.p2;
   ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
   ui.resultText.textContent = `${winner.name} 승. 정산 중...`;
   ui.resultOverlay.classList.add("is-active");
-  settleMatch(winnerPlayer, loserPlayer, loserBet);
+  settleMatch(winnerPlayer, loserPlayer);
 }
 
-async function settleMatch(winnerPlayer, loserPlayer, loserBet) {
+async function settleMatch(winnerPlayer, loserPlayer) {
   try {
     const data = await rpc("settle_match", {
       session_token: appSessionToken,
       room_code: currentRoom?.code ?? "",
       winner_id: winnerPlayer.id,
       loser_id: loserPlayer.id,
-      loser_bet: loserBet
+      loser_bet: 0
     });
     const updatedWinner = normalizePlayer(data.winner);
     const updatedLoser = normalizePlayer(data.loser);
@@ -788,7 +883,7 @@ async function settleMatch(winnerPlayer, loserPlayer, loserBet) {
     });
     if (currentUser?.id === updatedWinner.id) currentUser = updatedWinner;
     if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
-    ui.resultText.textContent = `${characters[game.fighters.find(item => item.ownerId === updatedWinner.id)?.kind || DEFAULT_CHARACTER].name} 승. ${data.amount}C 획득. ${updatedWinner.name} ${updatedWinner.coins}C / ${updatedLoser.name} ${updatedLoser.coins}C`;
+    ui.resultText.textContent = `${characters[game.fighters.find(item => item.ownerId === updatedWinner.id)?.kind || DEFAULT_CHARACTER].name} 승. ${data.lpGain ?? 14} LP 획득. ${updatedWinner.name} ${updatedWinner.lp} LP / ${updatedLoser.name} ${updatedLoser.lp} LP`;
   } catch (error) {
     ui.resultText.textContent = `정산 실패: ${error.message}`;
   }
@@ -1283,6 +1378,11 @@ function returnToLobby() {
   stopGame();
   renderLobby();
   ui.resultOverlay.classList.remove("is-active");
+  currentRoom = null;
+  players = currentUser ? [currentUser] : [];
+  matchPlayers.p1 = currentUser?.id ?? "";
+  matchPlayers.p2 = "";
+  document.querySelectorAll(".select-panel").forEach(panel => panel.classList.remove("is-hidden"));
   showScreen("lobby");
 }
 
@@ -1296,6 +1396,7 @@ async function logout() {
   players = [];
   matchPlayers = { p1: "", p2: "" };
   localStorage.removeItem(APP_SESSION_KEY);
+  setMatchmakingPolling(false);
   setRoomRealtime(null);
   setRoomPolling(false);
   ui.authPassword.value = "";
@@ -1364,7 +1465,7 @@ document.querySelectorAll(".chip-button").forEach(button => {
 ui.lobbyStartButton.addEventListener("click", prepareCharacterSelect);
 ui.backFromPvpButton.addEventListener("click", () => showScreen("lobby"));
 ui.backToLobbyButton.addEventListener("click", () => showScreen("pvp"));
-ui.toBetButton.addEventListener("click", startGame);
+ui.toBetButton.addEventListener("click", submitCharacterReady);
 ui.againButton.addEventListener("click", returnToLobby);
 
 async function boot() {

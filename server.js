@@ -220,5 +220,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`matchzzang arena server running on http://${HOST}:${PORT}`);
+  console.log(`M zzang server running on http://${HOST}:${PORT}`);
 });

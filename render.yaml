@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: matchzzang-arena
+    name: m-zzang
     runtime: node
     plan: starter
     buildCommand: npm install
@@ -12,6 +12,6 @@ services:
       - key: DB_PATH
         value: /var/data/db.json
     disk:
-      name: matchzzang-data
+      name: m-zzang-data
       mountPath: /var/data
       sizeGB: 1

@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>맞짱 아레나</title>
+  <title>M zzang</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
+    <div class="coin-badge">COIN <strong><span id="globalCoinAmount">0</span>C</strong></div>
+    <div id="matchOverlay" class="match-overlay">
+      <div id="matchOverlayText" class="match-overlay-text">게임이 시작됩니다</div>
+    </div>
     <section id="authScreen" class="screen is-active">
       <div class="panel auth-panel">
         <h1 class="screen-title">로그인</h1>
@@ -47,7 +51,7 @@
     <section id="lobbyScreen" class="screen">
       <button id="logoutButton" class="logout-button">로그아웃</button>
       <div class="top-copy">
-        <h1>맞짱 아레나</h1>
+        <h1>M zzang</h1>
       </div>
 
       <div class="lobby-shell">
@@ -56,7 +60,7 @@
             <h2>플레이어</h2>
             <div class="account-box">
               <span id="currentUserName">로그인이 필요합니다</span>
-              <strong><span id="currentUserCoins">0</span>C</strong>
+              <strong><span id="currentUserCoins">1000</span> LP</strong>
             </div>
             <div class="room-code-box">
               <span>현재 방 코드</span>
@@ -266,7 +270,7 @@
 
       <div class="bet-actions center-actions">
         <button id="backToLobbyButton" class="ghost-button">대전 준비로</button>
-        <button id="toBetButton" class="primary-button">전투 시작</button>
+        <button id="toBetButton" class="primary-button">준비 완료</button>
       </div>
     </section>
 
@@ -280,14 +284,9 @@
         </div>
 
         <div class="center-hud">
-          <div class="speed-controls">
-            <button class="speed-button is-active" data-speed="1" type="button">1배속</button>
-            <button class="speed-button" data-speed="2" type="button">2배속</button>
-            <button class="speed-button" data-speed="3" type="button">3배속</button>
-          </div>
           <div class="round-info">
-            <span>BETS</span>
-            <strong><span id="currentBet">10 / 10</span>C</strong>
+            <span>LP MATCH</span>
+            <strong><span id="currentBet">+14</span></strong>
           </div>
         </div>
 
@@ -299,7 +298,7 @@
         </div>
       </header>
 
-      <canvas id="arena" width="620" height="520" aria-label="맞짱 아레나 게임 필드"></canvas>
+      <canvas id="arena" width="620" height="520" aria-label="M zzang 게임 필드"></canvas>
 
       <div id="resultOverlay" class="result-overlay">
         <div class="result-box">
@@ -312,7 +311,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260603l"></script>
-  <script src="game.js?v=20260603l"></script>
+  <script src="supabase-config.js?v=20260605b"></script>
+  <script src="game.js?v=20260605b"></script>
 </body>
 </html>

@@ -5,10 +5,25 @@ create table if not exists public.app_users (
   username text not null unique,
   password_salt text not null,
   password_hash text not null,
-  coins integer not null default 100 check (coins >= 0),
+  coins integer not null default 0 check (coins >= 0),
+  lp integer not null default 1000 check (lp >= 0),
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
+
+alter table public.app_users
+add column if not exists lp integer not null default 1000 check (lp >= 0);
+
+alter table public.app_users
+alter column coins set default 0;
+
+update public.app_users
+set lp = 1000
+where lp is null;
+
+update public.app_users
+set coins = 0
+where coins is null or coins = 100;
 
 create table if not exists public.app_sessions (
   token text primary key,
@@ -24,12 +39,20 @@ create table if not exists public.app_rooms (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.match_queue (
+  user_id uuid primary key references public.app_users(id) on delete cascade,
+  tier text not null,
+  joined_at timestamptz not null default now(),
+  matched_room_code text references public.app_rooms(code) on delete set null
+);
+
 alter table public.app_rooms
 add column if not exists prep_state jsonb not null default '{}'::jsonb;
 
 alter table public.app_users enable row level security;
 alter table public.app_sessions enable row level security;
 alter table public.app_rooms enable row level security;
+alter table public.match_queue enable row level security;
 
 drop policy if exists "app rooms are visible for realtime" on public.app_rooms;
 create policy "app rooms are visible for realtime"
@@ -37,7 +60,14 @@ on public.app_rooms for select
 to anon, authenticated
 using (true);
 
+drop policy if exists "match queue visible for realtime" on public.match_queue;
+create policy "match queue visible for realtime"
+on public.match_queue for select
+to anon, authenticated
+using (true);
+
 alter table public.app_rooms replica identity full;
+alter table public.match_queue replica identity full;
 
 do $$
 begin
@@ -49,6 +79,20 @@ begin
       and tablename = 'app_rooms'
   ) then
     alter publication supabase_realtime add table public.app_rooms;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'match_queue'
+  ) then
+    alter publication supabase_realtime add table public.match_queue;
   end if;
 end;
 $$;
@@ -74,8 +118,25 @@ as $$
     'id', target_user.id,
     'username', target_user.username,
     'coins', target_user.coins,
+    'lp', target_user.lp,
     'ownedCharacters', target_user.owned_characters
   );
+$$;
+
+create or replace function public.lp_tier(score integer)
+returns text
+language sql
+immutable
+security definer
+set search_path = public
+as $$
+  select case
+    when score >= 1800 then '다이아'
+    when score >= 1600 then '플레'
+    when score >= 1400 then '골드'
+    when score >= 1200 then '실버'
+    else '브론즈'
+  end;
 $$;
 
 create or replace function public.app_user_from_token(session_token text)
@@ -278,6 +339,225 @@ begin
     when active_user.id = any(player_ids) then player_ids
     else array_append(player_ids, active_user.id)
   end
+  where code = normalized_code;
+
+  return public.app_room_json(normalized_code);
+end;
+$$;
+
+create or replace function public.find_pvp_match(session_token text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  opponent public.app_users;
+  active_tier text;
+  elapsed_seconds integer;
+  existing_room_code text;
+  tier_index integer;
+  min_index integer;
+  max_index integer;
+  new_code text;
+  tiers text[] := array['브론즈', '실버', '골드', '플레', '다이아'];
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select matched_room_code into existing_room_code
+  from public.match_queue
+  where user_id = active_user.id;
+
+  if existing_room_code is not null then
+    return jsonb_build_object('matched', true, 'room', public.app_room_json(existing_room_code));
+  end if;
+
+  active_tier := public.lp_tier(active_user.lp);
+
+  insert into public.match_queue (user_id, tier)
+  values (active_user.id, active_tier)
+  on conflict (user_id) do update
+  set tier = excluded.tier;
+
+  select greatest(0, extract(epoch from now() - joined_at)::int)
+  into elapsed_seconds
+  from public.match_queue
+  where user_id = active_user.id;
+
+  tier_index := array_position(tiers, active_tier);
+  min_index := greatest(1, tier_index - floor(elapsed_seconds / 30)::int);
+  max_index := least(array_length(tiers, 1), tier_index + floor(elapsed_seconds / 30)::int);
+
+  select u.* into opponent
+  from public.match_queue q
+  join public.app_users u on u.id = q.user_id
+  where q.user_id <> active_user.id
+    and q.matched_room_code is null
+    and array_position(tiers, q.tier) between min_index and max_index
+  order by q.joined_at
+  limit 1
+  for update skip locked;
+
+  if opponent.id is null then
+    return jsonb_build_object(
+      'matched', false,
+      'tier', active_tier,
+      'range', jsonb_build_object('min', tiers[min_index], 'max', tiers[max_index]),
+      'elapsed', elapsed_seconds
+    );
+  end if;
+
+  loop
+    new_code := public.make_room_code();
+    exit when not exists (select 1 from public.app_rooms where code = new_code);
+  end loop;
+
+  insert into public.app_rooms (code, host_user_id, player_ids, prep_state)
+  values (
+    new_code,
+    active_user.id,
+    array[active_user.id, opponent.id]::uuid[],
+    jsonb_build_object(
+      'matchmaking', true,
+      'matchPlayers', jsonb_build_object('p1', active_user.id, 'p2', opponent.id),
+      'characterSelections', '{}'::jsonb,
+      'ready', '{}'::jsonb,
+      'started', false,
+      'createdAt', extract(epoch from now())
+    )
+  );
+
+  update public.match_queue
+  set matched_room_code = new_code
+  where user_id in (active_user.id, opponent.id);
+
+  return jsonb_build_object('matched', true, 'room', public.app_room_json(new_code));
+end;
+$$;
+
+create or replace function public.get_match_status(session_token text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  room_code text;
+  active_tier text;
+  elapsed_seconds integer;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select matched_room_code, greatest(0, extract(epoch from now() - joined_at)::int)
+  into room_code, elapsed_seconds
+  from public.match_queue
+  where user_id = active_user.id;
+
+  if room_code is not null then
+    return jsonb_build_object('matched', true, 'room', public.app_room_json(room_code));
+  end if;
+
+  active_tier := public.lp_tier(active_user.lp);
+  return jsonb_build_object('matched', false, 'tier', active_tier, 'elapsed', coalesce(elapsed_seconds, 0));
+end;
+$$;
+
+create or replace function public.cancel_pvp_match(session_token text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+  delete from public.match_queue where user_id = active_user.id and matched_room_code is null;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.set_character_ready(session_token text, room_code text, character_kind text, is_ready boolean)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
+  current_state jsonb;
+  next_state jsonb;
+  next_ready jsonb;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if character_kind <> all(active_user.owned_characters) then
+    raise exception 'character not owned';
+  end if;
+
+  select player_ids into room_players
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null or active_user.id <> all(room_players) then
+    raise exception 'not a match participant';
+  end if;
+
+  select coalesce(prep_state, '{}'::jsonb) into current_state
+  from public.app_rooms
+  where code = normalized_code;
+
+  next_ready := jsonb_set(
+    coalesce(current_state->'ready', '{}'::jsonb),
+    array[active_user.id::text],
+    to_jsonb(is_ready),
+    true
+  );
+
+  select jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        current_state,
+        array['characterSelections', active_user.id::text],
+        to_jsonb(character_kind),
+        true
+      ),
+      array['ready'],
+      next_ready,
+      true
+    ),
+    array['started'],
+    to_jsonb(
+      coalesce((next_ready->>(room_players[1]::text))::boolean, false)
+      and coalesce((next_ready->>(room_players[2]::text))::boolean, false)
+    ),
+    true
+  ) into next_state
+  ;
+
+  update public.app_rooms
+  set prep_state = next_state
   where code = normalized_code;
 
   return public.app_room_json(normalized_code);
@@ -489,7 +769,6 @@ declare
   loser_user public.app_users;
   normalized_code text := upper(trim(room_code));
   room_players uuid[];
-  safe_bet integer := greatest(1, loser_bet);
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -518,22 +797,17 @@ begin
   select * into loser_user from public.app_users where id = loser_id for update;
   select * into winner_user from public.app_users where id = winner_id for update;
 
-  safe_bet := least(safe_bet, loser_user.coins);
-
   update public.app_users
-  set coins = coins - safe_bet
-  where id = loser_id
-  returning * into loser_user;
-
-  update public.app_users
-  set coins = coins + safe_bet
+  set lp = lp + 14
   where id = winner_id
   returning * into winner_user;
+
+  select * into loser_user from public.app_users where id = loser_id;
 
   return jsonb_build_object(
     'winner', public.app_user_json(winner_user),
     'loser', public.app_user_json(loser_user),
-    'amount', safe_bet
+    'lpGain', 14
   );
 end;
 $$;
@@ -548,6 +822,10 @@ grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) to anon, authenticated;
+grant execute on function public.find_pvp_match(text) to anon, authenticated;
+grant execute on function public.get_match_status(text) to anon, authenticated;
+grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
+grant execute on function public.set_character_ready(text, text, text, boolean) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
 
 notify pgrst, 'reload schema';
