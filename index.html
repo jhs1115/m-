@@ -169,36 +169,11 @@
           </div>
 
           <div class="pvp-section">
-            <h2>베팅</h2>
+            <h2>LP 매치</h2>
             <div class="wallet-row">
-              <span id="betP1Name">PLAYER 1</span>
-              <strong><span id="betP1Coins">100</span>C</strong>
+              <span>승리 보상</span>
+              <strong>+14 LP</strong>
             </div>
-            <div class="wallet-row">
-              <span id="betP2Name">PLAYER 2</span>
-              <strong><span id="betP2Coins">100</span>C</strong>
-            </div>
-
-            <div class="split-bet-grid">
-              <div>
-                <label class="bet-label" for="betP1Input">PLAYER 1 베팅</label>
-                <div class="bet-control player-bet-control">
-                  <input id="betP1Input" type="number" min="1" max="100" step="1" value="10">
-                  <button class="chip-button" data-bet-player="p1" data-chip="5">+5</button>
-                  <button class="chip-button" data-bet-player="p1" data-chip="10">+10</button>
-                </div>
-              </div>
-
-              <div>
-                <label class="bet-label" for="betP2Input">PLAYER 2 베팅</label>
-                <div class="bet-control player-bet-control">
-                  <input id="betP2Input" type="number" min="1" max="100" step="1" value="10">
-                  <button class="chip-button" data-bet-player="p2" data-chip="5">+5</button>
-                  <button class="chip-button" data-bet-player="p2" data-chip="10">+10</button>
-                </div>
-              </div>
-            </div>
-            <p id="betMessage" class="status-message"></p>
           </div>
         </div>
 
@@ -212,6 +187,13 @@
     <section id="selectScreen" class="screen">
       <div class="top-copy">
         <h1>캐릭터 선택</h1>
+      </div>
+      <div class="select-timer">
+        <div class="timer-track">
+          <span id="timerLeftBar"></span>
+          <span id="timerRightBar"></span>
+        </div>
+        <strong><span id="selectTimerText">30</span>초</strong>
       </div>
 
       <div class="player-select-grid">
@@ -269,7 +251,6 @@
       </div>
 
       <div class="bet-actions center-actions">
-        <button id="backToLobbyButton" class="ghost-button">대전 준비로</button>
         <button id="toBetButton" class="primary-button">준비 완료</button>
       </div>
     </section>
@@ -311,7 +292,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260605b"></script>
-  <script src="game.js?v=20260605b"></script>
+  <script src="supabase-config.js?v=20260605c"></script>
+  <script src="game.js?v=20260605c"></script>
 </body>
 </html>

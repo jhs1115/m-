@@ -77,16 +77,11 @@ const ui = {
   backFromGachaButton: document.getElementById("backFromGachaButton"),
   selectP1Label: document.getElementById("selectP1Label"),
   selectP2Label: document.getElementById("selectP2Label"),
-  backToLobbyButton: document.getElementById("backToLobbyButton"),
   toBetButton: document.getElementById("toBetButton"),
+  timerLeftBar: document.getElementById("timerLeftBar"),
+  timerRightBar: document.getElementById("timerRightBar"),
+  selectTimerText: document.getElementById("selectTimerText"),
   againButton: document.getElementById("againButton"),
-  betP1Input: document.getElementById("betP1Input"),
-  betP2Input: document.getElementById("betP2Input"),
-  betP1Name: document.getElementById("betP1Name"),
-  betP2Name: document.getElementById("betP2Name"),
-  betP1Coins: document.getElementById("betP1Coins"),
-  betP2Coins: document.getElementById("betP2Coins"),
-  betMessage: document.getElementById("betMessage"),
   currentBet: document.getElementById("currentBet"),
   speedButtons: document.querySelectorAll(".speed-button"),
   hudP1Label: document.getElementById("hudP1Label"),
@@ -174,6 +169,8 @@ let roomRealtimeChannel = null;
 let matchSelectionTouched = false;
 let matchmakingPollId = null;
 let selectedCharacterReady = false;
+let selectCountdownId = null;
+let selectDeadline = 0;
 
 function normalizePlayer(user) {
   return {
@@ -272,6 +269,33 @@ function showMatchOverlay(text, active = true) {
   ui.matchOverlay.classList.toggle("is-active", active);
 }
 
+function stopSelectTimer() {
+  if (selectCountdownId) {
+    clearInterval(selectCountdownId);
+    selectCountdownId = null;
+  }
+}
+
+function startSelectTimer() {
+  stopSelectTimer();
+  selectDeadline = Date.now() + 30000;
+  updateSelectTimer();
+  selectCountdownId = setInterval(updateSelectTimer, 100);
+}
+
+function updateSelectTimer() {
+  const remainingMs = Math.max(0, selectDeadline - Date.now());
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  const progress = remainingMs / 30000;
+  ui.selectTimerText.textContent = remainingSeconds;
+  ui.timerLeftBar.style.transform = `scaleX(${progress})`;
+  ui.timerRightBar.style.transform = `scaleX(${progress})`;
+  if (remainingMs <= 0) {
+    stopSelectTimer();
+    submitCharacterReady();
+  }
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -360,7 +384,6 @@ function setMatchPlayer(slot, playerId) {
   }
   renderMatchSelectors(true);
   updateLobbyPreview();
-  updateBetFields();
 }
 
 function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2) {
@@ -655,14 +678,20 @@ function prepareCharacterSelect() {
     panel.classList.toggle("is-hidden", !isMine);
   });
   ui.toBetButton.textContent = "준비 완료";
+  ui.toBetButton.disabled = false;
+  selectedCharacterReady = false;
   showScreen("select");
+  startSelectTimer();
 }
 
 async function submitCharacterReady() {
   if (!currentRoom || !currentUser) return;
+  if (selectedCharacterReady) return;
   const mySlot = currentUser.id === matchPlayers.p1 ? "p1" : currentUser.id === matchPlayers.p2 ? "p2" : "";
   if (!mySlot) return;
   try {
+    selectedCharacterReady = true;
+    stopSelectTimer();
     ui.toBetButton.disabled = true;
     const room = await rpc("set_character_ready", {
       session_token: appSessionToken,
@@ -673,6 +702,8 @@ async function submitCharacterReady() {
     applyRoom(room);
     ui.toBetButton.textContent = "상대 준비 대기중";
   } catch (error) {
+    selectedCharacterReady = false;
+    startSelectTimer();
     ui.toBetButton.disabled = false;
     ui.toBetButton.textContent = error.message;
   }
@@ -686,28 +717,8 @@ function maybeStartReadyMatch() {
   selections.p1 = charSelections[matchPlayers.p1] || selections.p1;
   selections.p2 = charSelections[matchPlayers.p2] || selections.p2;
   ui.toBetButton.disabled = false;
+  stopSelectTimer();
   startGame();
-}
-
-function updateBetFields() {
-  const p1 = getPlayer(matchPlayers.p1);
-  const p2 = getPlayer(matchPlayers.p2);
-  if (!p1 || !p2) return;
-
-  ui.betP1Name.textContent = p1.name;
-  ui.betP2Name.textContent = p2.name;
-  ui.betP1Coins.textContent = p1.lp;
-  ui.betP2Coins.textContent = p2.lp;
-  ui.betP1Input.disabled = false;
-  ui.betP2Input.disabled = false;
-  document.querySelectorAll(".chip-button").forEach(button => {
-    button.disabled = false;
-  });
-  ui.betP1Input.max = p1.coins;
-  ui.betP2Input.max = p2.coins;
-  ui.betP1Input.value = clamp(Number(ui.betP1Input.value) || 10, 1, p1.coins);
-  ui.betP2Input.value = clamp(Number(ui.betP2Input.value) || 10, 1, p2.coins);
-  ui.betMessage.textContent = "한 사람이 양쪽 판돈을 모두 정합니다. 각 판돈은 해당 플레이어 코인 안에서만 가능합니다.";
 }
 
 function randomVelocity(speed) {
@@ -770,8 +781,7 @@ function resetGame() {
     damageTexts: [],
     contactLock: false,
     over: false,
-    lastTime: performance.now(),
-    bets: { p1: 0, p2: 0 }
+    lastTime: performance.now()
   };
 
   ui.currentBet.textContent = "+14 LP";
@@ -1376,6 +1386,7 @@ function stopGame() {
 
 function returnToLobby() {
   stopGame();
+  stopSelectTimer();
   renderLobby();
   ui.resultOverlay.classList.remove("is-active");
   currentRoom = null;
@@ -1396,6 +1407,7 @@ async function logout() {
   players = [];
   matchPlayers = { p1: "", p2: "" };
   localStorage.removeItem(APP_SESSION_KEY);
+  stopSelectTimer();
   setMatchmakingPolling(false);
   setRoomRealtime(null);
   setRoomPolling(false);
@@ -1454,17 +1466,8 @@ ui.speedButtons.forEach(button => {
   button.addEventListener("click", () => setGameSpeed(Number(button.dataset.speed)));
 });
 
-document.querySelectorAll(".chip-button").forEach(button => {
-  button.addEventListener("click", () => {
-    const input = button.dataset.betPlayer === "p1" ? ui.betP1Input : ui.betP2Input;
-    const maxBet = Number(input.max);
-    input.value = clamp(Number(input.value) + Number(button.dataset.chip), 1, maxBet);
-  });
-});
-
 ui.lobbyStartButton.addEventListener("click", prepareCharacterSelect);
 ui.backFromPvpButton.addEventListener("click", () => showScreen("lobby"));
-ui.backToLobbyButton.addEventListener("click", () => showScreen("pvp"));
 ui.toBetButton.addEventListener("click", submitCharacterReady);
 ui.againButton.addEventListener("click", returnToLobby);
 

@@ -664,6 +664,48 @@ h2 {
   font-weight: 700;
 }
 
+.select-timer {
+  width: min(720px, 100%);
+  margin: 0 auto 22px;
+  text-align: center;
+}
+
+.timer-track {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  background: rgba(9, 12, 18, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.32);
+}
+
+.timer-track span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: linear-gradient(90deg, var(--gold), #ffefaa);
+  transition: transform 120ms linear;
+}
+
+#timerLeftBar {
+  left: 0;
+  transform-origin: left center;
+}
+
+#timerRightBar {
+  right: 0;
+  transform-origin: right center;
+}
+
+.select-timer strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--gold);
+  font-size: 1.25rem;
+}
+
 .player-select-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -774,8 +816,7 @@ h2 {
 }
 
 .primary-button,
-.ghost-button,
-.chip-button {
+.ghost-button {
   min-height: 46px;
   border-radius: 8px;
   border: 1px solid transparent;
@@ -792,8 +833,7 @@ h2 {
   box-shadow: 0 10px 26px rgba(242, 193, 78, 0.28);
 }
 
-.ghost-button,
-.chip-button {
+.ghost-button {
   color: var(--text);
   background: var(--panel-2);
   border-color: var(--line);
@@ -830,47 +870,6 @@ h2 {
   margin-bottom: 10px;
   color: var(--muted);
   font-weight: 700;
-}
-
-.bet-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, auto);
-  gap: 10px;
-}
-
-.split-bet-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.player-bet-control {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.player-bet-control input {
-  grid-column: 1 / -1;
-  width: 100%;
-  min-width: 0;
-  min-height: 58px;
-  font-size: 1.25rem;
-  font-weight: 900;
-}
-
-.player-bet-control .chip-button {
-  width: 100%;
-  min-height: 58px;
-}
-
-.bet-control input {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 14px;
-  color: var(--text);
-  background: #10131a;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  outline: none;
 }
 
 .bet-actions {
@@ -1052,8 +1051,6 @@ h2 {
   .lobby-side,
   .player-select-grid,
   .hud,
-  .bet-control,
-  .split-bet-grid,
   .pvp-layout,
   .gacha-stage-grid,
   .add-player,
