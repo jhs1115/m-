@@ -46,6 +46,7 @@ const ui = {
   currentUserName: document.getElementById("currentUserName"),
   currentUserTier: document.getElementById("currentUserTier"),
   currentUserCoins: document.getElementById("currentUserCoins"),
+  coinBadge: document.getElementById("coinBadge"),
   globalCoinAmount: document.getElementById("globalCoinAmount"),
   matchOverlay: document.getElementById("matchOverlay"),
   matchOverlayText: document.getElementById("matchOverlayText"),
@@ -294,7 +295,7 @@ function setMatchmakingPolling(enabled) {
     matchmakingPollId = null;
   }
   if (enabled) {
-    matchmakingPollId = setInterval(checkMatchmaking, 2000);
+    matchmakingPollId = setInterval(checkMatchmaking, 450);
   }
 }
 
@@ -665,6 +666,21 @@ async function drawCharacter() {
   }
 }
 
+async function claimFreeCoins() {
+  if (!currentUser) return;
+  ui.coinBadge.disabled = true;
+  try {
+    const data = await rpc("claim_free_coins", { session_token: appSessionToken });
+    currentUser = normalizePlayer(data);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    renderLobby();
+  } catch (error) {
+    ui.modeMessage.textContent = error.message;
+  } finally {
+    ui.coinBadge.disabled = false;
+  }
+}
+
 function updateCharacterCards(playerKey, player) {
   const owned = player.ownedCharacters;
   if (!owned.includes(selections[playerKey])) selections[playerKey] = owned[0] ?? DEFAULT_CHARACTER;
@@ -861,6 +877,7 @@ function resetGame() {
     damageTexts: [],
     contactLock: false,
     over: false,
+    tick: 0,
     lastTime: performance.now(),
     accumulator: 0
   };
@@ -1143,7 +1160,8 @@ async function useSkill(type) {
       const room = await rpc("use_skill_event", {
         session_token: appSessionToken,
         room_code: currentRoom.code,
-        skill_type: type
+        skill_type: type,
+        client_tick: game.tick
       });
       applyRoom(room);
     } catch (error) {
@@ -1164,6 +1182,8 @@ function processSkillEvents(prep) {
   events.forEach(event => {
     const eventId = event.id || `${event.actorId || event.actor_id}-${event.type}-${event.createdAt || event.created_at}`;
     if (!eventId || appliedSkillEvents.has(eventId)) return;
+    const applyTick = Number(event.applyTick ?? event.apply_tick ?? 0);
+    if (applyTick && game.tick < applyTick) return;
     const actorId = event.actorId || event.actor_id;
     const skillType = event.type;
     const fighter = fighterByOwnerId(actorId);
@@ -1900,6 +1920,9 @@ function drawDamageText(text) {
 
 function stepGame(dt) {
   if (!game.over) {
+    game.tick += 1;
+    const prep = currentRoom?.prepState || currentRoom?.prep_state || {};
+    processSkillEvents(prep);
     game.fighters.forEach(fighter => moveFighter(fighter, dt));
     handleFighterCollision();
     updateBalls(dt);
@@ -1980,6 +2003,7 @@ async function logout() {
 
 ui.loginButton.addEventListener("click", () => authenticate("login"));
 ui.logoutButton.addEventListener("click", logout);
+ui.coinBadge.addEventListener("click", claimFreeCoins);
 ui.signupButton.addEventListener("click", () => authenticate("signup"));
 ui.openSignupButton.addEventListener("click", () => showScreen("signup"));
 ui.backToLoginButton.addEventListener("click", () => showScreen("auth"));

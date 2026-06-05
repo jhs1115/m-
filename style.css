@@ -91,6 +91,10 @@ button:disabled {
   font-weight: 900;
 }
 
+.coin-badge:disabled {
+  opacity: 0.7;
+}
+
 .coin-badge strong {
   color: var(--gold);
 }

@@ -593,7 +593,7 @@ begin
 end;
 $$;
 
-create or replace function public.use_skill_event(session_token text, room_code text, skill_type text)
+create or replace function public.use_skill_event(session_token text, room_code text, skill_type text, client_tick integer default 0)
 returns jsonb
 language plpgsql
 volatile
@@ -607,6 +607,7 @@ declare
   current_state jsonb;
   current_events jsonb;
   event_id text;
+  apply_tick integer;
   next_state jsonb;
 begin
   active_user := public.app_user_from_token(session_token);
@@ -630,6 +631,7 @@ begin
 
   current_events := coalesce(current_state->'skillEvents', '[]'::jsonb);
   event_id := active_user.id::text || '-' || (jsonb_array_length(current_events) + 1)::text;
+  apply_tick := greatest(0, coalesce(client_tick, 0)) + 30;
 
   next_state := jsonb_set(
     current_state,
@@ -638,6 +640,7 @@ begin
       'id', event_id,
       'actorId', active_user.id,
       'type', skill_type,
+      'applyTick', apply_tick,
       'createdAt', extract(epoch from now())
     )),
     true
@@ -778,6 +781,31 @@ begin
 end;
 $$;
 
+create or replace function public.claim_free_coins(session_token text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  updated_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  update public.app_users
+  set coins = coins + 200
+  where id = active_user.id
+  returning * into updated_user;
+
+  return public.app_user_json(updated_user);
+end;
+$$;
+
 create or replace function public.set_match_ready(
   session_token text,
   room_code text,
@@ -869,6 +897,8 @@ declare
   normalized_code text := upper(trim(room_code));
   room_players uuid[];
   room_state jsonb;
+  settled_winner_id uuid;
+  settled_loser_id uuid;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -895,16 +925,28 @@ begin
     raise exception 'players must be in the same room';
   end if;
 
-  select * into loser_user from public.app_users where id = loser_id for update;
-  select * into winner_user from public.app_users where id = winner_id for update;
-
   if coalesce((room_state->>'settled')::boolean, false) then
+    settled_winner_id := nullif(room_state->>'winnerId', '')::uuid;
+    if settled_winner_id is null then
+      settled_winner_id := winner_id;
+    end if;
+    settled_loser_id := (
+      select player_id
+      from unnest(room_players) as player_id
+      where player_id <> settled_winner_id
+      limit 1
+    );
+    select * into winner_user from public.app_users where id = settled_winner_id;
+    select * into loser_user from public.app_users where id = settled_loser_id;
     return jsonb_build_object(
       'winner', public.app_user_json(winner_user),
       'loser', public.app_user_json(loser_user),
       'lpGain', 0
     );
   end if;
+
+  select * into loser_user from public.app_users where id = loser_id for update;
+  select * into winner_user from public.app_users where id = winner_id for update;
 
   update public.app_users
   set lp = lp + 14
@@ -942,12 +984,13 @@ revoke execute on function public.join_room(text, text) from anon, authenticated
 grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
+grant execute on function public.claim_free_coins(text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
 grant execute on function public.find_pvp_match(text) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
 grant execute on function public.set_character_ready(text, text, text, boolean) to anon, authenticated;
-grant execute on function public.use_skill_event(text, text, text) to anon, authenticated;
+grant execute on function public.use_skill_event(text, text, text, integer) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
 
 notify pgrst, 'reload schema';
