@@ -23,9 +23,10 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 18% 18%, rgba(61, 214, 208, 0.22), transparent 28%),
-    radial-gradient(circle at 78% 10%, rgba(242, 193, 78, 0.16), transparent 26%),
-    linear-gradient(135deg, #101219, #1a1c23 52%, #141821);
+    radial-gradient(circle at 50% 5%, rgba(242, 193, 78, 0.16), transparent 18%),
+    radial-gradient(circle at 18% 18%, rgba(61, 214, 208, 0.12), transparent 28%),
+    radial-gradient(circle at 78% 42%, rgba(242, 193, 78, 0.1), transparent 26%),
+    linear-gradient(135deg, #050911, #111722 54%, #090d14);
 }
 
 button,
@@ -47,7 +48,7 @@ button:disabled {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 28px;
+  padding: 28px 28px 92px;
 }
 
 .screen {
@@ -126,8 +127,28 @@ body:not(.is-authenticated) .coin-badge {
 
 .top-copy {
   max-width: 760px;
-  margin: 0 auto 26px;
+  margin: 0 auto 30px;
   text-align: center;
+}
+
+.top-copy h1 {
+  color: #f8d891;
+  font-family: Georgia, "Times New Roman", serif;
+  text-shadow: 0 0 28px rgba(242, 193, 78, 0.38);
+}
+
+.title-rule {
+  width: min(420px, 70%);
+  height: 1px;
+  margin: 8px auto 12px;
+  background: linear-gradient(90deg, transparent, rgba(242, 193, 78, 0.72), transparent);
+}
+
+.lobby-subtitle {
+  margin: 0;
+  color: rgba(247, 244, 235, 0.48);
+  font-size: 0.8rem;
+  letter-spacing: 0.55em;
 }
 
 .eyebrow {
@@ -173,32 +194,51 @@ h2 {
 
 .lobby-grid {
   display: grid;
-  grid-template-columns: minmax(0, 430px) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
-  min-height: calc(clamp(700px, 82vh, 940px) - 44px);
+  min-height: calc(clamp(620px, 72vh, 760px) - 44px);
 }
 
 .lobby-shell {
-  min-height: clamp(700px, 82vh, 940px);
+  width: min(1320px, 100%);
+  min-height: clamp(620px, 72vh, 760px);
   padding: 22px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
-    rgba(17, 19, 25, 0.66);
-  border: 1px solid var(--line);
+    linear-gradient(135deg, rgba(242, 193, 78, 0.06), rgba(255, 255, 255, 0.012)),
+    rgba(6, 10, 17, 0.72);
+  border: 1px solid rgba(242, 193, 78, 0.32);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+.lobby-tab-panel {
+  display: none;
+  min-height: calc(clamp(620px, 72vh, 760px) - 44px);
+}
+
+.lobby-tab-panel.is-active {
+  display: block;
 }
 
 .lobby-panel {
   width: 100%;
   min-height: 0;
-}
-
-.lobby-panel:first-child {
   display: flex;
   flex-direction: column;
-  grid-row: 1;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.16)),
+    rgba(15, 20, 30, 0.92);
+  border-color: rgba(242, 193, 78, 0.26);
+}
+
+.lobby-panel h2,
+.shop-panel h2,
+.placeholder-panel h2 {
+  color: #f8d891;
+  font-family: Georgia, "Times New Roman", serif;
+  text-align: center;
+  text-shadow: 0 0 18px rgba(242, 193, 78, 0.24);
 }
 
 .auth-panel {
@@ -237,10 +277,10 @@ h2 {
   align-items: center;
   gap: 14px;
   min-height: 58px;
-  margin-top: 14px;
+  margin-top: 24px;
   padding: 0 14px;
-  background: #151922;
-  border: 1px solid var(--line);
+  background: rgba(6, 10, 17, 0.78);
+  border: 1px solid rgba(242, 193, 78, 0.28);
   border-radius: 8px;
 }
 
@@ -282,23 +322,30 @@ h2 {
   color: #7cc7ff;
 }
 
-.lobby-side {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
-  min-height: 100%;
-  grid-row: 1 / span 2;
+.player-panel::after,
+.match-panel::after,
+.world-panel::after {
+  content: "";
+  flex: 1;
+  margin-top: 18px;
+  min-height: 260px;
+  border: 1px solid rgba(242, 193, 78, 0.12);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(242, 193, 78, 0.1), transparent 18%),
+    linear-gradient(180deg, rgba(12, 18, 30, 0.35), rgba(3, 6, 10, 0.88));
 }
 
-.match-panel,
-.gacha-panel {
-  width: 100%;
-  min-height: 0;
+.player-panel::after {
+  background:
+    radial-gradient(circle at 50% 72%, rgba(242, 193, 78, 0.18), transparent 8%),
+    linear-gradient(180deg, rgba(12, 18, 30, 0.28), rgba(3, 6, 10, 0.9));
 }
 
-.gacha-panel {
-  display: flex;
-  flex-direction: column;
+.match-panel::after {
+  background:
+    radial-gradient(circle at 50% 78%, rgba(61, 214, 208, 0.11), transparent 18%),
+    linear-gradient(180deg, rgba(12, 18, 30, 0.3), rgba(3, 6, 10, 0.88));
 }
 
 .gacha-box {
@@ -309,14 +356,66 @@ h2 {
   min-height: 150px;
   margin: 18px 0 12px;
   padding: 14px;
-  background: #151922;
-  border: 1px solid var(--line);
+  background: rgba(6, 10, 17, 0.78);
+  border: 1px solid rgba(242, 193, 78, 0.28);
   border-radius: 8px;
 }
 
 .gacha-box .primary-button {
   align-self: end;
   width: 100%;
+}
+
+.shop-panel,
+.placeholder-panel {
+  width: 100%;
+  min-height: calc(clamp(620px, 72vh, 760px) - 44px);
+  background:
+    radial-gradient(circle at 68% 72%, rgba(61, 214, 208, 0.1), transparent 22%),
+    rgba(15, 20, 30, 0.92);
+  border-color: rgba(242, 193, 78, 0.26);
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  min-height: 440px;
+  margin-top: 22px;
+}
+
+.shop-art {
+  min-height: 100%;
+  border: 1px solid rgba(242, 193, 78, 0.2);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(61, 214, 208, 0.28), transparent 12%),
+    radial-gradient(circle at 50% 70%, rgba(61, 214, 208, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(12, 18, 30, 0.2), rgba(3, 6, 10, 0.88));
+}
+
+.shop-gacha-box {
+  min-height: 220px;
+  margin: 0;
+}
+
+.shop-gacha-box strong {
+  color: var(--gold);
+  font-size: 1.8rem;
+}
+
+.placeholder-panel {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.placeholder-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .gacha-stage {
@@ -437,16 +536,18 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin: 18px 0 8px;
+  margin: 24px 0 8px;
 }
 
 .mode-button {
-  min-height: 92px;
-  padding: 14px;
-  text-align: left;
+  min-height: 164px;
+  padding: 18px;
+  text-align: center;
   color: var(--text);
-  background: #151922;
-  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 50% 68%, rgba(61, 214, 208, 0.1), transparent 28%),
+    rgba(6, 10, 17, 0.78);
+  border: 1px solid rgba(242, 193, 78, 0.24);
   border-radius: 8px;
 }
 
@@ -456,8 +557,9 @@ h2 {
 }
 
 .mode-button strong {
-  margin-bottom: 8px;
-  font-size: 1.35rem;
+  margin-bottom: 38px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.9rem;
 }
 
 .mode-button span {
@@ -467,6 +569,49 @@ h2 {
 .mode-button.is-selected {
   border-color: var(--gold);
   box-shadow: 0 0 0 1px rgba(242, 193, 78, 0.45) inset;
+}
+
+.bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 110px));
+  justify-content: center;
+  gap: 22px;
+  min-height: 74px;
+  padding: 8px 18px;
+  background: rgba(5, 8, 14, 0.88);
+  border-top: 1px solid rgba(242, 193, 78, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.bottom-nav-button {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-height: 58px;
+  color: rgba(247, 244, 235, 0.58);
+  background: transparent;
+  border: 0;
+  font-weight: 900;
+}
+
+.bottom-nav-button span {
+  color: currentColor;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.bottom-nav-button strong {
+  font-size: 0.78rem;
+}
+
+.bottom-nav-button.is-active {
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(242, 193, 78, 0.5);
 }
 
 .cancel-mode-button {
@@ -1073,7 +1218,7 @@ h2 {
 
 @media (max-width: 760px) {
   .app {
-    padding: 16px;
+    padding: 16px 16px 92px;
   }
 
   .character-grid,
@@ -1083,6 +1228,7 @@ h2 {
   .hud,
   .pvp-layout,
   .gacha-stage-grid,
+  .shop-grid,
   .add-player,
   .mode-grid,
   .match-preview {
@@ -1100,5 +1246,15 @@ h2 {
   .bet-actions .primary-button,
   .bet-actions .ghost-button {
     width: 100%;
+  }
+
+  .bottom-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .bottom-nav-button strong {
+    font-size: 0.68rem;
   }
 }

@@ -51,22 +51,24 @@
     <section id="lobbyScreen" class="screen">
       <button id="logoutButton" class="logout-button">로그아웃</button>
       <div class="top-copy">
-        <h1>M zzang</h1>
+        <h1>Mzzang</h1>
+        <div class="title-rule"></div>
+        <p class="lobby-subtitle">LEGENDS NEVER DIE</p>
       </div>
 
       <div class="lobby-shell">
-        <div class="lobby-grid">
-          <div class="panel lobby-panel">
-            <h2>플레이어</h2>
-            <div class="account-box">
-              <span id="currentUserName">로그인이 필요합니다</span>
-              <span id="currentUserTier" class="tier-label tier-bronze">브론즈</span>
-              <strong><span id="currentUserCoins">1000</span> LP</strong>
+        <div class="lobby-tab-panel is-active" data-lobby-panel="home">
+          <div class="lobby-grid">
+            <div class="panel lobby-panel player-panel">
+              <h2>플레이어</h2>
+              <div class="account-box">
+                <span id="currentUserName">로그인이 필요합니다</span>
+                <span id="currentUserTier" class="tier-label tier-bronze">브론즈</span>
+                <strong><span id="currentUserCoins">1000</span> LP</strong>
+              </div>
+              <div id="playerList" class="player-list"></div>
             </div>
-            <div id="playerList" class="player-list"></div>
-          </div>
 
-          <div class="lobby-side">
             <div class="panel lobby-panel match-panel">
               <h2>게임 시작</h2>
               <div class="mode-grid">
@@ -86,9 +88,22 @@
               <p id="modeMessage" class="status-message"></p>
             </div>
 
-            <div class="panel gacha-panel">
-              <h2>캐릭터 뽑기</h2>
-              <div class="gacha-box">
+            <div class="panel lobby-panel world-panel">
+              <h2>시즌</h2>
+              <div class="world-art">
+                <strong>ARENA</strong>
+                <span>랭크 매치 준비중</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lobby-tab-panel" data-lobby-panel="shop">
+          <div class="panel shop-panel">
+            <h2>상점</h2>
+            <div class="shop-grid">
+              <div class="shop-art"></div>
+              <div class="gacha-box shop-gacha-box">
                 <strong>50C</strong>
                 <span>새 캐릭터를 얻을 수 있습니다.</span>
                 <button id="openGachaButton" class="primary-button">뽑기하러 가기</button>
@@ -96,7 +111,51 @@
             </div>
           </div>
         </div>
+
+        <div class="lobby-tab-panel" data-lobby-panel="inventory">
+          <div class="panel placeholder-panel">
+            <h2>인벤토리</h2>
+            <p>보유 캐릭터와 장식 아이템을 정리할 공간입니다.</p>
+          </div>
+        </div>
+
+        <div class="lobby-tab-panel" data-lobby-panel="ranking">
+          <div class="panel placeholder-panel">
+            <h2>랭킹</h2>
+            <p>LP 랭킹과 티어 정보를 보여줄 공간입니다.</p>
+          </div>
+        </div>
+
+        <div class="lobby-tab-panel" data-lobby-panel="settings">
+          <div class="panel placeholder-panel">
+            <h2>설정</h2>
+            <p>게임 설정과 계정 옵션을 넣을 공간입니다.</p>
+          </div>
+        </div>
       </div>
+
+      <nav class="bottom-nav" aria-label="로비 메뉴">
+        <button class="bottom-nav-button is-active" type="button" data-lobby-tab="home">
+          <span>⌂</span>
+          <strong>홈</strong>
+        </button>
+        <button class="bottom-nav-button" type="button" data-lobby-tab="shop">
+          <span>▣</span>
+          <strong>상점</strong>
+        </button>
+        <button class="bottom-nav-button" type="button" data-lobby-tab="inventory">
+          <span>▤</span>
+          <strong>인벤토리</strong>
+        </button>
+        <button class="bottom-nav-button" type="button" data-lobby-tab="ranking">
+          <span>♕</span>
+          <strong>랭킹</strong>
+        </button>
+        <button class="bottom-nav-button" type="button" data-lobby-tab="settings">
+          <span>⚙</span>
+          <strong>설정</strong>
+        </button>
+      </nav>
     </section>
 
     <section id="gachaScreen" class="screen">
@@ -291,7 +350,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260605k"></script>
-  <script src="game.js?v=20260605k"></script>
+  <script src="supabase-config.js?v=20260605m"></script>
+  <script src="game.js?v=20260605m"></script>
 </body>
 </html>

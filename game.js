@@ -242,6 +242,15 @@ function showScreen(name) {
   document.body.classList.toggle("is-authenticated", Boolean(currentUser));
 }
 
+function switchLobbyTab(tabName) {
+  document.querySelectorAll("[data-lobby-panel]").forEach(panel => {
+    panel.classList.toggle("is-active", panel.dataset.lobbyPanel === tabName);
+  });
+  document.querySelectorAll("[data-lobby-tab]").forEach(button => {
+    button.classList.toggle("is-active", button.dataset.lobbyTab === tabName);
+  });
+}
+
 function setRoomPolling(enabled) {
   if (roomPollId) {
     clearInterval(roomPollId);
@@ -798,8 +807,8 @@ function makeFighter(kind, label, ownerId, x, y) {
     vx: velocity.vx,
     vy: velocity.vy,
     radius: 32,
-    hp: 100,
-    maxHp: 100,
+    hp: 200,
+    maxHp: 200,
     contactDamage: character.contactDamage,
     canThrow: character.canThrow,
     canGrab: character.canGrab,
@@ -817,8 +826,8 @@ function makeFighter(kind, label, ownerId, x, y) {
     stealthDamage: 15,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
-    skillTimer: 0,
-    ultimateTimer: 0,
+    skillTimer: 480,
+    ultimateTimer: 480,
     rageTime: 0,
     unstoppableTime: 0,
     unstoppableHit: false,
@@ -882,12 +891,12 @@ function startGame() {
 }
 
 function updateHud() {
-  const p1Hp = clamp(game.fighters[0].hp, 0, 100);
-  const p2Hp = clamp(game.fighters[1].hp, 0, 100);
+  const p1Hp = clamp(game.fighters[0].hp, 0, game.fighters[0].maxHp);
+  const p2Hp = clamp(game.fighters[1].hp, 0, game.fighters[1].maxHp);
   ui.playerOneHealthText.textContent = Math.ceil(p1Hp);
   ui.playerTwoHealthText.textContent = Math.ceil(p2Hp);
-  ui.playerOneHealthBar.style.width = `${p1Hp}%`;
-  ui.playerTwoHealthBar.style.width = `${p2Hp}%`;
+  ui.playerOneHealthBar.style.width = `${(p1Hp / game.fighters[0].maxHp) * 100}%`;
+  ui.playerTwoHealthBar.style.width = `${(p2Hp / game.fighters[1].maxHp) * 100}%`;
 }
 
 function damage(fighter, amount) {
@@ -1013,6 +1022,7 @@ function triggerNormalSkill(fighter) {
       if (ball.owner === fighter) {
         ball.homing = true;
         ball.homeTarget = target;
+        ball.homingTime = 240;
         ball.color = "#ffe28a";
         count += 1;
       }
@@ -1372,7 +1382,7 @@ function fireStarStrike(owner) {
       radius: 14,
       life: 1260,
       hitCooldown: 0,
-      damage: 10,
+      damage: 5,
       speed: 11.6,
       color: "#ffe28a",
       homing: false,
@@ -1524,6 +1534,14 @@ function dealPokerAttack(owner) {
 
 function updateBalls(dt) {
   game.balls = game.balls.filter(ball => {
+    if (ball.homingTime > 0) {
+      ball.homingTime -= dt;
+      if (ball.homingTime <= 0) {
+        ball.homing = false;
+        ball.homeTarget = null;
+        ball.color = ball.owner.accent;
+      }
+    }
     if (ball.homing && ball.homeTarget && !game.over) {
       const angle = Math.atan2(ball.homeTarget.y - ball.y, ball.homeTarget.x - ball.x);
       const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
@@ -1988,6 +2006,9 @@ ui.backFromGachaButton.addEventListener("click", () => {
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
+document.querySelectorAll("[data-lobby-tab]").forEach(button => {
+  button.addEventListener("click", () => switchLobbyTab(button.dataset.lobbyTab));
+});
 ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
 ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
 document.addEventListener("keydown", event => {
