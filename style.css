@@ -94,6 +94,10 @@ button:disabled {
   color: var(--gold);
 }
 
+body:not(.is-authenticated) .coin-badge {
+  display: none;
+}
+
 .match-overlay {
   position: fixed;
   inset: 0;
@@ -228,9 +232,10 @@ h2 {
 }
 
 .account-box {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
+  gap: 14px;
   min-height: 58px;
   margin-top: 14px;
   padding: 0 14px;
@@ -240,7 +245,41 @@ h2 {
 }
 
 .account-box strong {
-  color: var(--gold);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rank-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tier-label {
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.tier-bronze {
+  color: #d49562;
+}
+
+.tier-silver {
+  color: #c8d3df;
+}
+
+.tier-gold {
+  color: #f2c14e;
+}
+
+.tier-platinum {
+  color: #58dfc2;
+}
+
+.tier-diamond {
+  color: #7cc7ff;
 }
 
 .lobby-side {
@@ -503,6 +542,7 @@ h2 {
   gap: 10px;
   align-content: start;
   flex: 1;
+  min-height: 0;
   max-height: none;
   overflow: auto;
   padding-right: 4px;
@@ -516,30 +556,6 @@ h2 {
   background: #151922;
   border: 1px dashed var(--line);
   border-radius: 8px;
-}
-
-.player-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 10px;
-  align-items: center;
-  min-height: 54px;
-  padding: 0 14px;
-  background: #151922;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.player-row span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-row strong {
-  flex: none;
-  color: var(--gold);
 }
 
 .delete-player-button {

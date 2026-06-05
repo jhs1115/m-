@@ -44,6 +44,7 @@ const ui = {
   authMessage: document.getElementById("authMessage"),
   logoutButton: document.getElementById("logoutButton"),
   currentUserName: document.getElementById("currentUserName"),
+  currentUserTier: document.getElementById("currentUserTier"),
   currentUserCoins: document.getElementById("currentUserCoins"),
   globalCoinAmount: document.getElementById("globalCoinAmount"),
   matchOverlay: document.getElementById("matchOverlay"),
@@ -187,6 +188,16 @@ function tierForLp(lp) {
   return "브론즈";
 }
 
+function tierClassForLp(lp) {
+  return {
+    "다이아": "tier-diamond",
+    "플레": "tier-platinum",
+    "골드": "tier-gold",
+    "실버": "tier-silver",
+    "브론즈": "tier-bronze"
+  }[tierForLp(lp)];
+}
+
 function requireSupabase() {
   if (!supabaseClient) {
     throw new Error("supabase-config.js에 Supabase URL과 anon key를 넣어주세요.");
@@ -212,6 +223,7 @@ function getPlayer(id) {
 function showScreen(name) {
   Object.values(screens).forEach(screen => screen.classList.remove("is-active"));
   screens[name].classList.add("is-active");
+  document.body.classList.toggle("is-authenticated", Boolean(currentUser));
 }
 
 function setRoomPolling(enabled) {
@@ -335,29 +347,17 @@ function escapeHtml(value) {
 
 function renderLobby() {
   if (currentUser) {
-    ui.currentUserName.textContent = `${currentUser.name} · ${tierForLp(currentUser.lp)}`;
+    const tier = tierForLp(currentUser.lp);
+    const tierClass = tierClassForLp(currentUser.lp);
+    ui.currentUserName.textContent = currentUser.name;
+    ui.currentUserTier.textContent = tier;
+    ui.currentUserName.className = `rank-name ${tierClass}`;
+    ui.currentUserTier.className = `tier-label ${tierClass}`;
     ui.currentUserCoins.textContent = currentUser.lp;
     ui.globalCoinAmount.textContent = currentUser.coins;
   }
 
   ui.playerList.innerHTML = "";
-  if (players.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-list";
-    empty.textContent = "로그인하면 매칭을 시작할 수 있습니다.";
-    ui.playerList.appendChild(empty);
-  }
-
-  players.forEach(player => {
-    const ownedText = player.ownedCharacters.map(kind => characters[kind].name).join(", ");
-    const item = document.createElement("div");
-    item.className = "player-row";
-    item.innerHTML = `
-      <span title="${escapeHtml(ownedText)}">${escapeHtml(player.name)}</span>
-      <strong>${player.lp} LP</strong>
-    `;
-    ui.playerList.appendChild(item);
-  });
 
   reconcileMatchPlayers();
   renderMatchSelectors();
@@ -1283,8 +1283,32 @@ function drawFighter(fighter) {
     ctx.setLineDash([]);
   }
   ctx.restore();
+  drawFighterName(fighter);
   drawFighterHealthBar(fighter);
   drawPokerHand(fighter);
+}
+
+function drawFighterName(fighter) {
+  const text = fighter.ownerName;
+  const y = Math.max(18, fighter.y - fighter.radius - 18);
+  ctx.save();
+  ctx.font = "900 14px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const textWidth = Math.min(ctx.measureText(text).width, 112);
+  const boxWidth = textWidth + 20;
+  const boxHeight = 24;
+  const x = clamp(fighter.x - boxWidth / 2, 8, canvas.width - boxWidth - 8);
+  ctx.fillStyle = "rgba(5, 8, 14, 0.78)";
+  ctx.strokeStyle = fighter.accent;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(x, y - boxHeight / 2, boxWidth, boxHeight, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#f7f4eb";
+  ctx.fillText(text, x + boxWidth / 2, y, boxWidth - 12);
+  ctx.restore();
 }
 
 function drawFighterHealthBar(fighter) {
