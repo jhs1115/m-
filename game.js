@@ -914,7 +914,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     pokerBoostMultiplier: 1,
     stealthTimer: character.canStealth ? 420 : Infinity,
     stealthTime: 0,
-    stealthDamage: 5,
+    stealthDamage: 15,
     hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
@@ -1104,7 +1104,7 @@ function opponentOf(fighter) {
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
   fighter.stealthTime = hyper ? 240 : 180;
-  fighter.stealthDamage = 5;
+  fighter.stealthDamage = hyper ? 10 : 15;
   fighter.hyperStealthActive = hyper;
   fighter.hyperStealthNext = false;
   addVisualEffect({
@@ -1549,7 +1549,7 @@ function throwGrapple(owner) {
 
 function createShockwave(owner) {
   const target = opponentOf(owner);
-  const range = 128;
+  const range = 192;
   game.shockwaves.push({
     owner,
     x: owner.x,
@@ -1560,7 +1560,7 @@ function createShockwave(owner) {
     color: owner.accent
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damage(target, 20);
+    damage(target, 30);
     target.stunTime = Math.max(target.stunTime, 60);
     target.vx *= 0.25;
     target.vy *= 0.25;
@@ -1574,11 +1574,11 @@ function throwDrawCard(owner) {
   const type = cards[Math.floor(seededRandom() * cards.length)];
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   const damageByType = {
-    JOKER: Math.floor(seededRandom() * 30) + 1,
-    A: 5,
+    JOKER: Math.floor(seededRandom() * 45) + 1,
+    A: 7.5,
     K: 0,
-    Q: 5,
-    J: 3
+    Q: 7.5,
+    J: 4.5
   };
   game.pokerShots.push({
     owner,
@@ -1674,7 +1674,7 @@ function dealPokerAttack(owner) {
       vx: 0,
       vy: 0,
       radius: 10,
-      damage: 1.5 * multiplier,
+      damage: 2.25 * multiplier,
       life: 190,
       delay: index * 9,
       spread: (index - 2) * 0.1,
