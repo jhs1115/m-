@@ -914,7 +914,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     pokerBoostMultiplier: 1,
     stealthTimer: character.canStealth ? 420 : Infinity,
     stealthTime: 0,
-    stealthDamage: 15,
+    stealthDamage: 5,
     hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
@@ -926,7 +926,9 @@ function makeFighter(kind, label, ownerId, x, y) {
     stunTime: 0,
     slowTime: 0,
     hasteTime: 0,
-    hitFlash: 0
+    hitFlash: 0,
+    lockOnTime: 0,
+    lockOnPulse: 0
   };
 }
 
@@ -951,6 +953,7 @@ function resetGame() {
     pokerShots: [],
     shockwaves: [],
     damageTexts: [],
+    visualEffects: [],
     contactLock: false,
     over: false,
     tick: 0,
@@ -1042,6 +1045,14 @@ function addFloatingText(x, y, text, color = "#ff304f") {
   game.damageTexts.push({ x, y, text, color, life: 70, maxLife: 70, vy: -0.5 });
 }
 
+function addVisualEffect(effect) {
+  if (!game) return;
+  game.visualEffects.push({
+    ...effect,
+    maxLife: effect.maxLife || effect.life || 30
+  });
+}
+
 function finishGame(winner) {
   if (game.over) return;
   game.over = true;
@@ -1093,9 +1104,16 @@ function opponentOf(fighter) {
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
   fighter.stealthTime = hyper ? 240 : 180;
-  fighter.stealthDamage = 15;
+  fighter.stealthDamage = 5;
   fighter.hyperStealthActive = hyper;
   fighter.hyperStealthNext = false;
+  addVisualEffect({
+    type: hyper ? "hyper-stealth" : "stealth",
+    fighter,
+    life: hyper ? 58 : 42,
+    maxLife: hyper ? 58 : 42,
+    color: fighter.accent
+  });
   addFloatingText(fighter.x, fighter.y - fighter.radius - 44, hyper ? "하이퍼 히든!" : "은신", fighter.accent);
 }
 
@@ -1119,6 +1137,8 @@ function triggerNormalSkill(fighter) {
         count += 1;
       }
     });
+    target.lockOnTime = 90;
+    target.lockOnPulse = 0;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, count ? "룩 온!" : "룩 온", fighter.accent);
     fighter.skillTimer = 720;
     return;
@@ -1126,6 +1146,13 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "charger") {
     fighter.rageTime = 180;
+    addVisualEffect({
+      type: "rage-burst",
+      fighter,
+      life: 34,
+      maxLife: 34,
+      color: fighter.color
+    });
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "격노!", fighter.accent);
     fighter.skillTimer = 600;
     return;
@@ -1164,6 +1191,13 @@ function triggerUltimate(fighter) {
     fighter.vy = (fighter.vy / speed) * 34;
     fighter.unstoppableTime = 55;
     fighter.unstoppableHit = false;
+    addVisualEffect({
+      type: "unstoppable-burst",
+      fighter,
+      life: 42,
+      maxLife: 42,
+      color: fighter.color
+    });
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "불가항력!", fighter.accent);
     fighter.ultimateTimer = 1380;
     return;
@@ -1297,6 +1331,10 @@ function updateSkillHud() {
 function updateSkills(fighter, dt) {
   if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
   if (fighter.ultimateTimer > 0) fighter.ultimateTimer -= dt;
+  if (fighter.lockOnTime > 0) {
+    fighter.lockOnTime -= dt;
+    fighter.lockOnPulse += dt;
+  }
 }
 
 function moveFighter(fighter, dt) {
@@ -1311,6 +1349,10 @@ function moveFighter(fighter, dt) {
     if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
     if (fighter.stealthTime <= 0) fighter.hyperStealthActive = false;
     if (fighter.stealthDamageCooldown > 0) fighter.stealthDamageCooldown -= dt;
+    if (fighter.lockOnTime > 0) {
+      fighter.lockOnTime -= dt;
+      fighter.lockOnPulse += dt;
+    }
     fighter.vx *= 0.82;
     fighter.vy *= 0.82;
     if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
@@ -1320,7 +1362,7 @@ function moveFighter(fighter, dt) {
   fighter.y += fighter.vy * dt;
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = fighter.stealthTime > 0
-    ? fighter.hyperStealthActive ? 62.5 : 12.5
+    ? fighter.hyperStealthActive ? 125 : 12.5
     : fighter.canThrow
       ? 5.9
       : fighter.canGrab
@@ -1559,6 +1601,8 @@ function throwDrawCard(owner) {
 
 function assassinate(owner) {
   const target = opponentOf(owner);
+  const startX = owner.x;
+  const startY = owner.y;
   const targetSpeed = Math.hypot(target.vx, target.vy);
   const nx = targetSpeed > 0.2 ? target.vx / targetSpeed : (target.x - owner.x) / (Math.hypot(target.x - owner.x, target.y - owner.y) || 1);
   const ny = targetSpeed > 0.2 ? target.vy / targetSpeed : (target.y - owner.y) / (Math.hypot(target.x - owner.x, target.y - owner.y) || 1);
@@ -1567,6 +1611,16 @@ function assassinate(owner) {
   owner.vx = nx * 13;
   owner.vy = ny * 13;
   bounceOnWalls(owner);
+  addVisualEffect({
+    type: "assassinate-slash",
+    x1: startX,
+    y1: startY,
+    x2: owner.x,
+    y2: owner.y,
+    color: owner.accent,
+    life: 24,
+    maxLife: 24
+  });
   addFloatingText(owner.x, owner.y - owner.radius - 44, "암살!", owner.accent);
 }
 
@@ -1763,6 +1817,13 @@ function updateDamageTexts(dt) {
   });
 }
 
+function updateVisualEffects(dt) {
+  game.visualEffects = game.visualEffects.filter(effect => {
+    effect.life -= dt;
+    return effect.life > 0;
+  });
+}
+
 function drawArena() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#0d1118";
@@ -1785,22 +1846,126 @@ function drawArena() {
   game.shockwaves.forEach(drawShockwave);
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
+  game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
   game.fighters.forEach(drawFighter);
+  game.visualEffects.filter(effect => effect.type === "assassinate-slash").forEach(drawVisualEffect);
   game.damageTexts.forEach(drawDamageText);
+}
+
+function drawVisualEffect(effect) {
+  if (effect.type === "assassinate-slash") {
+    drawAssassinateSlash(effect);
+    return;
+  }
+  if (effect.type === "unstoppable-burst") {
+    drawExpandingBurst(effect, 74, 142, 8);
+    return;
+  }
+  if (effect.type === "rage-burst") {
+    drawExpandingBurst(effect, 42, 82, 5);
+    return;
+  }
+  if (effect.type === "hyper-stealth" || effect.type === "stealth") {
+    drawStealthBurst(effect);
+  }
+}
+
+function drawAssassinateSlash(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const angle = Math.atan2(effect.y2 - effect.y1, effect.x2 - effect.x1);
+  const offsetX = Math.cos(angle + Math.PI / 2);
+  const offsetY = Math.sin(angle + Math.PI / 2);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = "round";
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = 22;
+  ctx.strokeStyle = effect.color;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(effect.x1, effect.y1);
+  ctx.lineTo(effect.x2, effect.y2);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(247, 244, 235, 0.92)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(effect.x1 + offsetX * 7, effect.y1 + offsetY * 7);
+  ctx.lineTo(effect.x2 + offsetX * 7, effect.y2 + offsetY * 7);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(91, 108, 255, 0.55)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(effect.x1 - offsetX * 9, effect.y1 - offsetY * 9);
+  ctx.lineTo(effect.x2 - offsetX * 9, effect.y2 - offsetY * 9);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawExpandingBurst(effect, minRadius, maxRadius, width) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = minRadius + (maxRadius - minRadius) * progress;
+  const alpha = 1 - progress;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = effect.color;
+  ctx.fillStyle = effect.type === "unstoppable-burst"
+    ? "rgba(239, 71, 111, 0.16)"
+    : "rgba(239, 71, 111, 0.08)";
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = effect.type === "unstoppable-burst" ? 36 : 18;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.lineWidth = Math.max(2, width - 3);
+  ctx.setLineDash([16, 10]);
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, radius * 0.72, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStealthBurst(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = fighter.radius + 20 + progress * 44;
+  ctx.save();
+  ctx.globalAlpha = 1 - progress;
+  ctx.strokeStyle = effect.type === "hyper-stealth" ? "#8d7cff" : effect.color;
+  ctx.shadowColor = effect.type === "hyper-stealth" ? "#8d7cff" : effect.color;
+  ctx.shadowBlur = effect.type === "hyper-stealth" ? 34 : 18;
+  ctx.lineWidth = effect.type === "hyper-stealth" ? 5 : 3;
+  ctx.setLineDash(effect.type === "hyper-stealth" ? [4, 7, 18, 7] : [7, 7]);
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawFighter(fighter) {
   ctx.save();
   ctx.translate(fighter.x, fighter.y);
+  drawFighterAuras(fighter);
   ctx.beginPath();
   ctx.arc(0, 0, fighter.radius + 7, 0, Math.PI * 2);
-  ctx.fillStyle = fighter.hitFlash > 0 ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.08)";
+  ctx.fillStyle = fighter.hitFlash > 0
+    ? "rgba(255,255,255,0.42)"
+    : fighter.rageTime > 0
+      ? "rgba(239, 71, 111, 0.34)"
+      : "rgba(255,255,255,0.08)";
   ctx.fill();
   ctx.beginPath();
   ctx.arc(0, 0, fighter.radius, 0, Math.PI * 2);
   ctx.globalAlpha = fighter.stealthTime > 0 ? 0.42 : 1;
-  ctx.fillStyle = fighter.color;
+  ctx.fillStyle = fighter.rageTime > 0 ? "#ff174f" : fighter.color;
+  ctx.shadowColor = fighter.rageTime > 0 ? "#ef476f" : "transparent";
+  ctx.shadowBlur = fighter.rageTime > 0 ? 22 : 0;
   ctx.fill();
+  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   ctx.beginPath();
   ctx.arc(7, -7, 6, 0, Math.PI * 2);
@@ -1827,27 +1992,126 @@ function drawFighter(fighter) {
     ctx.fillText("P", -9, 20);
   }
   if (fighter.unstoppableTime > 0) {
-    ctx.strokeStyle = "rgba(239, 71, 111, 0.9)";
-    ctx.fillStyle = "rgba(239, 71, 111, 0.13)";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(0, 0, fighter.radius + 52, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    drawUnstoppableAura(fighter);
   }
   if (fighter.stealthTime > 0) {
+    drawStealthAura(fighter);
+  }
+  if (fighter.lockOnTime > 0) drawLockOnMark(fighter);
+  ctx.restore();
+  drawFighterName(fighter);
+  drawFighterHealthBar(fighter);
+  drawPokerHand(fighter);
+}
+
+function drawFighterAuras(fighter) {
+  if (fighter.rageTime <= 0 && fighter.unstoppableTime <= 0 && !fighter.hyperStealthActive) return;
+  ctx.save();
+  if (fighter.rageTime > 0) {
+    const pulse = 1 + Math.sin(game.tick * 0.22) * 0.06;
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = "rgba(239, 71, 111, 0.28)";
+    ctx.beginPath();
+    ctx.arc(0, 0, (fighter.radius + 18) * pulse, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (fighter.hyperStealthActive) {
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = "#8d7cff";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([3, 6]);
+    for (let i = 0; i < 3; i += 1) {
+      const radius = fighter.radius + 18 + i * 10 + Math.sin(game.tick * 0.16 + i) * 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawUnstoppableAura(fighter) {
+  const pulse = Math.sin(game.tick * 0.34) * 5;
+  ctx.save();
+  ctx.shadowColor = "#ef476f";
+  ctx.shadowBlur = 34;
+  ctx.strokeStyle = "rgba(239, 71, 111, 0.95)";
+  ctx.fillStyle = "rgba(239, 71, 111, 0.18)";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(0, 0, fighter.radius + 60 + pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255, 226, 138, 0.62)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([20, 8]);
+  ctx.beginPath();
+  ctx.arc(0, 0, fighter.radius + 42 - pulse * 0.4, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStealthAura(fighter) {
+  ctx.save();
+  if (fighter.hyperStealthActive) {
+    ctx.strokeStyle = "rgba(141, 124, 255, 0.95)";
+    ctx.fillStyle = "rgba(91, 108, 255, 0.11)";
+    ctx.shadowColor = "#8d7cff";
+    ctx.shadowBlur = 30;
+    ctx.lineWidth = 5;
+    ctx.setLineDash([2, 5, 16, 5]);
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 24 + Math.sin(game.tick * 0.28) * 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.rotate(game.tick * 0.045);
+    for (let i = 0; i < 4; i += 1) {
+      ctx.rotate(Math.PI / 2);
+      ctx.beginPath();
+      ctx.moveTo(fighter.radius + 14, 0);
+      ctx.lineTo(fighter.radius + 40, 0);
+      ctx.stroke();
+    }
+  } else {
     ctx.strokeStyle = fighter.accent;
     ctx.lineWidth = 3;
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.arc(0, 0, fighter.radius + 12, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.setLineDash([]);
   }
   ctx.restore();
-  drawFighterName(fighter);
-  drawFighterHealthBar(fighter);
-  drawPokerHand(fighter);
+}
+
+function drawLockOnMark(fighter) {
+  const alpha = clamp(fighter.lockOnTime / 90, 0, 1);
+  const radius = fighter.radius + 24 + Math.sin(fighter.lockOnPulse * 0.28) * 4;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0.25, alpha);
+  ctx.strokeStyle = "#ff304f";
+  ctx.shadowColor = "#ff304f";
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 4; i += 1) {
+    const angle = i * Math.PI / 2 + game.tick * 0.025;
+    const x1 = Math.cos(angle) * (radius - 8);
+    const y1 = Math.sin(angle) * (radius - 8);
+    const x2 = Math.cos(angle) * (radius + 16);
+    const y2 = Math.sin(angle) * (radius + 16);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(255, 48, 79, 0.88)";
+  ctx.beginPath();
+  ctx.arc(0, 0, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawFighterName(fighter) {
@@ -2012,6 +2276,7 @@ function stepGame(dt) {
     updatePokerShots(dt);
     updateShockwaves(dt);
     updateDamageTexts(dt);
+    updateVisualEffects(dt);
     updateSkillHud();
   }
 }
