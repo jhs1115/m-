@@ -99,8 +99,97 @@ button:disabled {
   color: var(--gold);
 }
 
+.patch-note-button {
+  position: fixed;
+  top: 18px;
+  right: 154px;
+  z-index: 11;
+  min-height: 40px;
+  padding: 0 14px;
+  color: var(--text);
+  background: rgba(16, 19, 26, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.patch-note-button:hover,
+.coin-badge:hover {
+  border-color: rgba(242, 193, 78, 0.72);
+  box-shadow: 0 0 18px rgba(242, 193, 78, 0.16);
+}
+
 body:not(.is-authenticated) .coin-badge {
   display: none;
+}
+
+.patch-note-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 5, 9, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.patch-note-modal.is-active {
+  display: grid;
+}
+
+.patch-note-box {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 34px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(242, 193, 78, 0.16), transparent 28%),
+    rgba(15, 20, 30, 0.96);
+  border: 1px solid rgba(242, 193, 78, 0.44);
+  border-radius: 8px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), 0 0 34px rgba(242, 193, 78, 0.1);
+}
+
+.patch-note-box h2 {
+  color: #f8d891;
+  font-family: Georgia, "Times New Roman", serif;
+  text-align: center;
+}
+
+.patch-note-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-height: 34px;
+  padding: 0 12px;
+  color: var(--text);
+  background: rgba(5, 8, 14, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.patch-note-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.patch-note-list article {
+  padding: 14px;
+  background: rgba(5, 8, 14, 0.56);
+  border: 1px solid rgba(242, 193, 78, 0.18);
+  border-radius: 8px;
+}
+
+.patch-note-list strong {
+  color: var(--gold);
+}
+
+.patch-note-list p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .match-overlay {

@@ -631,7 +631,7 @@ begin
 
   current_events := coalesce(current_state->'skillEvents', '[]'::jsonb);
   event_id := active_user.id::text || '-' || (jsonb_array_length(current_events) + 1)::text;
-  apply_tick := greatest(0, coalesce(client_tick, 0)) + 30;
+  apply_tick := greatest(0, coalesce(client_tick, 0)) + 45;
 
   next_state := jsonb_set(
     current_state,

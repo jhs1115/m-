@@ -33,6 +33,9 @@ const ui = {
   authUsername: document.getElementById("authUsername"),
   authPassword: document.getElementById("authPassword"),
   loginButton: document.getElementById("loginButton"),
+  patchNoteButton: document.getElementById("patchNoteButton"),
+  patchNoteModal: document.getElementById("patchNoteModal"),
+  patchNoteCloseButton: document.getElementById("patchNoteCloseButton"),
   openSignupButton: document.getElementById("openSignupButton"),
   signupButton: document.getElementById("signupButton"),
   signupUsername: document.getElementById("signupUsername"),
@@ -252,6 +255,11 @@ function switchLobbyTab(tabName) {
   });
 }
 
+function setPatchNotesOpen(open) {
+  ui.patchNoteModal.classList.toggle("is-active", open);
+  ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
+}
+
 function setRoomPolling(enabled) {
   if (roomPollId) {
     clearInterval(roomPollId);
@@ -261,11 +269,12 @@ function setRoomPolling(enabled) {
     roomPollId = setInterval(() => {
       const shouldPoll = screens.lobby.classList.contains("is-active")
         || screens.pvp.classList.contains("is-active")
-        || screens.select.classList.contains("is-active");
+        || screens.select.classList.contains("is-active")
+        || screens.game.classList.contains("is-active");
       if (currentRoom && shouldPoll) {
         refreshRoom();
       }
-    }, 1500);
+    }, 350);
   }
 }
 
@@ -800,7 +809,7 @@ function ultimateCooldown(kind) {
   return {
     thrower: 1800,
     charger: 1380,
-    grabber: 2100,
+    grabber: 1680,
     poker: 2400,
     stealth: 2400
   }[kind] ?? Infinity;
@@ -840,6 +849,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     stealthTimer: character.canStealth ? 420 : Infinity,
     stealthTime: 0,
     stealthDamage: 15,
+    hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
     skillTimer: 480,
@@ -878,8 +888,7 @@ function resetGame() {
     contactLock: false,
     over: false,
     tick: 0,
-    lastTime: performance.now(),
-    accumulator: 0
+    startTimeMs: Number((currentRoom?.prepState || currentRoom?.prep_state || {}).matchStartAt || 0) * 1000 || Date.now()
   };
   appliedSkillEvents = new Set();
   pendingSkillUse = false;
@@ -902,7 +911,6 @@ function startGame() {
   gameSpeed = 1;
   showScreen("game");
   if (animationId) cancelAnimationFrame(animationId);
-  game.lastTime = performance.now();
   updateSkillHud();
   animationId = requestAnimationFrame(loop);
 }
@@ -1019,7 +1027,8 @@ function opponentOf(fighter) {
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
   fighter.stealthTime = hyper ? 240 : 180;
-  fighter.stealthDamage = hyper ? 20 : 15;
+  fighter.stealthDamage = 15;
+  fighter.hyperStealthActive = hyper;
   fighter.hyperStealthNext = false;
   addFloatingText(fighter.x, fighter.y - fighter.radius - 44, hyper ? "하이퍼 히든!" : "은신", fighter.accent);
 }
@@ -1085,8 +1094,8 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "charger") {
     const speed = Math.hypot(fighter.vx, fighter.vy) || 1;
-    fighter.vx = (fighter.vx / speed) * 18;
-    fighter.vy = (fighter.vy / speed) * 18;
+    fighter.vx = (fighter.vx / speed) * 34;
+    fighter.vy = (fighter.vy / speed) * 34;
     fighter.unstoppableTime = 55;
     fighter.unstoppableHit = false;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "불가항력!", fighter.accent);
@@ -1096,14 +1105,15 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "grabber") {
     createShockwave(fighter);
-    fighter.ultimateTimer = 2100;
+    fighter.ultimateTimer = 1680;
     return;
   }
 
   if (fighter.kind === "poker") {
     const roll = Math.floor(seededRandom() * 6) + 1;
     heal(fighter, roll * 5);
-    addFloatingText(fighter.x, fighter.y - fighter.radius - 54, `힐 다이스 ${roll}`, fighter.accent);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 62, `${roll}`, fighter.accent);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 42, "힐 다이스", "#7bd88f");
     fighter.ultimateTimer = 2400;
     return;
   }
@@ -1233,6 +1243,7 @@ function moveFighter(fighter, dt) {
     if (fighter.slowTime > 0) fighter.slowTime -= dt;
     if (fighter.hasteTime > 0) fighter.hasteTime -= dt;
     if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
+    if (fighter.stealthTime <= 0) fighter.hyperStealthActive = false;
     if (fighter.stealthDamageCooldown > 0) fighter.stealthDamageCooldown -= dt;
     fighter.vx *= 0.82;
     fighter.vy *= 0.82;
@@ -1243,17 +1254,17 @@ function moveFighter(fighter, dt) {
   fighter.y += fighter.vy * dt;
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = fighter.stealthTime > 0
-    ? fighter.stealthDamage >= 20 ? 20.4 : 12.5
+    ? fighter.hyperStealthActive ? 62.5 : 12.5
     : fighter.canThrow
       ? 5.9
       : fighter.canGrab
         ? 6.2
         : 6.8;
   const targetSpeed = baseSpeed
-    * (fighter.rageTime > 0 ? 1.95 : 1)
+    * (fighter.rageTime > 0 ? 1.55 : 1)
     * (fighter.hasteTime > 0 ? 1.35 : 1)
     * (fighter.slowTime > 0 ? 0.58 : 1)
-    * (fighter.unstoppableTime > 0 ? 1.35 : 1);
+    * (fighter.unstoppableTime > 0 ? 2.35 : 1);
   if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
@@ -1306,6 +1317,7 @@ function moveFighter(fighter, dt) {
       fighter.stealthTimer = 420;
     }
     if (fighter.stealthTime > 0) fighter.stealthTime -= dt;
+    if (fighter.stealthTime <= 0) fighter.hyperStealthActive = false;
     if (fighter.stealthDamageCooldown > 0) fighter.stealthDamageCooldown -= dt;
   }
   if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
@@ -1374,13 +1386,13 @@ function throwBall(owner) {
     owner,
     x: owner.x + Math.cos(angle) * (owner.radius + 18),
     y: owner.y + Math.sin(angle) * (owner.radius + 18),
-    vx: Math.cos(angle) * 10.2,
-    vy: Math.sin(angle) * 10.2,
+    vx: Math.cos(angle) * 12.4,
+    vy: Math.sin(angle) * 12.4,
     radius: 11,
     life: 420,
     hitCooldown: 0,
     damage: 5,
-    speed: 10.2,
+    speed: 12.4,
     color: owner.accent,
     homing: false,
     star: false
@@ -1581,7 +1593,10 @@ function updateBalls(dt) {
       const dx = target.x - ball.x;
       const dy = target.y - ball.y;
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
-        if (target !== ball.owner) damage(target, ball.damage);
+        if (target !== ball.owner) {
+          damage(target, ball.damage);
+          if (!ball.star) return false;
+        }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
         ball.vx = -Math.cos(angle) * speed;
@@ -1617,6 +1632,7 @@ function updateGrapples(dt) {
       target.vy = Math.sin(pullAngle) * 5.2;
       bounceOnWalls(target);
       damage(target, 20);
+      target.stunTime = Math.max(target.stunTime, 30);
       return false;
     }
     return grapple.length < grapple.maxLength && grapple.life > 0;
@@ -1936,19 +1952,11 @@ function stepGame(dt) {
 
 function loop(now) {
   if (!game) return;
-  const elapsed = clamp(now - game.lastTime, 0, 120);
-  game.lastTime = now;
-  game.accumulator += elapsed;
-
+  const targetTick = Math.max(0, Math.floor((Date.now() - game.startTimeMs) / FIXED_STEP_MS));
   let steps = 0;
-  while (game.accumulator >= FIXED_STEP_MS && steps < 8) {
+  while (game.tick < targetTick && steps < 12) {
     stepGame(gameSpeed);
-    game.accumulator -= FIXED_STEP_MS;
     steps += 1;
-  }
-
-  if (steps >= 8) {
-    game.accumulator = 0;
   }
 
   drawArena();
@@ -2004,6 +2012,11 @@ async function logout() {
 ui.loginButton.addEventListener("click", () => authenticate("login"));
 ui.logoutButton.addEventListener("click", logout);
 ui.coinBadge.addEventListener("click", claimFreeCoins);
+ui.patchNoteButton.addEventListener("click", () => setPatchNotesOpen(true));
+ui.patchNoteCloseButton.addEventListener("click", () => setPatchNotesOpen(false));
+ui.patchNoteModal.addEventListener("click", event => {
+  if (event.target === ui.patchNoteModal) setPatchNotesOpen(false);
+});
 ui.signupButton.addEventListener("click", () => authenticate("signup"));
 ui.openSignupButton.addEventListener("click", () => showScreen("signup"));
 ui.backToLoginButton.addEventListener("click", () => showScreen("auth"));

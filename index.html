@@ -8,7 +8,28 @@
 </head>
 <body>
   <main class="app">
+    <button id="patchNoteButton" class="patch-note-button" type="button">패치노트</button>
     <button id="coinBadge" class="coin-badge" type="button">COIN <strong><span id="globalCoinAmount">0</span>C</strong></button>
+    <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
+      <div class="patch-note-box">
+        <button id="patchNoteCloseButton" class="patch-note-close" type="button">닫기</button>
+        <h2>패치노트</h2>
+        <div class="patch-note-list">
+          <article>
+            <strong>전투 밸런스</strong>
+            <p>공던지는 색히 공속 증가, 일반 공은 적 피격 시 사라집니다.</p>
+          </article>
+          <article>
+            <strong>스킬 조정</strong>
+            <p>그랩 기절 추가, 불가항력 속도 대폭 증가, 하이퍼 히든 이속 5배 적용.</p>
+          </article>
+          <article>
+            <strong>편의성</strong>
+            <p>힐 다이스 주사위 눈이 캐릭터 위에 표시됩니다.</p>
+          </article>
+        </div>
+      </div>
+    </div>
     <div id="matchOverlay" class="match-overlay">
       <div id="matchOverlayText" class="match-overlay-text">게임이 시작됩니다</div>
     </div>
@@ -350,7 +371,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260605n"></script>
-  <script src="game.js?v=20260605n"></script>
+  <script src="supabase-config.js?v=20260606b"></script>
+  <script src="game.js?v=20260606b"></script>
 </body>
 </html>
