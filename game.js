@@ -2,6 +2,7 @@
 const DEFAULT_CHARACTER = "thrower";
 const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
+const FIXED_STEP_MS = 1000 / 60;
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -47,14 +48,6 @@ const ui = {
   globalCoinAmount: document.getElementById("globalCoinAmount"),
   matchOverlay: document.getElementById("matchOverlay"),
   matchOverlayText: document.getElementById("matchOverlayText"),
-  roomCodeInput: document.getElementById("roomCodeInput"),
-  createRoomButton: document.getElementById("createRoomButton"),
-  joinRoomButton: document.getElementById("joinRoomButton"),
-  leaveRoomButton: document.getElementById("leaveRoomButton"),
-  roomCodeText: document.getElementById("roomCodeText"),
-  roomCard: document.getElementById("roomCard"),
-  roomCardCode: document.getElementById("roomCardCode"),
-  roomPlayerList: document.getElementById("roomPlayerList"),
   playerList: document.getElementById("playerList"),
   lobbyPlayerOne: document.getElementById("lobbyPlayerOne"),
   lobbyPlayerTwo: document.getElementById("lobbyPlayerTwo"),
@@ -65,6 +58,7 @@ const ui = {
   lobbyMessage: document.getElementById("lobbyMessage"),
   lobbyStartButton: document.getElementById("lobbyStartButton"),
   pvpModeButton: document.getElementById("pvpModeButton"),
+  cancelMatchButton: document.getElementById("cancelMatchButton"),
   pveModeButton: document.getElementById("pveModeButton"),
   backFromPvpButton: document.getElementById("backFromPvpButton"),
   modeMessage: document.getElementById("modeMessage"),
@@ -171,6 +165,9 @@ let matchmakingPollId = null;
 let selectedCharacterReady = false;
 let selectCountdownId = null;
 let selectDeadline = 0;
+let matchmakingActive = false;
+let matchRandomSeed = 1;
+let matchStartTimeoutId = null;
 
 function normalizePlayer(user) {
   return {
@@ -264,6 +261,32 @@ function setMatchmakingPolling(enabled) {
   }
 }
 
+function resetMatchmakingUi(message = "") {
+  matchmakingActive = false;
+  setMatchmakingPolling(false);
+  ui.pvpModeButton.disabled = false;
+  ui.pvpModeButton.classList.remove("is-selected");
+  ui.cancelMatchButton.classList.add("is-hidden");
+  ui.modeMessage.textContent = message;
+}
+
+function resetLocalMatchState() {
+  if (matchStartTimeoutId) {
+    clearTimeout(matchStartTimeoutId);
+    matchStartTimeoutId = null;
+  }
+  currentRoom = null;
+  selectedCharacterReady = false;
+  stopSelectTimer();
+  setRoomRealtime(null);
+  setRoomPolling(false);
+  players = currentUser ? [currentUser] : [];
+  matchPlayers.p1 = currentUser?.id ?? "";
+  matchPlayers.p2 = "";
+  selections = { p1: DEFAULT_CHARACTER, p2: DEFAULT_CHARACTER };
+  document.querySelectorAll(".select-panel").forEach(panel => panel.classList.remove("is-hidden"));
+}
+
 function showMatchOverlay(text, active = true) {
   ui.matchOverlayText.textContent = text;
   ui.matchOverlay.classList.toggle("is-active", active);
@@ -316,23 +339,12 @@ function renderLobby() {
     ui.currentUserCoins.textContent = currentUser.lp;
     ui.globalCoinAmount.textContent = currentUser.coins;
   }
-  ui.roomCodeText.textContent = currentRoom?.code ?? "없음";
-  ui.roomCard.classList.toggle("is-hidden", !currentRoom);
-  ui.leaveRoomButton.classList.toggle("is-hidden", !currentRoom);
-  ui.roomCardCode.textContent = currentRoom?.code ?? "없음";
-  ui.roomPlayerList.innerHTML = "";
-  players.forEach(player => {
-    const chip = document.createElement("div");
-    chip.className = "room-player-chip";
-    chip.innerHTML = `<span>${escapeHtml(player.name)}</span><strong>${player.lp} LP</strong>`;
-    ui.roomPlayerList.appendChild(chip);
-  });
 
   ui.playerList.innerHTML = "";
   if (players.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-list";
-    empty.textContent = "방을 만들거나 방 코드로 참가하세요.";
+    empty.textContent = "로그인하면 매칭을 시작할 수 있습니다.";
     ui.playerList.appendChild(empty);
   }
 
@@ -420,37 +432,57 @@ function openPvpSetup() {
 
 async function startMatchmaking() {
   if (!currentUser) return;
+  if (matchmakingActive) return;
   selectedMode = "pvp";
+  resetLocalMatchState();
+  renderLobby();
+  matchmakingActive = true;
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
+  ui.cancelMatchButton.classList.remove("is-hidden");
   ui.modeMessage.textContent = `${tierForLp(currentUser.lp)} 매칭중...`;
   ui.pvpModeButton.disabled = true;
   await checkMatchmaking();
-  setMatchmakingPolling(true);
+  if (matchmakingActive) setMatchmakingPolling(true);
 }
 
 async function checkMatchmaking() {
+  if (!matchmakingActive) return;
   try {
     const data = await rpc("find_pvp_match", { session_token: appSessionToken });
+    if (!matchmakingActive) return;
     if (!data.matched) {
       ui.modeMessage.textContent = `${data.tier ?? tierForLp(currentUser.lp)} 매칭중... ${data.elapsed ?? 0}초`;
       return;
     }
-    setMatchmakingPolling(false);
-    ui.pvpModeButton.disabled = false;
+    resetMatchmakingUi("");
     applyRoom(data.room);
     showMatchOverlay("게임이 시작됩니다", true);
     await wait(2000);
+    if (!currentRoom || currentRoom.code !== data.room.code) return;
     showMatchOverlay("", false);
     prepareCharacterSelect();
   } catch (error) {
-    setMatchmakingPolling(false);
-    ui.pvpModeButton.disabled = false;
-    ui.modeMessage.textContent = error.message;
+    resetMatchmakingUi(error.message);
   }
 }
 
+async function cancelMatchmaking() {
+  try {
+    await rpc("cancel_pvp_match", { session_token: appSessionToken });
+  } catch (error) {
+    ui.modeMessage.textContent = error.message;
+  }
+  resetLocalMatchState();
+  resetMatchmakingUi("매칭이 취소되었습니다.");
+  renderLobby();
+  showScreen("lobby");
+}
+
 function selectPveMode() {
+  if (matchmakingActive) {
+    cancelMatchmaking();
+  }
   selectedMode = "pve";
   ui.pveModeButton.classList.add("is-selected");
   ui.pvpModeButton.classList.remove("is-selected");
@@ -523,45 +555,6 @@ function applyRoom(room) {
   maybeStartReadyMatch();
 }
 
-async function createRoom() {
-  try {
-    const room = await rpc("create_room", { session_token: appSessionToken });
-    applyRoom(room);
-  } catch (error) {
-    ui.lobbyMessage.textContent = error.message;
-  }
-}
-
-async function joinRoom() {
-  const code = ui.roomCodeInput.value.trim().toUpperCase();
-  if (!code) {
-    ui.lobbyMessage.textContent = "방 코드를 입력하세요.";
-    return;
-  }
-  try {
-    const room = await rpc("join_room", { session_token: appSessionToken, room_code: code });
-    applyRoom(room);
-  } catch (error) {
-    ui.lobbyMessage.textContent = error.message;
-  }
-}
-
-async function leaveRoom() {
-  if (!currentRoom) return;
-  try {
-    await rpc("leave_room", { session_token: appSessionToken, room_code: currentRoom.code });
-    currentRoom = null;
-    players = currentUser ? [currentUser] : [];
-    matchPlayers.p1 = currentUser?.id ?? "";
-    matchPlayers.p2 = "";
-    setRoomRealtime(null);
-    setRoomPolling(false);
-    renderLobby();
-  } catch (error) {
-    ui.lobbyMessage.textContent = error.message;
-  }
-}
-
 async function refreshRoom() {
   if (!currentRoom) {
     await loadCurrentUser();
@@ -572,13 +565,10 @@ async function refreshRoom() {
     applyRoom(room);
   } catch (error) {
     if (error.message.includes("room not found")) {
-      currentRoom = null;
-      players = currentUser ? [currentUser] : [];
-      matchPlayers.p1 = currentUser?.id ?? "";
-      matchPlayers.p2 = "";
-      setRoomRealtime(null);
-      setRoomPolling(false);
+      resetLocalMatchState();
+      resetMatchmakingUi("상대가 매치에서 나갔습니다.");
       renderLobby();
+      showScreen("lobby");
       return;
     }
     ui.lobbyMessage.textContent = error.message;
@@ -718,11 +708,36 @@ function maybeStartReadyMatch() {
   selections.p2 = charSelections[matchPlayers.p2] || selections.p2;
   ui.toBetButton.disabled = false;
   stopSelectTimer();
+  const startAt = Number(prep.matchStartAt || prep.match_start_at || 0);
+  const delay = startAt ? Math.max(0, (startAt * 1000) - Date.now()) : 0;
+  if (delay > 40) {
+    if (!matchStartTimeoutId) {
+      matchStartTimeoutId = setTimeout(() => {
+        matchStartTimeoutId = null;
+        maybeStartReadyMatch();
+      }, delay);
+    }
+    return;
+  }
   startGame();
 }
 
+function hashSeed(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0 || 1;
+}
+
+function seededRandom() {
+  matchRandomSeed = Math.imul(matchRandomSeed, 1664525) + 1013904223;
+  return (matchRandomSeed >>> 0) / 4294967296;
+}
+
 function randomVelocity(speed) {
-  const angle = Math.random() * Math.PI * 2;
+  const angle = seededRandom() * Math.PI * 2;
   return {
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed
@@ -769,6 +784,13 @@ function makeFighter(kind, label, ownerId, x, y) {
 function resetGame() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  matchRandomSeed = hashSeed([
+    currentRoom?.code ?? "local",
+    matchPlayers.p1,
+    matchPlayers.p2,
+    selections.p1,
+    selections.p2
+  ].join("|"));
 
   game = {
     fighters: [
@@ -781,7 +803,8 @@ function resetGame() {
     damageTexts: [],
     contactLock: false,
     over: false,
-    lastTime: performance.now()
+    lastTime: performance.now(),
+    accumulator: 0
   };
 
   ui.currentBet.textContent = "+14 LP";
@@ -794,6 +817,10 @@ function resetGame() {
 }
 
 function startGame() {
+  if (matchStartTimeoutId) {
+    clearTimeout(matchStartTimeoutId);
+    matchStartTimeoutId = null;
+  }
   resetGame();
   gameSpeed = 1;
   showScreen("game");
@@ -1044,7 +1071,7 @@ function throwGrapple(owner) {
 function dealPokerAttack(owner) {
   if (!owner.canPoker || game.over) return;
   const ranks = ["A", "K", "Q", "J", "10", "9"];
-  const hand = Array.from({ length: 5 }, () => ranks[Math.floor(Math.random() * ranks.length)]);
+  const hand = Array.from({ length: 5 }, () => ranks[Math.floor(seededRandom() * ranks.length)]);
   const counts = Object.values(hand.reduce((acc, rank) => {
     acc[rank] = (acc[rank] || 0) + 1;
     return acc;
@@ -1355,10 +1382,7 @@ function drawDamageText(text) {
   ctx.restore();
 }
 
-function loop(now) {
-  if (!game) return;
-  const dt = clamp((now - game.lastTime) / 16.67, 0.4, 2) * gameSpeed;
-  game.lastTime = now;
+function stepGame(dt) {
   if (!game.over) {
     game.fighters.forEach(fighter => moveFighter(fighter, dt));
     handleFighterCollision();
@@ -1367,6 +1391,25 @@ function loop(now) {
     updatePokerShots(dt);
     updateDamageTexts(dt);
   }
+}
+
+function loop(now) {
+  if (!game) return;
+  const elapsed = clamp(now - game.lastTime, 0, 120);
+  game.lastTime = now;
+  game.accumulator += elapsed;
+
+  let steps = 0;
+  while (game.accumulator >= FIXED_STEP_MS && steps < 8) {
+    stepGame(gameSpeed);
+    game.accumulator -= FIXED_STEP_MS;
+    steps += 1;
+  }
+
+  if (steps >= 8) {
+    game.accumulator = 0;
+  }
+
   drawArena();
   animationId = requestAnimationFrame(loop);
 }
@@ -1387,17 +1430,16 @@ function stopGame() {
 function returnToLobby() {
   stopGame();
   stopSelectTimer();
-  renderLobby();
   ui.resultOverlay.classList.remove("is-active");
-  currentRoom = null;
-  players = currentUser ? [currentUser] : [];
-  matchPlayers.p1 = currentUser?.id ?? "";
-  matchPlayers.p2 = "";
-  document.querySelectorAll(".select-panel").forEach(panel => panel.classList.remove("is-hidden"));
+  resetLocalMatchState();
+  renderLobby();
   showScreen("lobby");
 }
 
 async function logout() {
+  if (appSessionToken) {
+    await rpc("cancel_pvp_match", { session_token: appSessionToken }).catch(() => {});
+  }
   if (supabaseClient && appSessionToken) {
     await rpc("logout_user", { session_token: appSessionToken }).catch(() => {});
   }
@@ -1408,7 +1450,9 @@ async function logout() {
   matchPlayers = { p1: "", p2: "" };
   localStorage.removeItem(APP_SESSION_KEY);
   stopSelectTimer();
+  resetLocalMatchState();
   setMatchmakingPolling(false);
+  resetMatchmakingUi("");
   setRoomRealtime(null);
   setRoomPolling(false);
   ui.authPassword.value = "";
@@ -1429,12 +1473,6 @@ ui.authPassword.addEventListener("keydown", event => {
 ui.signupPassword.addEventListener("keydown", event => {
   if (event.key === "Enter") authenticate("signup");
 });
-ui.createRoomButton.addEventListener("click", createRoom);
-ui.joinRoomButton.addEventListener("click", joinRoom);
-ui.leaveRoomButton.addEventListener("click", leaveRoom);
-ui.roomCodeInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") joinRoom();
-});
 ui.lobbyPlayerOne.addEventListener("change", () => {
   setMatchPlayer("p1", ui.lobbyPlayerOne.value);
 });
@@ -1448,6 +1486,7 @@ ui.backFromGachaButton.addEventListener("click", () => {
   showScreen("lobby");
 });
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
+ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
 
 ui.cards.forEach(card => {

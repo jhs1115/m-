@@ -374,7 +374,12 @@ begin
   where user_id = active_user.id;
 
   if existing_room_code is not null then
-    return jsonb_build_object('matched', true, 'room', public.app_room_json(existing_room_code));
+    if exists (select 1 from public.app_rooms where code = existing_room_code) then
+      return jsonb_build_object('matched', true, 'room', public.app_room_json(existing_room_code));
+    end if;
+
+    delete from public.match_queue
+    where user_id = active_user.id;
   end if;
 
   active_tier := public.lp_tier(active_user.lp);
@@ -464,7 +469,9 @@ begin
   where user_id = active_user.id;
 
   if room_code is not null then
-    return jsonb_build_object('matched', true, 'room', public.app_room_json(room_code));
+    if exists (select 1 from public.app_rooms where code = room_code) then
+      return jsonb_build_object('matched', true, 'room', public.app_room_json(room_code));
+    end if;
   end if;
 
   active_tier := public.lp_tier(active_user.lp);
@@ -481,12 +488,24 @@ set search_path = public
 as $$
 declare
   active_user public.app_users;
+  room_code text;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
     raise exception 'login required';
   end if;
-  delete from public.match_queue where user_id = active_user.id and matched_room_code is null;
+
+  select matched_room_code into room_code
+  from public.match_queue
+  where user_id = active_user.id;
+
+  if room_code is not null then
+    delete from public.match_queue where matched_room_code = room_code or user_id = active_user.id;
+    delete from public.app_rooms where code = room_code;
+  else
+    delete from public.match_queue where user_id = active_user.id;
+  end if;
+
   return jsonb_build_object('ok', true);
 end;
 $$;
@@ -556,6 +575,16 @@ begin
   ) into next_state
   ;
 
+  if (next_state->>'started')::boolean
+    and not (next_state ? 'matchStartAt') then
+    next_state := jsonb_set(
+      next_state,
+      array['matchStartAt'],
+      to_jsonb(extract(epoch from now()) + 2),
+      true
+    );
+  end if;
+
   update public.app_rooms
   set prep_state = next_state
   where code = normalized_code;
@@ -575,6 +604,7 @@ declare
   active_user public.app_users;
   normalized_code text := upper(trim(room_code));
   remaining_players uuid[];
+  is_matchmaking boolean;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -583,6 +613,17 @@ begin
 
   if not exists (select 1 from public.app_rooms where code = normalized_code) then
     raise exception 'room not found';
+  end if;
+
+  select coalesce((prep_state->>'matchmaking')::boolean, false)
+  into is_matchmaking
+  from public.app_rooms
+  where code = normalized_code;
+
+  if is_matchmaking then
+    delete from public.match_queue where matched_room_code = normalized_code or user_id = active_user.id;
+    delete from public.app_rooms where code = normalized_code;
+    return jsonb_build_object('left', true, 'room', null);
   end if;
 
   update public.app_rooms
@@ -769,6 +810,7 @@ declare
   loser_user public.app_users;
   normalized_code text := upper(trim(room_code));
   room_players uuid[];
+  room_state jsonb;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -779,7 +821,8 @@ begin
     raise exception 'winner and loser must be different';
   end if;
 
-  select player_ids into room_players
+  select player_ids, coalesce(prep_state, '{}'::jsonb)
+  into room_players, room_state
   from public.app_rooms
   where code = normalized_code
   for update;
@@ -797,12 +840,32 @@ begin
   select * into loser_user from public.app_users where id = loser_id for update;
   select * into winner_user from public.app_users where id = winner_id for update;
 
+  if coalesce((room_state->>'settled')::boolean, false) then
+    return jsonb_build_object(
+      'winner', public.app_user_json(winner_user),
+      'loser', public.app_user_json(loser_user),
+      'lpGain', 0
+    );
+  end if;
+
   update public.app_users
   set lp = lp + 14
   where id = winner_id
   returning * into winner_user;
 
   select * into loser_user from public.app_users where id = loser_id;
+
+  update public.app_rooms
+  set prep_state = jsonb_set(
+    jsonb_set(room_state, array['settled'], 'true'::jsonb, true),
+    array['winnerId'],
+    to_jsonb(winner_id),
+    true
+  )
+  where code = normalized_code;
+
+  delete from public.match_queue
+  where matched_room_code = normalized_code;
 
   return jsonb_build_object(
     'winner', public.app_user_json(winner_user),
@@ -816,12 +879,12 @@ grant execute on function public.signup_user(text, text) to anon, authenticated;
 grant execute on function public.login_user(text, text) to anon, authenticated;
 grant execute on function public.logout_user(text) to anon, authenticated;
 grant execute on function public.get_me(text) to anon, authenticated;
-grant execute on function public.create_room(text) to anon, authenticated;
-grant execute on function public.join_room(text, text) to anon, authenticated;
+revoke execute on function public.create_room(text) from anon, authenticated;
+revoke execute on function public.join_room(text, text) from anon, authenticated;
 grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
-grant execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) to anon, authenticated;
+revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
 grant execute on function public.find_pvp_match(text) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;

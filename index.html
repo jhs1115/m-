@@ -62,25 +62,6 @@
               <span id="currentUserName">로그인이 필요합니다</span>
               <strong><span id="currentUserCoins">1000</span> LP</strong>
             </div>
-            <div class="room-code-box">
-              <span>현재 방 코드</span>
-              <strong id="roomCodeText">없음</strong>
-            </div>
-            <div class="add-player">
-              <input id="roomCodeInput" type="text" maxlength="8" placeholder="방 코드 입력">
-              <button id="joinRoomButton" class="primary-button">참가</button>
-            </div>
-            <div class="room-actions">
-              <button id="createRoomButton" class="ghost-button">방 만들기</button>
-              <button id="leaveRoomButton" class="ghost-button is-hidden">방 나가기</button>
-            </div>
-            <div id="roomCard" class="room-card is-hidden">
-              <div class="room-card-head">
-                <span>생성된 방</span>
-                <strong id="roomCardCode">없음</strong>
-              </div>
-              <div id="roomPlayerList" class="room-player-list"></div>
-            </div>
             <div id="playerList" class="player-list"></div>
           </div>
 
@@ -91,6 +72,10 @@
                 <button id="pvpModeButton" class="mode-button" type="button">
                   <strong>PVP</strong>
                   <span>플레이어끼리 대전</span>
+                </button>
+                <button id="cancelMatchButton" class="mode-button cancel-mode-button is-hidden" type="button">
+                  <strong>취소</strong>
+                  <span>매칭 중단</span>
                 </button>
                 <button id="pveModeButton" class="mode-button" type="button">
                   <strong>PVE</strong>
@@ -292,7 +277,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260605c"></script>
-  <script src="game.js?v=20260605c"></script>
+  <script src="supabase-config.js?v=20260605d"></script>
+  <script src="game.js?v=20260605d"></script>
 </body>
 </html>

@@ -227,8 +227,7 @@ h2 {
   min-width: 74px;
 }
 
-.account-box,
-.room-code-box {
+.account-box {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -240,77 +239,7 @@ h2 {
   border-radius: 8px;
 }
 
-.account-box strong,
-.room-code-box strong {
-  color: var(--gold);
-}
-
-.room-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.room-card {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 18px;
-  padding: 14px;
-  background: #10131a;
-  border: 1px solid var(--gold);
-  border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(242, 193, 78, 0.12);
-}
-
-.room-card.is-hidden {
-  display: none;
-}
-
-#leaveRoomButton {
-  width: 100%;
-  margin: 0 0 18px;
-}
-
-#leaveRoomButton.is-hidden {
-  display: none;
-}
-
-.room-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.room-card-head span {
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.room-card-head strong {
-  color: var(--gold);
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
-}
-
-.room-player-list {
-  display: grid;
-  gap: 8px;
-}
-
-.room-player-chip {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 42px;
-  padding: 0 12px;
-  background: #151922;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.room-player-chip strong {
+.account-box strong {
   color: var(--gold);
 }
 
@@ -499,6 +428,14 @@ h2 {
 .mode-button.is-selected {
   border-color: var(--gold);
   box-shadow: 0 0 0 1px rgba(242, 193, 78, 0.45) inset;
+}
+
+.cancel-mode-button {
+  border-color: rgba(239, 71, 111, 0.5);
+}
+
+.cancel-mode-button strong {
+  color: var(--red);
 }
 
 .pvp-setup {
