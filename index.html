@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260606e">
 </head>
 <body>
   <main class="app">
@@ -134,16 +134,18 @@
         </div>
 
         <div class="lobby-tab-panel" data-lobby-panel="inventory">
-          <div class="panel placeholder-panel">
+          <div class="panel inventory-panel">
             <h2>인벤토리</h2>
-            <p>보유 캐릭터와 장식 아이템을 정리할 공간입니다.</p>
+            <div id="inventoryGrid" class="inventory-grid"></div>
           </div>
         </div>
 
         <div class="lobby-tab-panel" data-lobby-panel="ranking">
-          <div class="panel placeholder-panel">
+          <div class="panel ranking-panel">
             <h2>랭킹</h2>
-            <p>LP 랭킹과 티어 정보를 보여줄 공간입니다.</p>
+            <div id="rankingList" class="ranking-list">
+              <div class="ranking-empty">랭킹을 불러오는 중...</div>
+            </div>
           </div>
         </div>
 
@@ -181,9 +183,13 @@
 
     <section id="gachaScreen" class="screen">
       <div class="panel gacha-stage">
-        <h1 class="screen-title">캐릭터 뽑기</h1>
+        <div class="gacha-header">
+          <span>CHARACTER SUMMON</span>
+          <h1 class="screen-title">캐릭터 뽑기</h1>
+        </div>
         <div class="gacha-stage-grid">
           <div class="gacha-machine">
+            <div class="summon-ring"></div>
             <div id="gachaReveal" class="gacha-reveal">
               <span>?</span>
               <strong id="gachaResultName">READY</strong>
@@ -191,8 +197,12 @@
           </div>
 
           <div class="gacha-controls">
-            <label class="bet-label" for="gachaPlayer">뽑을 플레이어</label>
-            <select id="gachaPlayer" class="player-select"></select>
+            <div class="gacha-control-title">
+              <strong>소환권</strong>
+              <span>미보유 캐릭터 중 하나를 획득합니다.</span>
+            </div>
+            <label class="bet-label is-hidden" for="gachaPlayer">뽑을 플레이어</label>
+            <select id="gachaPlayer" class="player-select is-hidden"></select>
             <div class="gacha-price">
               <span>가격</span>
               <strong>50C</strong>
@@ -371,7 +381,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260606c"></script>
-  <script src="game.js?v=20260606c"></script>
+  <script src="supabase-config.js?v=20260606e"></script>
+  <script src="game.js?v=20260606e"></script>
 </body>
 </html>
