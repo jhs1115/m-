@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607h";
+const SIMULATION_VERSION = "20260607i";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -523,6 +523,9 @@ function resetLocalMatchState() {
   matchPlayers.p1 = currentUser?.id ?? "";
   matchPlayers.p2 = "";
   selections = { p1: DEFAULT_CHARACTER, p2: DEFAULT_CHARACTER };
+  ui.pvpModeButton.disabled = false;
+  ui.pvpModeButton.classList.remove("is-selected");
+  ui.cancelMatchButton.classList.add("is-hidden");
   document.querySelectorAll(".select-panel").forEach(panel => panel.classList.remove("is-hidden"));
   showMatchOverlay("", false);
 }
