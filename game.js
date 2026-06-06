@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607d";
+const SIMULATION_VERSION = "20260607h";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -275,7 +275,7 @@ const characterGuide = {
     ultimate: ["절멸자", "60초", "2.5초 동안 천공 레이저의 공격 주기가 0.2초로 변경됩니다."]
   },
   wild: {
-    attack: ["할퀴기", "3초", "맵의 무작위 위치 3곳을 할퀴어 범위 안의 적에게 25의 피해를 줍니다. 적과 충돌해도 발동합니다."],
+    attack: ["할퀴기", "3초", "맵의 무작위 위치 3곳을 할퀴어 범위 안의 적에게 20의 피해를 줍니다. 적과 충돌해도 발동합니다."],
     normal: ["추격", "18초", "5초 동안 속도가 3배가 되고 이동 방향이 계속 적을 향합니다."],
     ultimate: ["야생의 본능", "패시브", "상대 체력이 50% 이하가 되면 이동속도가 3.5배 증가합니다."]
   },
@@ -308,6 +308,7 @@ let animationId = null;
 let gameSpeed = 1;
 let selectedMode = "";
 let roomPollId = null;
+let roomRefreshPending = false;
 let roomRealtimeChannel = null;
 let roomRealtimeCode = "";
 let matchSelectionTouched = false;
@@ -320,6 +321,7 @@ let matchmakingGeneration = 0;
 let matchmakingRequestPending = false;
 let matchTransitionRoomCode = "";
 let matchTransitionTimeoutId = null;
+let completedMatchTransitionRoomCode = "";
 let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
@@ -438,7 +440,7 @@ function setRoomPolling(enabled) {
       if (currentRoom && shouldPoll) {
         refreshRoom();
       }
-    }, 100);
+    }, 250);
   }
 }
 
@@ -471,6 +473,9 @@ function setRoomRealtime(roomCode) {
         prepState: row.prep_state
       };
       processSkillEvents(row.prep_state);
+      if (row.prep_state.matchmaking && !row.prep_state.started && !game) {
+        beginMatchedRoomTransition(roomCode, matchmakingGeneration);
+      }
       maybeStartReadyMatch();
     })
     .subscribe();
@@ -489,7 +494,7 @@ function setMatchmakingPolling(enabled) {
 function resetMatchmakingUi(message = "") {
   matchmakingActive = false;
   setMatchmakingPolling(false);
-  ui.pvpModeButton.disabled = false;
+  ui.pvpModeButton.disabled = Boolean(matchTransitionRoomCode);
   ui.pvpModeButton.classList.remove("is-selected");
   ui.cancelMatchButton.classList.add("is-hidden");
   ui.modeMessage.textContent = message;
@@ -498,7 +503,9 @@ function resetMatchmakingUi(message = "") {
 function resetLocalMatchState() {
   matchmakingGeneration += 1;
   matchmakingRequestPending = false;
+  roomRefreshPending = false;
   matchTransitionRoomCode = "";
+  completedMatchTransitionRoomCode = "";
   if (matchTransitionTimeoutId) {
     clearTimeout(matchTransitionTimeoutId);
     matchTransitionTimeoutId = null;
@@ -694,9 +701,11 @@ function renderRankings(rankings) {
     const tier = player.tier || tierForLp(lp);
     const tierClass = tierClassForLp(lp);
     const isMe = currentUser && player.id === currentUser.id;
+    const podiumClass = index === 0 ? "is-first" : index === 1 ? "is-second" : index === 2 ? "is-third" : "";
+    const rankMark = index === 0 ? "♛ 1" : index === 1 ? "◆ 2" : index === 2 ? "◆ 3" : index + 1;
     return `
-      <article class="ranking-row ${isMe ? "is-me" : ""}">
-        <b>${index + 1}</b>
+      <article class="ranking-row ${podiumClass} ${isMe ? "is-me" : ""}">
+        <b>${rankMark}</b>
         <div>
           <strong class="${tierClass}">${escapeHtml(player.name || player.username || "unknown")}</strong>
           <span class="${tierClass}">${tier}</span>
@@ -893,6 +902,7 @@ async function loadCurrentUser() {
 }
 
 function applyRoom(room) {
+  const previousRoomCode = currentRoom?.code || "";
   const previousP1 = matchPlayers.p1;
   const previousP2 = matchPlayers.p2;
   const roomPlayers = Array.isArray(room.players)
@@ -909,7 +919,7 @@ function applyRoom(room) {
   } else {
     reconcileMatchPlayers(previousP1, previousP2);
   }
-  renderLobby();
+  if (previousRoomCode !== currentRoom.code) renderLobby();
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
   processSkillEvents(prep);
@@ -922,14 +932,16 @@ function applyRoom(room) {
 function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGeneration) {
   if (!roomCode || expectedGeneration !== matchmakingGeneration) return;
   if (screens.select.classList.contains("is-active") || screens.game.classList.contains("is-active")) return;
-  if (matchTransitionRoomCode === roomCode && matchTransitionTimeoutId) return;
+  if (completedMatchTransitionRoomCode === roomCode) return;
+  if (matchTransitionRoomCode === roomCode) return;
 
   matchTransitionRoomCode = roomCode;
   if (matchTransitionTimeoutId) clearTimeout(matchTransitionTimeoutId);
   resetMatchmakingUi("");
+  ui.pvpModeButton.disabled = true;
   showMatchOverlay("게임이 시작됩니다", true);
 
-  matchTransitionTimeoutId = setTimeout(() => {
+  matchTransitionTimeoutId = setTimeout(async () => {
     matchTransitionTimeoutId = null;
     if (expectedGeneration !== matchmakingGeneration
       || !currentRoom
@@ -941,18 +953,55 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
       return;
     }
 
-    showMatchOverlay("", false);
-    prepareCharacterSelect();
+    const entered = await enterCharacterSelectWhenReady(roomCode, expectedGeneration);
+    if (!entered && expectedGeneration === matchmakingGeneration) {
+      matchTransitionRoomCode = "";
+      showMatchOverlay("", false);
+      ui.pvpModeButton.disabled = false;
+      ui.modeMessage.textContent = "매칭 정보를 불러오지 못했습니다. 다시 시도해주세요.";
+    }
   }, 2000);
 }
 
+async function enterCharacterSelectWhenReady(roomCode, expectedGeneration) {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    if (expectedGeneration !== matchmakingGeneration
+      || !currentRoom
+      || currentRoom.code !== roomCode) return false;
+
+    if (prepareCharacterSelect()) {
+      completedMatchTransitionRoomCode = roomCode;
+      matchTransitionRoomCode = roomCode;
+      showMatchOverlay("", false);
+      return true;
+    }
+
+    try {
+      const room = await rpc("get_room", {
+        session_token: appSessionToken,
+        room_code: roomCode
+      });
+      if (expectedGeneration !== matchmakingGeneration) return false;
+      applyRoom(room);
+    } catch {
+      // The room may still be finishing its initial transaction. Retry briefly.
+    }
+    await wait(250);
+  }
+  return false;
+}
+
 async function refreshRoom() {
+  if (roomRefreshPending) return;
   if (!currentRoom) {
     await loadCurrentUser();
     return;
   }
+  const requestedRoomCode = currentRoom.code;
+  roomRefreshPending = true;
   try {
-    const room = await rpc("get_room", { session_token: appSessionToken, room_code: currentRoom.code });
+    const room = await rpc("get_room", { session_token: appSessionToken, room_code: requestedRoomCode });
+    if (!currentRoom || currentRoom.code !== requestedRoomCode) return;
     applyRoom(room);
   } catch (error) {
     if (error.message.includes("room not found")) {
@@ -963,6 +1012,8 @@ async function refreshRoom() {
       return;
     }
     ui.lobbyMessage.textContent = error.message;
+  } finally {
+    roomRefreshPending = false;
   }
 }
 
@@ -1073,7 +1124,8 @@ function resolveRandomCharacter(player) {
 function prepareCharacterSelect() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
-  const mySlot = currentUser?.id === matchPlayers.p1 ? "p1" : currentUser?.id === matchPlayers.p2 ? "p2" : "p1";
+  const mySlot = currentUser?.id === matchPlayers.p1 ? "p1" : currentUser?.id === matchPlayers.p2 ? "p2" : "";
+  if (!currentRoom || !p1 || !p2 || !mySlot) return false;
   ui.selectP1Label.textContent = `PLAYER 1 - ${p1.name}`;
   ui.selectP2Label.textContent = `PLAYER 2 - ${p2.name}`;
   updateCharacterCards("p1", p1);
@@ -1088,6 +1140,7 @@ function prepareCharacterSelect() {
   selectedCharacterReady = false;
   showScreen("select");
   startSelectTimer();
+  return true;
 }
 
 async function submitCharacterReady() {
@@ -2137,7 +2190,7 @@ function createWildSlashes(owner, x = null, y = null) {
       delay: 28 + index * 8,
       life: 55 + index * 8,
       hit: false,
-      damage: 25,
+      damage: 20,
       color: owner.accent,
       angle: seededRandom() * Math.PI
     });
