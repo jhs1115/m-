@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607l";
+const SIMULATION_VERSION = "20260607m";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -2550,7 +2550,7 @@ function updateBalls(dt) {
         if (target !== ball.owner) {
           damage(target, ball.damage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood) return false;
+          if (ball.blood || ball.owner.canThrow) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -3267,13 +3267,12 @@ function drawPokerHand(fighter) {
 }
 
 function drawGrapple(grapple) {
+  ctx.save();
   const startX = grapple.owner.x;
   const startY = grapple.owner.y;
   const endX = startX + Math.cos(grapple.angle) * grapple.length;
   const endY = startY + Math.sin(grapple.angle) * grapple.length;
   ctx.strokeStyle = grapple.owner.accent;
-  ctx.shadowColor = grapple.enhanced ? "#ffffff" : "transparent";
-  ctx.shadowBlur = grapple.enhanced ? 18 : 0;
   ctx.lineWidth = grapple.enhanced ? 9 : 5;
   ctx.beginPath();
   ctx.moveTo(startX, startY);
@@ -3283,6 +3282,7 @@ function drawGrapple(grapple) {
   ctx.arc(endX, endY, grapple.enhanced ? 16 : 10, 0, Math.PI * 2);
   ctx.fillStyle = grapple.owner.accent;
   ctx.fill();
+  ctx.restore();
 }
 
 function drawDamageText(text) {
@@ -3943,7 +3943,7 @@ function stepPve() {
       if (enemy) {
         damagePveEnemy(enemy, projectile.damage);
         if (projectile.slow) enemy.slowTime = 180;
-        if (projectile.blood) return false;
+        if (projectile.blood || pveGame.player.kind === "thrower") return false;
         const angle = Math.atan2(enemy.y - projectile.y, enemy.x - projectile.x);
         const speed = Math.hypot(projectile.vx, projectile.vy);
         projectile.vx = -Math.cos(angle) * speed;
@@ -4065,8 +4065,6 @@ function drawPve() {
     const endY = player.y + Math.sin(grapple.angle) * grapple.length;
     pveCtx.save();
     pveCtx.strokeStyle = player.accent;
-    pveCtx.shadowColor = grapple.enhanced ? "#ffffff" : "transparent";
-    pveCtx.shadowBlur = grapple.enhanced ? 18 : 0;
     pveCtx.lineWidth = grapple.enhanced ? 9 : 5;
     pveCtx.beginPath();
     pveCtx.moveTo(player.x, player.y);
