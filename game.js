@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607m";
+const SIMULATION_VERSION = "20260607n";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -2550,7 +2550,7 @@ function updateBalls(dt) {
         if (target !== ball.owner) {
           damage(target, ball.damage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || ball.owner.canThrow) return false;
+          if (ball.blood || (ball.owner.canThrow && !ball.star)) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -3943,7 +3943,7 @@ function stepPve() {
       if (enemy) {
         damagePveEnemy(enemy, projectile.damage);
         if (projectile.slow) enemy.slowTime = 180;
-        if (projectile.blood || pveGame.player.kind === "thrower") return false;
+        if (projectile.blood || (pveGame.player.kind === "thrower" && !projectile.star)) return false;
         const angle = Math.atan2(enemy.y - projectile.y, enemy.x - projectile.x);
         const speed = Math.hypot(projectile.vx, projectile.vy);
         projectile.vx = -Math.cos(angle) * speed;
