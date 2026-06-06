@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260606z1";
+const SIMULATION_VERSION = "20260607d";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -257,30 +257,30 @@ const characterGuide = {
   stealth: {
     attack: ["은신 돌파", "7초", "3초 동안 은신해 피해와 충돌을 무시하고 적을 관통할 때 15의 피해를 줍니다."],
     normal: ["암살", "15초", "은신 상태에서만 사용할 수 있으며 즉시 적의 뒤로 이동합니다."],
-    ultimate: ["하이퍼 히든", "40초", "다음 은신이 1초 길어지고 이동속도가 크게 증가하며 관통 피해가 10으로 변경됩니다."]
+    ultimate: ["하이퍼 히든", "45초", "다음 은신이 1초 길어지고 이동속도가 크게 증가하며 관통 피해가 10으로 변경됩니다."]
   },
   enhancer: {
     attack: ["강화 타격", "2초당 강화", "적과 닿지 않은 동안 2초마다 공격력이 1 증가합니다. 충돌 시 현재 공격력만큼 피해를 줍니다. 최대 40."],
-    normal: ["용광로", "10초", "다음 2번의 자연 강화에서 공격력을 추가로 2 얻습니다."],
+    normal: ["용광로", "10초", "다음 2번의 자연 강화에서 공격력이 총 2씩 증가합니다."],
     ultimate: ["갓 웨폰", "5초", "현재 공격력을 가진 무기를 추가 소환하고 공격력을 0으로 초기화합니다. 각 무기는 5초마다 공격합니다."]
   },
   tank: {
     attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 주며 받는 모든 피해가 20% 감소합니다."],
     normal: ["도발", "12초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
-    ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 50의 피해와 3초 기절을 줍니다."]
+    ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 50의 피해와 3초 기절을 줍니다."]
   },
   beamer: {
-    attack: ["천공 레이저", "3초", "적의 위치에 예고 후 세로 레이저를 포격해 30의 피해를 줍니다."],
+    attack: ["천공 레이저", "3초", "적의 위치에 예고 후 세로 레이저를 포격해 45의 피해를 줍니다."],
     normal: ["슬로우 빔", "12초", "넓은 직선 빔으로 5의 피해를 주고 적을 3초 동안 느리게 만듭니다."],
     ultimate: ["절멸자", "60초", "2.5초 동안 천공 레이저의 공격 주기가 0.2초로 변경됩니다."]
   },
   wild: {
     attack: ["할퀴기", "3초", "맵의 무작위 위치 3곳을 할퀴어 범위 안의 적에게 25의 피해를 줍니다. 적과 충돌해도 발동합니다."],
     normal: ["추격", "18초", "5초 동안 속도가 3배가 되고 이동 방향이 계속 적을 향합니다."],
-    ultimate: ["야생의 본능", "패시브", "상대 체력이 50% 이하가 되면 이동속도가 2배 증가합니다."]
+    ultimate: ["야생의 본능", "패시브", "상대 체력이 50% 이하가 되면 이동속도가 3.5배 증가합니다."]
   },
   vampire: {
-    attack: ["피의 탄환", "3초", "벽에 튕기지 않는 빠른 피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 40."],
+    attack: ["피의 탄환", "3초", "벽에 튕기지 않는 빠른 피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 35."],
     normal: ["흡혈", "패시브", "자신이 입힌 피해의 30%만큼 체력을 회복합니다."],
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
@@ -318,6 +318,8 @@ let selectDeadline = 0;
 let matchmakingActive = false;
 let matchmakingGeneration = 0;
 let matchmakingRequestPending = false;
+let matchTransitionRoomCode = "";
+let matchTransitionTimeoutId = null;
 let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
@@ -496,6 +498,11 @@ function resetMatchmakingUi(message = "") {
 function resetLocalMatchState() {
   matchmakingGeneration += 1;
   matchmakingRequestPending = false;
+  matchTransitionRoomCode = "";
+  if (matchTransitionTimeoutId) {
+    clearTimeout(matchTransitionTimeoutId);
+    matchTransitionTimeoutId = null;
+  }
   if (matchStartTimeoutId) {
     clearTimeout(matchStartTimeoutId);
     matchStartTimeoutId = null;
@@ -793,14 +800,9 @@ async function checkMatchmaking(expectedGeneration = matchmakingGeneration) {
       return;
     }
     resetMatchmakingUi("");
-    await syncServerClock(3).catch(() => {});
     applyRoom(data.room);
-    showMatchOverlay("게임이 시작됩니다", true);
-    await wait(2000);
-    if (expectedGeneration !== matchmakingGeneration) return;
-    showMatchOverlay("", false);
-    if (!currentRoom || currentRoom.code !== data.room.code) return;
-    prepareCharacterSelect();
+    syncServerClock(3).catch(() => {});
+    beginMatchedRoomTransition(data.room.code, expectedGeneration);
   } catch (error) {
     if (expectedGeneration === matchmakingGeneration) {
       showMatchOverlay("", false);
@@ -911,7 +913,37 @@ function applyRoom(room) {
   setRoomPolling(true);
   setRoomRealtime(currentRoom.code);
   processSkillEvents(prep);
+  if (prep.matchmaking && !prep.started && !game) {
+    beginMatchedRoomTransition(currentRoom.code, matchmakingGeneration);
+  }
   maybeStartReadyMatch();
+}
+
+function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGeneration) {
+  if (!roomCode || expectedGeneration !== matchmakingGeneration) return;
+  if (screens.select.classList.contains("is-active") || screens.game.classList.contains("is-active")) return;
+  if (matchTransitionRoomCode === roomCode && matchTransitionTimeoutId) return;
+
+  matchTransitionRoomCode = roomCode;
+  if (matchTransitionTimeoutId) clearTimeout(matchTransitionTimeoutId);
+  resetMatchmakingUi("");
+  showMatchOverlay("게임이 시작됩니다", true);
+
+  matchTransitionTimeoutId = setTimeout(() => {
+    matchTransitionTimeoutId = null;
+    if (expectedGeneration !== matchmakingGeneration
+      || !currentRoom
+      || currentRoom.code !== roomCode) {
+      if (matchTransitionRoomCode === roomCode) {
+        matchTransitionRoomCode = "";
+        showMatchOverlay("", false);
+      }
+      return;
+    }
+
+    showMatchOverlay("", false);
+    prepareCharacterSelect();
+  }, 2000);
 }
 
 async function refreshRoom() {
@@ -1156,7 +1188,7 @@ function ultimateCooldown(kind) {
     charger: 1380,
     grabber: 1680,
     poker: 2400,
-    stealth: 2400,
+    stealth: 2700,
     enhancer: 300,
     tank: 2400,
     beamer: 3600,
@@ -1592,7 +1624,7 @@ function triggerUltimate(fighter) {
   if (fighter.kind === "stealth") {
     fighter.hyperStealthNext = true;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "하이퍼 히든!", fighter.accent);
-    fighter.ultimateTimer = 2400;
+    fighter.ultimateTimer = 2700;
     return;
   }
 
@@ -1791,7 +1823,7 @@ function moveFighter(fighter, dt) {
     fighter.vx = Math.cos(angle) * Math.max(baseSpeed * 3, speed);
     fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 3, speed);
   }
-  const wildInstinct = fighter.kind === "wild" && target.hp <= target.maxHp * 0.5 ? 2 : 1;
+  const wildInstinct = fighter.kind === "wild" && target.hp <= target.maxHp * 0.5 ? 3.5 : 1;
   const brawlerRamp = fighter.kind === "brawler" ? 1 + fighter.idleAttackTime / 60 * 0.06 : 1;
   const targetSpeed = baseSpeed
     * (fighter.rageTime > 0 ? 1.55 : 1)
@@ -1831,7 +1863,7 @@ function moveFighter(fighter, dt) {
   if (fighter.kind === "enhancer") {
     fighter.enhanceTimer -= dt;
     if (fighter.enhanceTimer <= 0) {
-      fighter.attackPower = Math.min(40, fighter.attackPower + (fighter.furnaceCharges > 0 ? 3 : 1));
+      fighter.attackPower = Math.min(40, fighter.attackPower + (fighter.furnaceCharges > 0 ? 2 : 1));
       if (fighter.furnaceCharges > 0) fighter.furnaceCharges -= 1;
       fighter.enhanceTimer = 120;
     }
@@ -2089,7 +2121,7 @@ function createSkyLaser(owner) {
     delay: 60,
     life: 84,
     hit: false,
-    damage: 30,
+    damage: 45,
     color: owner.accent
   });
 }
@@ -2115,7 +2147,7 @@ function createWildSlashes(owner, x = null, y = null) {
 function fireBloodBullet(owner) {
   const target = opponentOf(owner);
   const hpMissing = 1 - owner.hp / owner.maxHp;
-  const damageAmount = 10 + hpMissing * 30;
+  const damageAmount = 10 + hpMissing * 25;
   const speed = 12.5 + hpMissing * 9.5;
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.balls.push({
@@ -2156,16 +2188,17 @@ function launchGodWeapon(owner, power) {
 
 function createTankBlast(owner) {
   const target = opponentOf(owner);
+  const range = 261;
   game.shockwaves.push({
     owner,
     x: owner.x,
     y: owner.y,
     radius: 28,
-    maxRadius: 174,
+    maxRadius: range,
     life: 42,
     color: "#d5dde8"
   });
-  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + 174) {
+  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
     damage(target, 50, owner);
     target.stunTime = Math.max(target.stunTime, 180);
   }

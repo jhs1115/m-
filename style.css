@@ -252,6 +252,14 @@ body:not(.is-authenticated) .coin-badge {
   width: min(1900px, calc(100vw - 32px));
 }
 
+#selectScreen {
+  width: min(1800px, calc(100vw - 32px));
+}
+
+#selectScreen .top-copy {
+  margin-bottom: 18px;
+}
+
 .top-copy {
   max-width: 760px;
   margin: 0 auto 30px;
@@ -1495,19 +1503,22 @@ h2 {
 
 .player-select-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 18px;
+  width: 100%;
 }
 
 .select-panel {
-  padding: 18px;
+  width: 100%;
+  padding: 20px;
   background: rgba(28, 32, 41, 0.58);
   border: 1px solid var(--line);
   border-radius: 8px;
 }
 
 .character-grid.compact {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .fighter-card {
@@ -1523,8 +1534,8 @@ h2 {
 }
 
 .compact .fighter-card {
-  min-height: 132px;
-  padding: 16px;
+  min-height: 146px;
+  padding: 16px 14px;
 }
 
 .compact .fighter-icon {
@@ -1539,6 +1550,16 @@ h2 {
   font-size: 0.92rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+#selectScreen > .primary-button {
+  margin-top: 18px;
+}
+
+@media (max-width: 1200px) {
+  .character-grid.compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .fighter-card:hover,
