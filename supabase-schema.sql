@@ -46,6 +46,14 @@ create table if not exists public.match_queue (
   matched_room_code text references public.app_rooms(code) on delete set null
 );
 
+create table if not exists public.pve_runs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  stage text not null,
+  started_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
 alter table public.app_rooms
 add column if not exists prep_state jsonb not null default '{}'::jsonb;
 
@@ -53,6 +61,7 @@ alter table public.app_users enable row level security;
 alter table public.app_sessions enable row level security;
 alter table public.app_rooms enable row level security;
 alter table public.match_queue enable row level security;
+alter table public.pve_runs enable row level security;
 
 drop policy if exists "app rooms are visible for realtime" on public.app_rooms;
 create policy "app rooms are visible for realtime"
@@ -286,6 +295,25 @@ begin
 end;
 $$;
 
+create or replace function public.get_server_time(session_token text)
+returns numeric
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  return extract(epoch from clock_timestamp());
+end;
+$$;
+
 create or replace function public.create_room(session_token text)
 returns jsonb
 language plpgsql
@@ -510,7 +538,15 @@ begin
 end;
 $$;
 
-create or replace function public.set_character_ready(session_token text, room_code text, character_kind text, is_ready boolean)
+drop function if exists public.set_character_ready(text, text, text, boolean);
+
+create or replace function public.set_character_ready(
+  session_token text,
+  room_code text,
+  character_kind text,
+  is_ready boolean,
+  simulation_version text
+)
 returns jsonb
 language plpgsql
 volatile
@@ -524,6 +560,7 @@ declare
   current_state jsonb;
   next_state jsonb;
   next_ready jsonb;
+  next_versions jsonb;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -554,12 +591,30 @@ begin
     true
   );
 
+  next_versions := jsonb_set(
+    coalesce(current_state->'simulationVersions', '{}'::jsonb),
+    array[active_user.id::text],
+    to_jsonb(simulation_version),
+    true
+  );
+
+  if coalesce((next_ready->>(room_players[1]::text))::boolean, false)
+    and coalesce((next_ready->>(room_players[2]::text))::boolean, false)
+    and (next_versions->>(room_players[1]::text)) is distinct from (next_versions->>(room_players[2]::text)) then
+    raise exception 'game version mismatch; refresh both clients';
+  end if;
+
   select jsonb_set(
     jsonb_set(
       jsonb_set(
-        current_state,
-        array['characterSelections', active_user.id::text],
-        to_jsonb(character_kind),
+        jsonb_set(
+          current_state,
+          array['characterSelections', active_user.id::text],
+          to_jsonb(character_kind),
+          true
+        ),
+        array['simulationVersions'],
+        next_versions,
         true
       ),
       array['ready'],
@@ -577,6 +632,12 @@ begin
 
   if (next_state->>'started')::boolean
     and not (next_state ? 'matchStartAt') then
+    next_state := jsonb_set(
+      next_state,
+      array['matchVersion'],
+      to_jsonb(next_versions->>(room_players[1]::text)),
+      true
+    );
     next_state := jsonb_set(
       next_state,
       array['matchStartAt'],
@@ -631,11 +692,20 @@ begin
     raise exception 'not a match participant';
   end if;
 
+  if not coalesce((current_state->>'started')::boolean, false) then
+    raise exception 'match not started';
+  end if;
+
+  if (current_state->>'matchVersion') is distinct from
+    (current_state->'simulationVersions'->>active_user.id::text) then
+    raise exception 'game version mismatch; refresh both clients';
+  end if;
+
   current_events := coalesce(current_state->'skillEvents', '[]'::jsonb);
   event_id := active_user.id::text || '-' || (jsonb_array_length(current_events) + 1)::text;
   match_start_at := coalesce((current_state->>'matchStartAt')::numeric, extract(epoch from now()));
   server_tick := greatest(0, floor((extract(epoch from now()) - match_start_at) * 60)::integer);
-  apply_tick := server_tick + 12;
+  apply_tick := server_tick + 2;
 
   next_state := jsonb_set(
     current_state,
@@ -810,6 +880,86 @@ begin
   returning * into updated_user;
 
   return public.app_user_json(updated_user);
+end;
+$$;
+
+create or replace function public.begin_pve_run(session_token text, stage_code text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  run_id uuid;
+  normalized_stage text := trim(stage_code);
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if normalized_stage not in ('1-1', '1-2', '1-3') then
+    raise exception 'invalid pve stage';
+  end if;
+
+  insert into public.pve_runs (user_id, stage)
+  values (active_user.id, normalized_stage)
+  returning id into run_id;
+
+  return jsonb_build_object('runId', run_id, 'stage', normalized_stage);
+end;
+$$;
+
+create or replace function public.complete_pve_run(session_token text, run_id uuid)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  active_run public.pve_runs;
+  updated_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select * into active_run
+  from public.pve_runs
+  where id = run_id
+  for update;
+
+  if active_run.id is null or active_run.user_id <> active_user.id then
+    raise exception 'pve run not found';
+  end if;
+
+  if active_run.completed_at is not null then
+    raise exception 'pve reward already claimed';
+  end if;
+
+  if active_run.started_at > now() - interval '3 seconds' then
+    raise exception 'pve stage completed too quickly';
+  end if;
+
+  update public.pve_runs
+  set completed_at = now()
+  where id = active_run.id;
+
+  update public.app_users
+  set coins = coins + 10
+  where id = active_user.id
+  returning * into updated_user;
+
+  return jsonb_build_object(
+    'reward', 10,
+    'stage', active_run.stage,
+    'user', public.app_user_json(updated_user)
+  );
 end;
 $$;
 
@@ -1022,18 +1172,21 @@ grant execute on function public.signup_user(text, text) to anon, authenticated;
 grant execute on function public.login_user(text, text) to anon, authenticated;
 grant execute on function public.logout_user(text) to anon, authenticated;
 grant execute on function public.get_me(text) to anon, authenticated;
+grant execute on function public.get_server_time(text) to anon, authenticated;
 revoke execute on function public.create_room(text) from anon, authenticated;
 revoke execute on function public.join_room(text, text) from anon, authenticated;
 grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.claim_free_coins(text) to anon, authenticated;
+grant execute on function public.begin_pve_run(text, text) to anon, authenticated;
+grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;
 grant execute on function public.get_rankings(text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
 grant execute on function public.find_pvp_match(text) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
-grant execute on function public.set_character_ready(text, text, text, boolean) to anon, authenticated;
+grant execute on function public.set_character_ready(text, text, text, boolean, text) to anon, authenticated;
 grant execute on function public.use_skill_event(text, text, text, integer) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
 

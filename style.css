@@ -464,6 +464,7 @@ h2 {
 .shop-panel,
 .inventory-panel,
 .ranking-panel,
+.pve-stage-panel,
 .placeholder-panel {
   width: 100%;
   min-height: calc(clamp(620px, 72vh, 760px) - 44px);
@@ -471,6 +472,95 @@ h2 {
     radial-gradient(circle at 68% 72%, rgba(61, 214, 208, 0.1), transparent 22%),
     rgba(15, 20, 30, 0.92);
   border-color: rgba(242, 193, 78, 0.26);
+}
+
+.pve-stage-panel {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  background:
+    radial-gradient(circle at 50% 75%, rgba(61, 214, 208, 0.12), transparent 26%),
+    rgba(15, 20, 30, 0.94);
+  border-color: rgba(242, 193, 78, 0.28);
+}
+
+.pve-stage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 26px;
+}
+
+.pve-stage-header span {
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+}
+
+.pve-stage-header h1 {
+  margin-top: 8px;
+}
+
+.pve-stage-panel > .player-select {
+  max-width: 420px;
+}
+
+.pve-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.pve-stage-card {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-height: 280px;
+  padding: 24px;
+  color: var(--text);
+  text-align: left;
+  background:
+    radial-gradient(circle at 50% 72%, rgba(61, 214, 208, 0.16), transparent 25%),
+    linear-gradient(180deg, rgba(24, 31, 44, 0.96), rgba(5, 9, 15, 0.98));
+  border: 1px solid rgba(242, 193, 78, 0.24);
+  border-radius: 8px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.pve-stage-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--gold);
+}
+
+.pve-stage-card span {
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.pve-stage-card strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.4rem;
+}
+
+.pve-stage-card em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
+#pveArena {
+  display: block;
+  width: min(100%, 720px);
+  margin: 0 auto;
+  aspect-ratio: 620 / 520;
+  background: #0d1118;
+  border: 2px solid #798294;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
 }
 
 .inventory-panel,
@@ -1582,6 +1672,7 @@ h2 {
 
   .character-grid,
   .inventory-grid,
+  .pve-stage-grid,
   .lobby-grid,
   .lobby-side,
   .player-select-grid,
@@ -1632,5 +1723,13 @@ h2 {
 
   .bottom-nav-button strong {
     font-size: 0.68rem;
+  }
+
+  .pve-stage-header {
+    flex-direction: column;
+  }
+
+  .pve-stage-card {
+    min-height: 180px;
   }
 }
