@@ -1006,6 +1006,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     furnaceCharges: 0,
     weaponActive: false,
     weaponTimer: 0,
+    weaponPower: 0,
     weaponFlight: 0,
     weaponHit: false,
     damageReduction: kind === "tank" ? 0.2 : 0,
@@ -1014,7 +1015,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     silenceTime: 0,
     beamTimer: kind === "beamer" ? 180 : Infinity,
     annihilatorTime: 0,
-    wildTimer: kind === "wild" ? 360 : Infinity,
+    wildTimer: kind === "wild" ? 180 : Infinity,
     chaseTime: 0,
     bloodTimer: kind === "vampire" ? 300 : Infinity,
     bloodPreludeTime: 0,
@@ -1126,8 +1127,10 @@ function contactDamagePair(a, b) {
     }
     return;
   }
-  if (a.kind === "wild" && a.chaseTime > 0) createWildSlashes(a, b.x, b.y);
-  if (b.kind === "wild" && b.chaseTime > 0) createWildSlashes(b, a.x, a.y);
+  if (a.kind === "wild" && a.chaseTime > 0) createWildSlashes(a);
+  if (b.kind === "wild" && b.chaseTime > 0) createWildSlashes(b);
+  if (a.kind === "wild" && a.chaseTime > 0) a.slowTime = Math.max(a.slowTime, 45);
+  if (b.kind === "wild" && b.chaseTime > 0) b.slowTime = Math.max(b.slowTime, 45);
   const aDamage = a.kind === "enhancer" ? a.attackPower : a.contactDamage;
   const bDamage = b.kind === "enhancer" ? b.attackPower : b.contactDamage;
   if (a.kind === "charger" && b.kind === "charger" && a.hp <= bDamage && b.hp <= aDamage) {
@@ -1232,7 +1235,8 @@ function startStealth(fighter) {
 function heal(fighter, amount) {
   if (amount <= 0 || game.over) return;
   fighter.hp = clamp(fighter.hp + amount, 0, fighter.maxHp);
-  addFloatingText(fighter.x, fighter.y - fighter.radius - 28, `+${amount}`, "#7bd88f");
+  const shownAmount = Math.round(amount * 10) / 10;
+  addFloatingText(fighter.x, fighter.y - fighter.radius - 28, `+${shownAmount}`, "#7bd88f");
   updateHud();
 }
 
@@ -1373,6 +1377,8 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "enhancer") {
     fighter.weaponActive = true;
+    fighter.weaponPower = fighter.attackPower;
+    fighter.attackPower = 0;
     fighter.weaponTimer = 1;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "갓 웨폰!", fighter.accent);
     fighter.ultimateTimer = 300;
@@ -1388,7 +1394,7 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "beamer") {
-    fighter.annihilatorTime = 120;
+    fighter.annihilatorTime = 150;
     fighter.beamTimer = 1;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "절멸자!", fighter.accent);
     fighter.ultimateTimer = 3600;
@@ -1398,6 +1404,7 @@ function triggerUltimate(fighter) {
   if (fighter.kind === "vampire") {
     fighter.hp = Math.max(1, fighter.hp * 0.5);
     fighter.bloodPreludeTime = 180;
+    fighter.bloodTimer = Math.min(fighter.bloodTimer, 100);
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "핏빛 서곡!", fighter.accent);
     updateHud();
     fighter.ultimateTimer = 3000;
@@ -1637,7 +1644,7 @@ function moveFighter(fighter, dt) {
     fighter.wildTimer -= dt;
     if (fighter.wildTimer <= 0) {
       createWildSlashes(fighter);
-      fighter.wildTimer = 360;
+      fighter.wildTimer = 180;
     }
   }
 
@@ -1645,7 +1652,7 @@ function moveFighter(fighter, dt) {
     fighter.bloodTimer -= dt;
     if (fighter.bloodTimer <= 0) {
       fireBloodBullet(fighter);
-      fighter.bloodTimer = 300;
+      fighter.bloodTimer = fighter.bloodPreludeTime > 0 ? 100 : 300;
     }
   }
 
@@ -1859,7 +1866,7 @@ function createSkyLaser(owner) {
     delay: 60,
     life: 84,
     hit: false,
-    damage: 20,
+    damage: 35,
     color: owner.accent
   });
 }
@@ -1885,7 +1892,7 @@ function createWildSlashes(owner, x = null, y = null) {
 function fireBloodBullet(owner) {
   const target = opponentOf(owner);
   const hpMissing = 1 - owner.hp / owner.maxHp;
-  const damageAmount = 10 + hpMissing * 20;
+  const damageAmount = 10 + hpMissing * 30;
   const speed = 9.5 + hpMissing * 8;
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.balls.push({
@@ -1916,7 +1923,7 @@ function launchGodWeapon(owner) {
     y: owner.y,
     vx: Math.cos(angle) * 13,
     vy: Math.sin(angle) * 13,
-    damage: owner.attackPower * 2,
+    damage: owner.weaponPower,
     returning: false,
     hit: false,
     life: 150,
@@ -1943,10 +1950,7 @@ function createTankBlast(owner) {
 
 function punchTarget(owner, target) {
   const damageAmount = 20 + (owner.gritActive ? 15 : 0);
-  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   damage(target, damageAmount, owner);
-  target.vx = Math.cos(angle) * 13;
-  target.vy = Math.sin(angle) * 13;
   owner.punchTimer = 60;
   owner.idleAttackTime = 0;
   addVisualEffect({
