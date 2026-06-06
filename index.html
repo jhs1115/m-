@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260606r">
+  <link rel="stylesheet" href="style.css?v=20260606z1">
 </head>
 <body>
   <main class="app">
@@ -13,19 +13,65 @@
     <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
       <div class="patch-note-box">
         <button id="patchNoteCloseButton" class="patch-note-close" type="button">닫기</button>
-        <h2>패치노트</h2>
+        <div class="patch-note-heading">
+          <span>2026.06.06 UPDATE</span>
+          <h2>패치노트</h2>
+          <p>매칭부터 PVE, 도감, 캐릭터 밸런스까지 지금까지 적용된 주요 변경점입니다.</p>
+        </div>
         <div class="patch-note-list">
           <article>
-            <strong>전투 밸런스</strong>
-            <p>공던지는 색히 공속 증가, 일반 공은 적 피격 시 사라집니다.</p>
+            <strong>핵심 시스템</strong>
+            <ul>
+              <li>코인 베팅을 제거하고 기본 1000 LP의 랭크 시스템으로 변경했습니다.</li>
+              <li>같은 티어를 우선 탐색하는 온라인 PVP 자동 매칭과 매칭 취소 기능을 추가했습니다.</li>
+              <li>양쪽 플레이어가 같은 전투를 보도록 서버 시간 기반 동기화와 스킬 동기화를 개선했습니다.</li>
+              <li>전투 시작 전 각 플레이어가 보유 캐릭터를 선택하고 준비할 수 있습니다.</li>
+            </ul>
           </article>
           <article>
-            <strong>스킬 조정</strong>
-            <p>그랩 기절 추가, 불가항력 속도 대폭 증가, 하이퍼 히든 이속 5배 적용.</p>
+            <strong>PVE</strong>
+            <ul>
+              <li>스테이지 1-1, 1-2, 1-3과 근접·투척 잡몹을 추가했습니다.</li>
+              <li>보유 캐릭터를 선택해 출전할 수 있으며 스테이지 클리어 시 10C를 획득합니다.</li>
+              <li>일반 투사체는 벽과 대상에 튕기며, 피의 탄환만 벽에 튕기지 않습니다.</li>
+            </ul>
           </article>
           <article>
-            <strong>편의성</strong>
-            <p>힐 다이스 주사위 눈이 캐릭터 위에 표시됩니다.</p>
+            <strong>캐릭터 및 스킬</strong>
+            <ul>
+              <li>공던지는, 돌진하는, 그랩하는, 포커하는, 은신하는 색히의 스킬 시스템을 완성했습니다.</li>
+              <li>강화하는, 개쳐맞는, 빔쏘는, 야생의힘쓰는, 피흡하는, 맨몸격투하는 색히를 추가했습니다.</li>
+              <li>일반 스킬은 1키, 궁극기는 2키 또는 전투 화면의 스킬 버튼으로 사용합니다.</li>
+              <li>전투 시작 후 8초부터 스킬을 사용할 수 있으며 남은 쿨타임이 버튼에 표시됩니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>주요 밸런스</strong>
+            <ul>
+              <li>모든 캐릭터의 체력을 200으로 통일했습니다.</li>
+              <li>갓 웨폰은 중복 소환되며 강화 공격력은 2초마다 1씩, 최대 40까지 증가합니다.</li>
+              <li>핏빛 서곡의 피해 2배를 제거하고 공격속도·이동속도 증가만 유지했습니다.</li>
+              <li>맨몸격투의 투지 공격력 증가를 8로 조정하고 야수성 속도 증가를 초당 6%로 높였습니다.</li>
+              <li>추격 속도를 3배로 높이고 할퀴기를 3곳에 생성하며 충돌 시에도 발동하도록 변경했습니다.</li>
+              <li>천공 레이저는 세로 광선 전체에 30의 피해 판정이 적용됩니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>콘텐츠 및 UI</strong>
+            <ul>
+              <li>홈, 상점, 인벤토리, 도감, 랭킹, 설정으로 구성된 하단 로비 메뉴를 추가했습니다.</li>
+              <li>도감에서 모든 캐릭터의 미리보기, 보유 상태, 일반 공격·스킬·궁극기 설명을 확인할 수 있습니다.</li>
+              <li>실제 계정 LP 랭킹, 캐릭터 인벤토리, 50C 캐릭터 뽑기를 추가했습니다.</li>
+              <li>캐릭터 이름·체력바·피해 숫자와 각종 스킬 이펙트를 전투 화면에 표시합니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>버그 수정</strong>
+            <ul>
+              <li>두 번째 매칭에서 ‘게임이 시작됩니다’ 화면에 갇히는 문제를 수정했습니다.</li>
+              <li>이전 매칭 요청과 전환 상태가 새 매칭에 남지 않도록 중복 요청을 차단했습니다.</li>
+              <li>캐릭터 선택이 잠시 후 되돌아가던 문제와 매칭 취소 후 재매칭 오류를 개선했습니다.</li>
+            </ul>
           </article>
         </div>
       </div>
@@ -139,6 +185,33 @@
           </div>
         </div>
 
+        <div class="lobby-tab-panel" data-lobby-panel="codex">
+          <div class="panel codex-panel">
+            <div class="codex-header">
+              <div>
+                <span>CHARACTER ARCHIVE</span>
+                <h2>도감</h2>
+              </div>
+              <strong id="codexOwnedCount">0 / 11 보유</strong>
+            </div>
+            <div class="codex-layout">
+              <div id="codexCharacterList" class="codex-character-list"></div>
+              <article id="codexDetail" class="codex-detail">
+                <div class="codex-preview-stage">
+                  <div id="codexPreview" class="codex-preview">
+                    <span id="codexPreviewInitial">T</span>
+                  </div>
+                  <div>
+                    <span id="codexOwnership" class="codex-ownership">보유중</span>
+                    <h3 id="codexCharacterName">공던지는 색히</h3>
+                  </div>
+                </div>
+                <div id="codexSkillList" class="codex-skill-list"></div>
+              </article>
+            </div>
+          </div>
+        </div>
+
         <div class="lobby-tab-panel" data-lobby-panel="ranking">
           <div class="panel ranking-panel">
             <h2>랭킹</h2>
@@ -168,6 +241,10 @@
         <button class="bottom-nav-button" type="button" data-lobby-tab="inventory">
           <span>▤</span>
           <strong>인벤토리</strong>
+        </button>
+        <button class="bottom-nav-button" type="button" data-lobby-tab="codex">
+          <span>◈</span>
+          <strong>도감</strong>
         </button>
         <button class="bottom-nav-button" type="button" data-lobby-tab="ranking">
           <span>♕</span>
@@ -328,6 +405,10 @@
         <div class="select-panel">
           <p class="player-label" id="selectP1Label">PLAYER 1</p>
           <div class="character-grid compact">
+            <button class="fighter-card random-pick-card" data-player="p1" data-character="random">
+              <span class="fighter-icon random">?</span>
+              <strong data-name="랜덤 픽">랜덤 픽</strong>
+            </button>
             <button class="fighter-card is-selected" data-player="p1" data-character="thrower">
               <span class="fighter-icon throw">T</span>
               <strong data-name="공던지는 색히">공던지는 색히</strong>
@@ -378,6 +459,10 @@
         <div class="select-panel">
           <p class="player-label" id="selectP2Label">PLAYER 2</p>
           <div class="character-grid compact">
+            <button class="fighter-card random-pick-card" data-player="p2" data-character="random">
+              <span class="fighter-icon random">?</span>
+              <strong data-name="랜덤 픽">랜덤 픽</strong>
+            </button>
             <button class="fighter-card is-selected" data-player="p2" data-character="thrower">
               <span class="fighter-icon throw">T</span>
               <strong data-name="공던지는 색히">공던지는 색히</strong>
@@ -481,7 +566,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260606r"></script>
-  <script src="game.js?v=20260606r"></script>
+  <script src="supabase-config.js?v=20260606z1"></script>
+  <script src="game.js?v=20260606z1"></script>
 </body>
 </html>
