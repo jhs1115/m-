@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607i";
+const SIMULATION_VERSION = "20260607l";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -23,6 +23,7 @@ const screens = {
   lobby: document.getElementById("lobbyScreen"),
   gacha: document.getElementById("gachaScreen"),
   pve: document.getElementById("pveScreen"),
+  pveCharacter: document.getElementById("pveCharacterScreen"),
   pveBattle: document.getElementById("pveBattleScreen"),
   pvp: document.getElementById("pvpScreen"),
   select: document.getElementById("selectScreen"),
@@ -69,6 +70,7 @@ const ui = {
   codexOwnership: document.getElementById("codexOwnership"),
   codexCharacterName: document.getElementById("codexCharacterName"),
   codexSkillList: document.getElementById("codexSkillList"),
+  rankingPodium: document.getElementById("rankingPodium"),
   rankingList: document.getElementById("rankingList"),
   lobbyPlayerOne: document.getElementById("lobbyPlayerOne"),
   lobbyPlayerTwo: document.getElementById("lobbyPlayerTwo"),
@@ -82,8 +84,12 @@ const ui = {
   cancelMatchButton: document.getElementById("cancelMatchButton"),
   pveModeButton: document.getElementById("pveModeButton"),
   backFromPveButton: document.getElementById("backFromPveButton"),
-  pveCharacterSelect: document.getElementById("pveCharacterSelect"),
   pveStageButtons: document.querySelectorAll("[data-pve-stage]"),
+  pveSelectedStageLabel: document.getElementById("pveSelectedStageLabel"),
+  pveCharacterGrid: document.getElementById("pveCharacterGrid"),
+  pveCharacterMessage: document.getElementById("pveCharacterMessage"),
+  backToPveStagesButton: document.getElementById("backToPveStagesButton"),
+  startPveBattleButton: document.getElementById("startPveBattleButton"),
   pvePlayerLabel: document.getElementById("pvePlayerLabel"),
   pvePlayerCharacter: document.getElementById("pvePlayerCharacter"),
   pvePlayerHealthBar: document.getElementById("pvePlayerHealthBar"),
@@ -95,6 +101,12 @@ const ui = {
   pveResultTitle: document.getElementById("pveResultTitle"),
   pveResultText: document.getElementById("pveResultText"),
   pveResultButton: document.getElementById("pveResultButton"),
+  pveNormalSkillButton: document.getElementById("pveNormalSkillButton"),
+  pveUltimateSkillButton: document.getElementById("pveUltimateSkillButton"),
+  pveNormalSkillName: document.getElementById("pveNormalSkillName"),
+  pveUltimateSkillName: document.getElementById("pveUltimateSkillName"),
+  pveNormalSkillCooldown: document.getElementById("pveNormalSkillCooldown"),
+  pveUltimateSkillCooldown: document.getElementById("pveUltimateSkillCooldown"),
   backFromPvpButton: document.getElementById("backFromPvpButton"),
   modeMessage: document.getElementById("modeMessage"),
   openGachaButton: document.getElementById("openGachaButton"),
@@ -242,11 +254,11 @@ const characterGuide = {
   charger: {
     attack: ["몸통 박치기", "접촉", "적에게 충돌하면 10의 피해를 주고 서로 튕겨납니다."],
     normal: ["격노", "10초", "3초 동안 이동속도가 크게 증가하고 몸의 색이 진해집니다."],
-    ultimate: ["불가항력", "23초", "바라보는 방향으로 초고속 돌진합니다. 캐릭터와 오오라에 닿은 적에게 40의 피해를 줍니다."]
+    ultimate: ["불가항력", "23초", "잠시 멈춰 힘을 모은 뒤 바라보는 방향으로 폭발적으로 돌진합니다. 캐릭터와 오오라에 닿은 적에게 40의 피해를 줍니다."]
   },
   grabber: {
     attack: ["그랩", "자동", "선을 발사해 적을 끌어당기고 20의 피해와 0.5초 기절을 줍니다."],
-    normal: ["그랩", "15초", "일반 공격인 그랩을 즉시 발동합니다."],
+    normal: ["강화 그랩", "15초", "일반 그랩보다 사거리가 2배 길고 더 빠른 강화 그랩을 즉시 발사합니다."],
     ultimate: ["충격파", "28초", "주변 넓은 범위에 30의 피해를 주고 적을 1초 동안 기절시킵니다."]
   },
   poker: {
@@ -272,7 +284,7 @@ const characterGuide = {
   beamer: {
     attack: ["천공 레이저", "3초", "적의 위치에 예고 후 세로 레이저를 포격해 45의 피해를 줍니다."],
     normal: ["슬로우 빔", "12초", "넓은 직선 빔으로 5의 피해를 주고 적을 3초 동안 느리게 만듭니다."],
-    ultimate: ["절멸자", "60초", "2.5초 동안 천공 레이저의 공격 주기가 0.2초로 변경됩니다."]
+    ultimate: ["절멸자", "60초", "3초 동안 천공 레이저의 공격 주기가 0.2초로 변경됩니다."]
   },
   wild: {
     attack: ["할퀴기", "3초", "맵의 무작위 위치 3곳을 할퀴어 범위 안의 적에게 20의 피해를 줍니다. 적과 충돌해도 발동합니다."],
@@ -326,9 +338,14 @@ let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
 let pendingSkillUse = false;
+let resimulatingGame = false;
+let settlementRequestedWinnerId = "";
+let settlementTimeoutId = null;
 let serverClockOffsetMs = 0;
 let pveGame = null;
 let pveAnimationId = null;
+let pendingPveStage = "";
+let selectedPveCharacter = DEFAULT_CHARACTER;
 
 function normalizePlayer(user) {
   return {
@@ -682,12 +699,14 @@ function renderCodexDetail(kind) {
 
 async function loadRankings() {
   if (!ui.rankingList || !currentUser) return;
+  if (ui.rankingPodium) ui.rankingPodium.innerHTML = `<div class="ranking-podium-empty">TOP 3 집계 중...</div>`;
   ui.rankingList.innerHTML = `<div class="ranking-empty">랭킹을 불러오는 중...</div>`;
 
   try {
     const rankings = await rpc("get_rankings", { session_token: appSessionToken });
     renderRankings(Array.isArray(rankings) ? rankings : []);
   } catch (error) {
+    if (ui.rankingPodium) ui.rankingPodium.innerHTML = "";
     ui.rankingList.innerHTML = `<div class="ranking-empty">${escapeHtml(error.message)}</div>`;
   }
 }
@@ -695,10 +714,12 @@ async function loadRankings() {
 function renderRankings(rankings) {
   if (!ui.rankingList) return;
   if (!rankings.length) {
+    if (ui.rankingPodium) ui.rankingPodium.innerHTML = `<div class="ranking-podium-empty">아직 TOP 3가 없습니다.</div>`;
     ui.rankingList.innerHTML = `<div class="ranking-empty">아직 랭킹 데이터가 없습니다.</div>`;
     return;
   }
 
+  renderRankingPodium(rankings.slice(0, 3));
   ui.rankingList.innerHTML = rankings.map((player, index) => {
     const lp = Number(player.lp ?? 1000);
     const tier = player.tier || tierForLp(lp);
@@ -717,6 +738,42 @@ function renderRankings(rankings) {
       </article>
     `;
   }).join("");
+}
+
+function renderRankingPodium(topPlayers) {
+  if (!ui.rankingPodium) return;
+  const podiumOrder = [
+    { rank: 2, player: topPlayers[1], className: "second" },
+    { rank: 1, player: topPlayers[0], className: "first" },
+    { rank: 3, player: topPlayers[2], className: "third" }
+  ];
+  ui.rankingPodium.innerHTML = `
+    <div class="podium-light"></div>
+    <div class="podium-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="podium-stage">
+      ${podiumOrder.map(slot => {
+        if (!slot.player) {
+          return `<article class="podium-slot ${slot.className} is-empty"><div class="podium-player">-</div><div class="podium-block"><b>${slot.rank}</b></div></article>`;
+        }
+        const lp = Number(slot.player.lp ?? 1000);
+        const tier = slot.player.tier || tierForLp(lp);
+        const tierClass = tierClassForLp(lp);
+        return `
+          <article class="podium-slot ${slot.className}">
+            <div class="podium-player">
+              <span>${slot.rank === 1 ? "♛" : "◆"}</span>
+              <strong class="${tierClass}">${escapeHtml(slot.player.name || slot.player.username || "unknown")}</strong>
+              <em>${lp} LP</em>
+            </div>
+            <div class="podium-block">
+              <b>${slot.rank}</b>
+              <small class="${tierClass}">${tier}</small>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
 }
 
 function renderMatchSelectors(force = false) {
@@ -851,12 +908,21 @@ function selectPveMode() {
 
 function renderPveCharacterOptions() {
   if (!currentUser) return;
-  ui.pveCharacterSelect.innerHTML = "";
-  currentUser.ownedCharacters.forEach(kind => {
-    const option = document.createElement("option");
-    option.value = kind;
-    option.textContent = characters[kind]?.name || kind;
-    ui.pveCharacterSelect.appendChild(option);
+  if (!currentUser.ownedCharacters.includes(selectedPveCharacter)) {
+    selectedPveCharacter = currentUser.ownedCharacters[0] || DEFAULT_CHARACTER;
+  }
+  ui.pveCharacterGrid.innerHTML = currentUser.ownedCharacters.map(kind => `
+    <button class="fighter-card ${kind === selectedPveCharacter ? "is-selected" : ""}"
+      type="button" data-pve-character="${kind}">
+      <span class="fighter-icon" style="background:${characters[kind]?.color}; color:#071016">${characterInitial(kind)}</span>
+      <strong>${characters[kind]?.name || kind}</strong>
+    </button>
+  `).join("");
+  ui.pveCharacterGrid.querySelectorAll("[data-pve-character]").forEach(button => {
+    button.addEventListener("click", () => {
+      selectedPveCharacter = button.dataset.pveCharacter;
+      renderPveCharacterOptions();
+    });
   });
 }
 async function authenticate(mode) {
@@ -1141,6 +1207,7 @@ function prepareCharacterSelect() {
   ui.toBetButton.textContent = "준비 완료";
   ui.toBetButton.disabled = false;
   selectedCharacterReady = false;
+  syncServerClock(3).catch(() => {});
   showScreen("select");
   startSelectTimer();
   return true;
@@ -1294,6 +1361,9 @@ function makeFighter(kind, label, ownerId, x, y) {
     skillTimer: kind === "vampire" || kind === "brawler" ? 0 : 480,
     ultimateTimer: kind === "wild" || kind === "brawler" ? 0 : 480,
     rageTime: 0,
+    unstoppableWindup: 0,
+    unstoppableDirectionX: 0,
+    unstoppableDirectionY: 0,
     unstoppableTime: 0,
     unstoppableHit: false,
     stunTime: 0,
@@ -1312,6 +1382,7 @@ function makeFighter(kind, label, ownerId, x, y) {
     silenceTime: 0,
     beamTimer: kind === "beamer" ? 180 : Infinity,
     annihilatorTime: 0,
+    annihilatorTimer: Infinity,
     wildTimer: kind === "wild" ? 180 : Infinity,
     chaseTime: 0,
     chaseBounceTime: 0,
@@ -1372,6 +1443,11 @@ function startGame() {
     matchStartTimeoutId = null;
   }
   resetGame();
+  settlementRequestedWinnerId = "";
+  if (settlementTimeoutId) {
+    clearTimeout(settlementTimeoutId);
+    settlementTimeoutId = null;
+  }
   gameSpeed = 1;
   showScreen("game");
   if (animationId) cancelAnimationFrame(animationId);
@@ -1380,6 +1456,7 @@ function startGame() {
 }
 
 function updateHud() {
+  if (resimulatingGame) return;
   const p1Hp = clamp(game.fighters[0].hp, 0, game.fighters[0].maxHp);
   const p2Hp = clamp(game.fighters[1].hp, 0, game.fighters[1].maxHp);
   ui.playerOneHealthText.textContent = Math.ceil(p1Hp);
@@ -1480,13 +1557,26 @@ function addVisualEffect(effect) {
 function finishGame(winner) {
   if (game.over) return;
   game.over = true;
+  game.winner = winner;
+  if (resimulatingGame) return;
+  presentGameWinner(winner);
+}
+
+function presentGameWinner(winner) {
   const loser = winner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
   ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
   ui.resultText.textContent = `${winner.name} 승. 정산 중...`;
   ui.resultOverlay.classList.add("is-active");
-  settleMatch(winnerPlayer, loserPlayer);
+  if (settlementRequestedWinnerId !== winner.ownerId) {
+    if (settlementTimeoutId) clearTimeout(settlementTimeoutId);
+    settlementRequestedWinnerId = winner.ownerId;
+    settlementTimeoutId = setTimeout(() => {
+      settlementTimeoutId = null;
+      settleMatch(winnerPlayer, loserPlayer);
+    }, 700);
+  }
 }
 
 async function settleMatch(winnerPlayer, loserPlayer) {
@@ -1516,6 +1606,17 @@ async function settleMatch(winnerPlayer, loserPlayer) {
 function finishDraw() {
   if (game.over) return;
   game.over = true;
+  game.draw = true;
+  if (resimulatingGame) return;
+  presentGameDraw();
+}
+
+function presentGameDraw() {
+  if (settlementTimeoutId) {
+    clearTimeout(settlementTimeoutId);
+    settlementTimeoutId = null;
+    settlementRequestedWinnerId = "";
+  }
   ui.resultTitle.textContent = "무승부!";
   ui.resultText.textContent = "돌진하는 색히끼리 끝까지 맞짱. 코인은 그대로 유지됩니다.";
   ui.resultOverlay.classList.add("is-active");
@@ -1584,8 +1685,8 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "grabber") {
-    throwGrapple(fighter);
-    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "그랩!", fighter.accent);
+    throwGrapple(fighter, true);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "강화 그랩!", fighter.accent);
     fighter.skillTimer = 900;
     return;
   }
@@ -1646,18 +1747,14 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "charger") {
     const speed = Math.hypot(fighter.vx, fighter.vy) || 1;
-    fighter.vx = (fighter.vx / speed) * 34;
-    fighter.vy = (fighter.vy / speed) * 34;
-    fighter.unstoppableTime = 55;
+    fighter.unstoppableDirectionX = fighter.vx / speed;
+    fighter.unstoppableDirectionY = fighter.vy / speed;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    fighter.unstoppableWindup = 24;
+    fighter.unstoppableTime = 0;
     fighter.unstoppableHit = false;
-    addVisualEffect({
-      type: "unstoppable-burst",
-      fighter,
-      life: 42,
-      maxLife: 42,
-      color: fighter.color
-    });
-    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "불가항력!", fighter.accent);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "집중...", fighter.accent);
     fighter.ultimateTimer = 1380;
     return;
   }
@@ -1704,7 +1801,7 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "beamer") {
-    fighter.annihilatorTime = 150;
+    fighter.annihilatorTime = 180;
     fighter.beamTimer = 1;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "절멸자!", fighter.accent);
     fighter.ultimateTimer = 3600;
@@ -1787,6 +1884,15 @@ function processSkillEvents(prep) {
   if (!game || !prep) return;
   const events = prep.skillEvents || prep.skill_events || [];
   if (!Array.isArray(events)) return;
+  const hasLateEvent = !resimulatingGame && events.some(event => {
+    const eventId = event.id || `${event.actorId || event.actor_id}-${event.type}-${event.createdAt || event.created_at}`;
+    const applyTick = Number(event.applyTick ?? event.apply_tick ?? 0);
+    return eventId && !appliedSkillEvents.has(eventId) && applyTick > 0 && applyTick < game.tick;
+  });
+  if (hasLateEvent) {
+    resimulateGameToTick(game.tick);
+    return;
+  }
   events.forEach(event => {
     const eventId = event.id || `${event.actorId || event.actor_id}-${event.type}-${event.createdAt || event.created_at}`;
     if (!eventId || appliedSkillEvents.has(eventId)) return;
@@ -1807,6 +1913,7 @@ function cooldownSeconds(ticks) {
 }
 
 function updateSkillHud() {
+  if (resimulatingGame) return;
   const fighter = myFighter();
   if (!fighter) return;
   const names = skillNames[fighter.kind] || { normal: "일반스킬", ultimate: "궁극기" };
@@ -1857,6 +1964,26 @@ function moveFighter(fighter, dt) {
     if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
     return;
   }
+  if (fighter.unstoppableWindup > 0) {
+    fighter.unstoppableWindup -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.unstoppableWindup <= 0) {
+      fighter.vx = fighter.unstoppableDirectionX * 6.8;
+      fighter.vy = fighter.unstoppableDirectionY * 6.8;
+      fighter.unstoppableTime = 55;
+      addVisualEffect({
+        type: "unstoppable-burst",
+        fighter,
+        life: 42,
+        maxLife: 42,
+        color: fighter.color
+      });
+      addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "불가항력!", fighter.accent);
+    }
+    return;
+  }
   if (fighter.shieldTime <= 0) {
     fighter.x += fighter.vx * dt;
     fighter.y += fighter.vy * dt;
@@ -1885,7 +2012,7 @@ function moveFighter(fighter, dt) {
     * (fighter.rageTime > 0 ? 1.55 : 1)
     * (fighter.hasteTime > 0 ? 1.35 : 1)
     * (fighter.slowTime > 0 ? 0.58 : 1)
-    * (fighter.unstoppableTime > 0 ? 2.35 : 1)
+    * (fighter.unstoppableTime > 0 ? 3.525 : 1)
     * (fighter.chaseTime > 0 ? 3 : 1)
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
     * wildInstinct
@@ -2112,7 +2239,7 @@ function fireStarStrike(owner) {
   addFloatingText(owner.x, owner.y - owner.radius - 44, "스타 스트라이크!", owner.accent);
 }
 
-function throwGrapple(owner) {
+function throwGrapple(owner, enhanced = false) {
   if (!owner.canGrab || game.over) return;
   const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
@@ -2120,8 +2247,9 @@ function throwGrapple(owner) {
     owner,
     angle,
     length: owner.radius + 8,
-    maxLength: 470,
-    speed: 11,
+    maxLength: enhanced ? 940 : 470,
+    speed: enhanced ? 19 : 11,
+    enhanced,
     hit: false,
     life: 50
   });
@@ -2816,8 +2944,19 @@ function addFighterStatLabel(fighter, label, color) {
 }
 
 function drawFighterAuras(fighter) {
-  if (fighter.rageTime <= 0 && fighter.unstoppableTime <= 0 && !fighter.hyperStealthActive) return;
+  if (fighter.rageTime <= 0 && fighter.unstoppableTime <= 0 && fighter.unstoppableWindup <= 0 && !fighter.hyperStealthActive) return;
   ctx.save();
+  if (fighter.unstoppableWindup > 0) {
+    const progress = 1 - fighter.unstoppableWindup / 24;
+    ctx.globalAlpha = 0.38 + progress * 0.42;
+    ctx.strokeStyle = fighter.accent;
+    ctx.shadowColor = fighter.accent;
+    ctx.shadowBlur = 18 + progress * 22;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 34 - progress * 20, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   if (fighter.rageTime > 0) {
     const pulse = 1 + Math.sin(game.tick * 0.22) * 0.06;
     ctx.globalAlpha = 0.34;
@@ -3014,18 +3153,26 @@ function drawBall(ball) {
 function drawAreaAttack(attack) {
   ctx.save();
   const warning = attack.delay > 0;
+  const isAnnihilator = attack.type === "annihilator-laser";
   ctx.globalAlpha = warning ? 0.42 + Math.sin(game.tick * 0.32) * 0.12 : clamp(attack.life / 24, 0, 1);
-  ctx.strokeStyle = attack.type === "laser" ? "#62dfff" : attack.color;
-  ctx.fillStyle = attack.type === "laser" ? "rgba(66,165,255,0.16)" : "rgba(216,255,117,0.12)";
+  ctx.strokeStyle = isAnnihilator ? "#ff304f" : attack.type === "laser" ? "#62dfff" : attack.color;
+  ctx.fillStyle = isAnnihilator ? "rgba(255,48,79,0.18)" : attack.type === "laser" ? "rgba(66,165,255,0.16)" : "rgba(216,255,117,0.12)";
+  ctx.shadowColor = isAnnihilator ? "#ff304f" : "transparent";
+  ctx.shadowBlur = isAnnihilator ? (warning ? 12 : 28) : 0;
   ctx.lineWidth = warning ? 3 : 8;
   ctx.setLineDash(warning ? [8, 7] : []);
   ctx.beginPath();
   ctx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  if (!warning && attack.type === "laser") {
-    ctx.fillStyle = "rgba(167,239,255,0.7)";
-    ctx.fillRect(attack.x - 18, 0, 36, canvas.height);
+  if (!warning && (attack.type === "laser" || isAnnihilator)) {
+    ctx.fillStyle = isAnnihilator ? "rgba(255,48,79,0.78)" : "rgba(167,239,255,0.7)";
+    ctx.fillRect(
+      attack.x - (isAnnihilator ? 11 : 18),
+      0,
+      isAnnihilator ? 22 : 36,
+      isAnnihilator ? attack.y : canvas.height
+    );
   }
   if (!warning && attack.type === "slash") {
     ctx.translate(attack.x, attack.y);
@@ -3125,13 +3272,15 @@ function drawGrapple(grapple) {
   const endX = startX + Math.cos(grapple.angle) * grapple.length;
   const endY = startY + Math.sin(grapple.angle) * grapple.length;
   ctx.strokeStyle = grapple.owner.accent;
-  ctx.lineWidth = 5;
+  ctx.shadowColor = grapple.enhanced ? "#ffffff" : "transparent";
+  ctx.shadowBlur = grapple.enhanced ? 18 : 0;
+  ctx.lineWidth = grapple.enhanced ? 9 : 5;
   ctx.beginPath();
   ctx.moveTo(startX, startY);
   ctx.lineTo(endX, endY);
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(endX, endY, 10, 0, Math.PI * 2);
+  ctx.arc(endX, endY, grapple.enhanced ? 16 : 10, 0, Math.PI * 2);
   ctx.fillStyle = grapple.owner.accent;
   ctx.fill();
 }
@@ -3172,6 +3321,23 @@ function stepGame(dt) {
   }
 }
 
+function resimulateGameToTick(targetTick) {
+  if (!game || resimulatingGame || targetTick <= 0) return;
+  resimulatingGame = true;
+  resetGame();
+  while (game && !game.over && game.tick < targetTick) {
+    stepGame(1);
+  }
+  resimulatingGame = false;
+  updateHud();
+  updateSkillHud();
+  if (game?.over && game.winner) {
+    presentGameWinner(game.winner);
+  } else if (game?.over && game.draw) {
+    presentGameDraw();
+  }
+}
+
 function loop(now) {
   if (!game) return;
   const serverTick = Math.max(0, Math.floor((serverNowMs() - game.startTimeMs) / FIXED_STEP_MS));
@@ -3199,6 +3365,11 @@ function pveVelocity(speed, offset = 0) {
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
+function pveRandomIndex(length) {
+  const value = Math.abs(Math.imul(pveGame.seed++, 2654435761)) >>> 0;
+  return value % length;
+}
+
 function makePveEnemy(type, x, y, offset) {
   const velocity = pveVelocity(type === "thrower" ? 3.4 : 4.2, offset);
   return {
@@ -3211,7 +3382,10 @@ function makePveEnemy(type, x, y, offset) {
     hp: type === "thrower" ? 55 : 65,
     maxHp: type === "thrower" ? 55 : 65,
     contactCooldown: 0,
-    throwTimer: type === "thrower" ? 300 : Infinity
+    throwTimer: type === "thrower" ? 300 : Infinity,
+    slowTime: 0,
+    stunTime: 0,
+    silenceTime: 0
   };
 }
 
@@ -3228,7 +3402,7 @@ async function startPveStage(stage) {
     showScreen("lobby");
     return;
   }
-  const kind = ui.pveCharacterSelect.value || DEFAULT_CHARACTER;
+  const kind = selectedPveCharacter || DEFAULT_CHARACTER;
   const character = characters[kind];
   const playerVelocity = { vx: 5.8, vy: 4.6 };
   pveGame = {
@@ -3251,11 +3425,36 @@ async function startPveStage(stage) {
       color: character.color,
       accent: character.accent,
       shotTimer: 50,
-      hitFlash: 0
+      hitFlash: 0,
+      skillTimer: kind === "vampire" || kind === "brawler" ? 0 : 480,
+      ultimateTimer: kind === "wild" || kind === "brawler" ? 0 : 480,
+      rageTime: 0,
+      unstoppableWindup: 0,
+      unstoppableDirectionX: 0,
+      unstoppableDirectionY: 0,
+      unstoppableTime: 0,
+      stealthTime: 0,
+      stealthTimer: kind === "stealth" ? 420 : Infinity,
+      hyperStealthNext: false,
+      hyperStealth: false,
+      furnaceCharges: 0,
+      attackPower: kind === "enhancer" ? 1 : 0,
+      enhanceTimer: 120,
+      godWeapons: [],
+      shieldTime: 0,
+      bloodPreludeTime: 0,
+      gritUsed: false,
+      gritActive: false,
+      idleAttackTime: 0,
+      chaseTime: 0,
+      pokerBoostMultiplier: 1
     },
     enemies: [],
     projectiles: [],
-    damageTexts: []
+    grapples: [],
+    areaAttacks: [],
+    damageTexts: [],
+    floatingTexts: []
   };
   if (stage === "1-1") {
     pveGame.enemies.push(makePveEnemy("melee", 480, 260, 1));
@@ -3271,8 +3470,47 @@ async function startPveStage(stage) {
   ui.pveStageLabel.textContent = stage;
   ui.pveResultOverlay.classList.remove("is-active");
   updatePveHud();
+  updatePveSkillHud();
   showScreen("pveBattle");
   pveAnimationId = requestAnimationFrame(pveLoop);
+}
+
+function openPveCharacterSelect(stage) {
+  pendingPveStage = stage;
+  ui.pveSelectedStageLabel.textContent = `STAGE ${stage}`;
+  ui.pveCharacterMessage.textContent = "";
+  renderPveCharacterOptions();
+  showScreen("pveCharacter");
+}
+
+function nearestPveEnemy() {
+  if (!pveGame) return null;
+  return pveGame.enemies.filter(enemy => enemy.hp > 0)
+    .sort((a, b) => Math.hypot(a.x - pveGame.player.x, a.y - pveGame.player.y)
+      - Math.hypot(b.x - pveGame.player.x, b.y - pveGame.player.y))[0] || null;
+}
+
+function addPveFloating(text, color = "#f7f4eb") {
+  if (!pveGame) return;
+  pveGame.floatingTexts.push({
+    x: pveGame.player.x,
+    y: pveGame.player.y - 48,
+    text,
+    color,
+    life: 60
+  });
+}
+
+function healPvePlayer(amount) {
+  if (!pveGame || pveGame.over) return;
+  pveGame.player.hp = Math.min(pveGame.player.maxHp, pveGame.player.hp + amount);
+  pveGame.floatingTexts.push({
+    x: pveGame.player.x,
+    y: pveGame.player.y - 40,
+    text: `+${Math.round(amount * 10) / 10}`,
+    color: "#7bd88f",
+    life: 50
+  });
 }
 
 function bouncePveBody(body) {
@@ -3288,37 +3526,204 @@ function addPveDamage(x, y, amount, color = "#ff304f") {
 
 function damagePvePlayer(amount) {
   if (!pveGame || pveGame.over) return;
-  pveGame.player.hp = Math.max(0, pveGame.player.hp - amount);
+  const player = pveGame.player;
+  if (player.stealthTime > 0) return;
+  const reduction = player.shieldTime > 0 ? 0.9 : player.kind === "tank" ? 0.2 : 0;
+  amount *= 1 - reduction;
+  player.hp = Math.max(0, player.hp - amount);
   pveGame.player.hitFlash = 10;
-  addPveDamage(pveGame.player.x, pveGame.player.y - 36, amount);
-  if (pveGame.player.hp <= 0) finishPve(false);
+  addPveDamage(player.x, player.y - 36, Math.round(amount * 10) / 10);
+  if (player.kind === "brawler" && !player.gritUsed && player.hp <= player.maxHp * 0.5) {
+    player.gritUsed = true;
+    player.gritActive = true;
+    healPvePlayer(player.maxHp * 0.3);
+    addPveFloating("투지!", player.accent);
+  }
+  if (player.hp <= 0) finishPve(false);
 }
 
 function damagePveEnemy(enemy, amount) {
   enemy.hp = Math.max(0, enemy.hp - amount);
-  addPveDamage(enemy.x, enemy.y - 30, amount);
+  addPveDamage(enemy.x, enemy.y - 30, Math.round(amount * 10) / 10);
+  if (pveGame.player.kind === "vampire") healPvePlayer(amount * 0.3);
 }
 
-function firePvePlayerShot() {
-  const target = pveGame.enemies.filter(enemy => enemy.hp > 0)
-    .sort((a, b) => Math.hypot(a.x - pveGame.player.x, a.y - pveGame.player.y) - Math.hypot(b.x - pveGame.player.x, b.y - pveGame.player.y))[0];
+function firePvePlayerShot(options = {}) {
+  const target = nearestPveEnemy();
   if (!target) return;
   const angle = Math.atan2(target.y - pveGame.player.y, target.x - pveGame.player.x);
-  const blood = pveGame.player.kind === "vampire";
-  const speed = blood ? 15 : 11;
+  const blood = options.blood ?? pveGame.player.kind === "vampire";
+  const speed = options.speed || (blood ? 15 : 11);
   pveGame.projectiles.push({
     owner: "player",
     x: pveGame.player.x,
     y: pveGame.player.y,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    radius: blood ? 10 : 8,
-    damage: 10,
-    life: 180,
-    color: blood ? "#ff174f" : pveGame.player.accent,
+    radius: options.radius || (blood ? 10 : 8),
+    damage: options.damage ?? 10,
+    life: options.life || 180,
+    color: options.color || (blood ? "#ff174f" : pveGame.player.accent),
     blood,
-    hitCooldown: 0
+    hitCooldown: 0,
+    homing: Boolean(options.homing),
+    star: Boolean(options.star),
+    slow: Boolean(options.slow)
   });
+}
+
+function firePveGrapple(enhanced = false) {
+  const target = nearestPveEnemy();
+  if (!target) return;
+  pveGame.grapples.push({
+    angle: Math.atan2(target.y - pveGame.player.y, target.x - pveGame.player.x),
+    length: pveGame.player.radius,
+    maxLength: enhanced ? 940 : 470,
+    speed: enhanced ? 19 : 11,
+    enhanced,
+    life: enhanced ? 70 : 50
+  });
+}
+
+function createPveAreaAttack(x, y, radius, damageAmount, delay = 18, color = "#ff304f", type = "blast", stun = 0) {
+  pveGame.areaAttacks.push({ x, y, radius, damage: damageAmount, delay, life: delay + 24, hit: false, color, type, stun });
+}
+
+function usePveSkill(type) {
+  if (!pveGame || pveGame.over) return;
+  const player = pveGame.player;
+  const timerKey = type === "normal" ? "skillTimer" : "ultimateTimer";
+  if (player[timerKey] > 0) return;
+  const target = nearestPveEnemy();
+
+  if (type === "normal") {
+    if (player.kind === "thrower") {
+      pveGame.projectiles.filter(projectile => projectile.owner === "player").forEach(projectile => {
+        projectile.homing = true;
+        projectile.homingTime = 240;
+      });
+      player.skillTimer = 720;
+      addPveFloating("룩 온!", player.accent);
+    } else if (player.kind === "charger") {
+      player.rageTime = 180;
+      player.skillTimer = 600;
+      addPveFloating("격노!", player.accent);
+    } else if (player.kind === "grabber") {
+      firePveGrapple(true);
+      player.skillTimer = 900;
+      addPveFloating("강화 그랩!", player.accent);
+    } else if (player.kind === "poker") {
+      const cards = ["JOKER", "A", "K", "Q", "J"];
+      const card = cards[pveRandomIndex(cards.length)];
+      let cardDamage = card === "JOKER" ? 18 : card === "A" || card === "Q" ? 7.5 : card === "J" ? 4.5 : 0;
+      if (card === "K") player.pokerBoostMultiplier = 2;
+      if (target && cardDamage) damagePveEnemy(target, cardDamage);
+      if (card === "A" && target) target.slowTime = 180;
+      if (card === "Q") player.rageTime = 180;
+      player.skillTimer = 600;
+      addPveFloating(`드로우 ${card}`, player.accent);
+    } else if (player.kind === "stealth" && player.stealthTime > 0 && target) {
+      const angle = Math.atan2(target.vy, target.vx);
+      player.x = target.x - Math.cos(angle) * (target.radius + player.radius + 8);
+      player.y = target.y - Math.sin(angle) * (target.radius + player.radius + 8);
+      bouncePveBody(player);
+      player.skillTimer = 900;
+      addPveFloating("암살!", player.accent);
+    } else if (player.kind === "enhancer") {
+      player.furnaceCharges = 2;
+      player.skillTimer = 600;
+      addPveFloating("용광로!", player.accent);
+    } else if (player.kind === "tank") {
+      if (target) {
+        damagePveEnemy(target, 10);
+        const angle = Math.atan2(player.y - target.y, player.x - target.x);
+        target.vx = Math.cos(angle) * 5;
+        target.vy = Math.sin(angle) * 5;
+        target.silenceTime = 120;
+      }
+      player.skillTimer = 720;
+      addPveFloating("도발!", player.accent);
+    } else if (player.kind === "beamer") {
+      if (target) {
+        damagePveEnemy(target, 5);
+        target.slowTime = 180;
+      }
+      player.skillTimer = 720;
+      addPveFloating("슬로우 빔!", player.accent);
+    } else if (player.kind === "wild") {
+      player.chaseTime = 300;
+      player.skillTimer = 1080;
+      addPveFloating("추격!", player.accent);
+    }
+  } else {
+    if (player.kind === "thrower") {
+      firePvePlayerShot({ damage: 5, life: 540, radius: 14, star: true, speed: 12 });
+      firePvePlayerShot({ damage: 5, life: 540, radius: 14, star: true, speed: 12 });
+      player.ultimateTimer = 1800;
+      addPveFloating("스타 스트라이크!", player.accent);
+    } else if (player.kind === "charger") {
+      const speed = Math.hypot(player.vx, player.vy) || 1;
+      player.unstoppableDirectionX = player.vx / speed;
+      player.unstoppableDirectionY = player.vy / speed;
+      player.vx = 0;
+      player.vy = 0;
+      player.unstoppableWindup = 24;
+      player.ultimateTimer = 1380;
+      addPveFloating("집중...", player.accent);
+    } else if (player.kind === "grabber") {
+      createPveAreaAttack(player.x, player.y, 192, 30, 0, player.accent, "shockwave", 60);
+      player.ultimateTimer = 1680;
+      addPveFloating("충격파!", player.accent);
+    } else if (player.kind === "poker") {
+      const roll = pveRandomIndex(6) + 1;
+      healPvePlayer(roll * 5);
+      player.ultimateTimer = 2400;
+      addPveFloating(`힐 다이스 ${roll}`, player.accent);
+    } else if (player.kind === "stealth") {
+      player.hyperStealthNext = true;
+      player.ultimateTimer = 2700;
+      addPveFloating("하이퍼 히든!", player.accent);
+    } else if (player.kind === "enhancer") {
+      player.godWeapons.push({ power: player.attackPower, timer: 1 });
+      player.attackPower = 0;
+      player.ultimateTimer = 300;
+      addPveFloating("갓 웨폰!", player.accent);
+    } else if (player.kind === "tank") {
+      player.shieldTime = 180;
+      player.shieldBlastPending = true;
+      player.ultimateTimer = 2400;
+      addPveFloating("야수의 방패!", player.accent);
+    } else if (player.kind === "beamer") {
+      player.annihilatorTime = 180;
+      player.shotTimer = 1;
+      player.ultimateTimer = 3600;
+      addPveFloating("절멸자!", player.accent);
+    } else if (player.kind === "vampire") {
+      player.hp = Math.max(1, player.hp * 0.5);
+      player.bloodPreludeTime = 180;
+      player.ultimateTimer = 3000;
+      addPveFloating("핏빛 서곡!", player.accent);
+    }
+  }
+  updatePveSkillHud();
+}
+
+function updatePveSkillHud() {
+  if (!pveGame) return;
+  const player = pveGame.player;
+  const names = skillNames[player.kind];
+  const passiveNormal = player.kind === "vampire" || player.kind === "brawler";
+  const passiveUltimate = player.kind === "wild" || player.kind === "brawler";
+  const normalCooldown = cooldownSeconds(player.skillTimer);
+  const ultimateCooldown = cooldownSeconds(player.ultimateTimer);
+  ui.pveNormalSkillName.textContent = names.normal;
+  ui.pveUltimateSkillName.textContent = names.ultimate;
+  ui.pveNormalSkillCooldown.textContent = passiveNormal ? "PASSIVE" : normalCooldown || "";
+  ui.pveUltimateSkillCooldown.textContent = passiveUltimate ? "PASSIVE" : ultimateCooldown || "";
+  ui.pveNormalSkillButton.classList.toggle("is-cooling", passiveNormal || normalCooldown > 0);
+  ui.pveUltimateSkillButton.classList.toggle("is-cooling", passiveUltimate || ultimateCooldown > 0);
+  ui.pveNormalSkillButton.disabled = passiveNormal || normalCooldown > 0 || (player.kind === "stealth" && player.stealthTime <= 0);
+  ui.pveUltimateSkillButton.disabled = passiveUltimate || ultimateCooldown > 0;
 }
 
 function firePveEnemyShot(enemy) {
@@ -3342,26 +3747,145 @@ function stepPve() {
   if (!pveGame || pveGame.over) return;
   pveGame.tick += 1;
   const player = pveGame.player;
-  player.x += player.vx;
-  player.y += player.vy;
+  if (player.skillTimer > 0) player.skillTimer -= 1;
+  if (player.ultimateTimer > 0) player.ultimateTimer -= 1;
+  if (player.rageTime > 0) player.rageTime -= 1;
+  if (player.unstoppableWindup > 0) {
+    player.unstoppableWindup -= 1;
+    player.vx = 0;
+    player.vy = 0;
+    if (player.unstoppableWindup <= 0) {
+      player.vx = player.unstoppableDirectionX * 5.8;
+      player.vy = player.unstoppableDirectionY * 5.8;
+      player.unstoppableTime = 55;
+      addPveFloating("불가항력!", player.accent);
+    }
+  } else if (player.unstoppableTime > 0) {
+    player.unstoppableTime -= 1;
+  }
+  if (player.bloodPreludeTime > 0) player.bloodPreludeTime -= 1;
+  if (player.chaseTime > 0) player.chaseTime -= 1;
+  if (player.shieldTime > 0) {
+    player.shieldTime -= 1;
+    if (player.shieldTime <= 0 && player.shieldBlastPending) {
+      player.shieldBlastPending = false;
+      createPveAreaAttack(player.x, player.y, 261, 50, 0, "#d5dde8", "shockwave", 180);
+    }
+  }
+  if (player.stealthTime > 0) player.stealthTime -= 1;
+  if (player.kind === "stealth") {
+    player.stealthTimer -= 1;
+    if (player.stealthTimer <= 0) {
+      player.hyperStealth = player.hyperStealthNext;
+      player.hyperStealthNext = false;
+      player.stealthTime = player.hyperStealth ? 240 : 180;
+      player.stealthTimer = 420;
+      addPveFloating(player.hyperStealth ? "하이퍼 은신!" : "은신", player.accent);
+    }
+    if (player.stealthTime <= 0) player.hyperStealth = false;
+  }
+  if (player.kind === "enhancer") {
+    player.enhanceTimer -= 1;
+    if (player.enhanceTimer <= 0) {
+      player.attackPower = Math.min(40, player.attackPower + (player.furnaceCharges > 0 ? 2 : 1));
+      if (player.furnaceCharges > 0) player.furnaceCharges -= 1;
+      player.enhanceTimer = 120;
+    }
+    player.godWeapons.forEach(weapon => {
+      weapon.timer -= 1;
+      if (weapon.timer <= 0) {
+        firePvePlayerShot({ damage: weapon.power, speed: 14, color: "#ffe28a" });
+        weapon.timer = 300;
+      }
+    });
+  }
+  if (player.kind === "beamer" && player.annihilatorTime > 0) player.annihilatorTime -= 1;
+
+  const closest = nearestPveEnemy();
+  if (player.chaseTime > 0 && closest) {
+    const angle = Math.atan2(closest.y - player.y, closest.x - player.x);
+    player.vx = Math.cos(angle) * 18;
+    player.vy = Math.sin(angle) * 18;
+  }
+  const speedMultiplier = (player.rageTime > 0 ? 1.55 : 1)
+    * (player.stealthTime > 0 ? player.hyperStealth ? 10 : 1.8 : 1)
+    * (player.kind === "wild" && closest && closest.hp <= closest.maxHp * 0.5 ? 3.5 : 1)
+    * (player.bloodPreludeTime > 0 ? 2 : 1)
+    * (player.unstoppableTime > 0 ? 8.8 : 1)
+    * (player.kind === "brawler" ? 1 + player.idleAttackTime / 60 * 0.06 : 1);
+  if (player.shieldTime <= 0 && player.unstoppableWindup <= 0) {
+    player.x += player.vx * speedMultiplier;
+    player.y += player.vy * speedMultiplier;
+  }
   bouncePveBody(player);
   if (player.hitFlash > 0) player.hitFlash -= 1;
   player.shotTimer -= 1;
   if (player.shotTimer <= 0) {
-    firePvePlayerShot();
-    player.shotTimer = 75;
+    if (player.kind === "thrower") {
+      firePvePlayerShot({ damage: 5, speed: 12.4, life: 420, radius: 11 });
+      player.shotTimer = 180;
+    } else if (player.kind === "grabber") {
+      firePveGrapple(false);
+      player.shotTimer = 150;
+    } else if (player.kind === "poker") {
+      for (let index = 0; index < 5; index += 1) firePvePlayerShot({ damage: 4.5, speed: 15.8, life: 190 });
+      player.shotTimer = 300;
+    } else if (player.kind === "beamer") {
+      if (closest) createPveAreaAttack(closest.x, closest.y, 62, 45, 60, player.accent, "laser");
+      player.shotTimer = player.annihilatorTime > 0 ? 12 : 180;
+    } else if (player.kind === "wild") {
+      for (let index = 0; index < 3; index += 1) {
+        createPveAreaAttack(
+          58 + (pveGame.seed++ * 71 % (pveCanvas.width - 116)),
+          58 + (pveGame.seed++ * 43 % (pveCanvas.height - 116)),
+          58, 20, 28 + index * 8, player.accent, "slash"
+        );
+      }
+      player.shotTimer = 180;
+    } else if (player.kind === "vampire") {
+      const missing = 1 - player.hp / player.maxHp;
+      firePvePlayerShot({ blood: true, damage: 10 + missing * 25, speed: 12.5 + missing * 9.5 });
+      player.shotTimer = player.bloodPreludeTime > 0 ? 60 : 180;
+    } else if (player.kind === "brawler") {
+      if (closest && Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius + 52) {
+        damagePveEnemy(closest, 7 + (player.gritActive ? 8 : 0));
+        player.idleAttackTime = 0;
+      }
+      player.shotTimer = 60;
+    } else {
+      player.shotTimer = 60;
+    }
   }
 
   pveGame.enemies.forEach(enemy => {
     if (enemy.hp <= 0) return;
+    if (enemy.stunTime > 0) {
+      enemy.stunTime -= 1;
+      enemy.vx *= 0.82;
+      enemy.vy *= 0.82;
+      return;
+    }
     enemy.x += enemy.vx;
     enemy.y += enemy.vy;
     bouncePveBody(enemy);
     if (enemy.contactCooldown > 0) enemy.contactCooldown -= 1;
+    if (enemy.slowTime > 0) {
+      enemy.slowTime -= 1;
+      enemy.vx *= 0.99;
+      enemy.vy *= 0.99;
+    }
+    if (enemy.silenceTime > 0) enemy.silenceTime -= 1;
     const dx = player.x - enemy.x;
     const dy = player.y - enemy.y;
     const distance = Math.hypot(dx, dy);
     if (distance < player.radius + enemy.radius) {
+      if (player.stealthTime > 0) {
+        if (enemy.contactCooldown <= 0) {
+          damagePveEnemy(enemy, player.hyperStealth ? 10 : 15);
+          enemy.contactCooldown = 24;
+        }
+        return;
+      }
       const nx = dx / (distance || 1);
       const ny = dy / (distance || 1);
       player.vx = nx * 6;
@@ -3370,10 +3894,21 @@ function stepPve() {
       enemy.vy = -ny * 4.4;
       if (enemy.contactCooldown <= 0) {
         damagePvePlayer(5);
+        const contactDamage = player.unstoppableTime > 0 ? 40
+          : player.kind === "charger" ? 10
+          : player.kind === "tank" ? 5
+            : player.kind === "enhancer" ? player.attackPower
+              : 0;
+        if (contactDamage > 0) damagePveEnemy(enemy, contactDamage);
+        if (player.kind === "wild") {
+          for (let index = 0; index < 3; index += 1) {
+            createPveAreaAttack(enemy.x + (index - 1) * 32, enemy.y, 58, 20, index * 6, player.accent, "slash");
+          }
+        }
         enemy.contactCooldown = 30;
       }
     }
-    if (enemy.type === "thrower") {
+    if (enemy.type === "thrower" && enemy.silenceTime <= 0) {
       enemy.throwTimer -= 1;
       if (enemy.throwTimer <= 0) {
         firePveEnemyShot(enemy);
@@ -3383,6 +3918,19 @@ function stepPve() {
   });
 
   pveGame.projectiles = pveGame.projectiles.filter(projectile => {
+    if (projectile.homingTime > 0) {
+      projectile.homingTime -= 1;
+      if (projectile.homingTime <= 0) projectile.homing = false;
+    }
+    if (projectile.homing) {
+      const target = nearestPveEnemy();
+      if (target) {
+        const speed = Math.hypot(projectile.vx, projectile.vy);
+        const angle = Math.atan2(target.y - projectile.y, target.x - projectile.x);
+        projectile.vx = projectile.vx * 0.85 + Math.cos(angle) * speed * 0.15;
+        projectile.vy = projectile.vy * 0.85 + Math.sin(angle) * speed * 0.15;
+      }
+    }
     projectile.x += projectile.vx;
     projectile.y += projectile.vy;
     projectile.life -= 1;
@@ -3394,6 +3942,7 @@ function stepPve() {
         && Math.hypot(item.x - projectile.x, item.y - projectile.y) < item.radius + projectile.radius);
       if (enemy) {
         damagePveEnemy(enemy, projectile.damage);
+        if (projectile.slow) enemy.slowTime = 180;
         if (projectile.blood) return false;
         const angle = Math.atan2(enemy.y - projectile.y, enemy.x - projectile.x);
         const speed = Math.hypot(projectile.vx, projectile.vy);
@@ -3415,13 +3964,56 @@ function stepPve() {
         ? projectile.x > -30 && projectile.x < pveCanvas.width + 30 && projectile.y > -30 && projectile.y < pveCanvas.height + 30
         : true);
   });
+  pveGame.grapples = pveGame.grapples.filter(grapple => {
+    grapple.length += grapple.speed;
+    grapple.life -= 1;
+    const endX = player.x + Math.cos(grapple.angle) * grapple.length;
+    const endY = player.y + Math.sin(grapple.angle) * grapple.length;
+    const enemy = pveGame.enemies.find(item => item.hp > 0
+      && Math.hypot(item.x - endX, item.y - endY) < item.radius + (grapple.enhanced ? 20 : 14));
+    if (enemy) {
+      const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+      enemy.x += Math.cos(angle) * 70;
+      enemy.y += Math.sin(angle) * 70;
+      enemy.vx = Math.cos(angle) * 5.2;
+      enemy.vy = Math.sin(angle) * 5.2;
+      enemy.stunTime = 30;
+      damagePveEnemy(enemy, 20);
+      return false;
+    }
+    return grapple.life > 0 && grapple.length < grapple.maxLength;
+  });
+  pveGame.areaAttacks = pveGame.areaAttacks.filter(attack => {
+    attack.delay -= 1;
+    attack.life -= 1;
+    if (attack.delay <= 0 && !attack.hit) {
+      attack.hit = true;
+      pveGame.enemies.forEach(enemy => {
+        if (enemy.hp <= 0) return;
+        const hit = Math.hypot(enemy.x - attack.x, enemy.y - attack.y) < enemy.radius + attack.radius
+          || (attack.type === "laser" && Math.abs(enemy.x - attack.x) < enemy.radius + 18);
+        if (hit) {
+          damagePveEnemy(enemy, attack.damage);
+          if (attack.stun) enemy.stunTime = Math.max(enemy.stunTime, attack.stun);
+        }
+      });
+    }
+    return attack.life > 0;
+  });
   pveGame.enemies = pveGame.enemies.filter(enemy => enemy.hp > 0);
   pveGame.damageTexts = pveGame.damageTexts.filter(text => {
     text.y -= 0.6;
     text.life -= 1;
     return text.life > 0;
   });
+  pveGame.floatingTexts = pveGame.floatingTexts.filter(text => {
+    text.y -= 0.5;
+    text.life -= 1;
+    return text.life > 0;
+  });
+  if (player.kind === "brawler") player.idleAttackTime += 1;
   updatePveHud();
+  updatePveSkillHud();
   if (!pveGame.enemies.length) finishPve(true);
 }
 
@@ -3450,25 +4042,59 @@ function drawPve() {
   const player = pveGame.player;
   pveCtx.beginPath();
   pveCtx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+  pveCtx.globalAlpha = player.stealthTime > 0 ? 0.36 : 1;
   pveCtx.fillStyle = player.hitFlash > 0 ? "#ffffff" : player.color;
   pveCtx.fill();
   pveCtx.beginPath();
   pveCtx.arc(player.x + 7, player.y - 7, 6, 0, Math.PI * 2);
   pveCtx.fillStyle = "#101319";
   pveCtx.fill();
+  pveCtx.globalAlpha = 1;
   pveGame.enemies.forEach(enemy => {
     pveCtx.beginPath();
     pveCtx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
     pveCtx.fillStyle = enemy.type === "thrower" ? "#9b7cff" : "#ef476f";
     pveCtx.fill();
-    pveCtx.fillStyle = "#f7f4eb";
-    pveCtx.font = "900 11px Segoe UI";
-    pveCtx.textAlign = "center";
-    pveCtx.fillText(enemy.type === "thrower" ? "투척" : "잡몹", enemy.x, enemy.y + 4);
     pveCtx.fillStyle = "#101319";
     pveCtx.fillRect(enemy.x - 28, enemy.y + 34, 56, 6);
     pveCtx.fillStyle = "#ef476f";
     pveCtx.fillRect(enemy.x - 28, enemy.y + 34, 56 * enemy.hp / enemy.maxHp, 6);
+  });
+  pveGame.grapples.forEach(grapple => {
+    const endX = player.x + Math.cos(grapple.angle) * grapple.length;
+    const endY = player.y + Math.sin(grapple.angle) * grapple.length;
+    pveCtx.save();
+    pveCtx.strokeStyle = player.accent;
+    pveCtx.shadowColor = grapple.enhanced ? "#ffffff" : "transparent";
+    pveCtx.shadowBlur = grapple.enhanced ? 18 : 0;
+    pveCtx.lineWidth = grapple.enhanced ? 9 : 5;
+    pveCtx.beginPath();
+    pveCtx.moveTo(player.x, player.y);
+    pveCtx.lineTo(endX, endY);
+    pveCtx.stroke();
+    pveCtx.beginPath();
+    pveCtx.arc(endX, endY, grapple.enhanced ? 16 : 10, 0, Math.PI * 2);
+    pveCtx.fillStyle = player.accent;
+    pveCtx.fill();
+    pveCtx.restore();
+  });
+  pveGame.areaAttacks.forEach(attack => {
+    const warning = attack.delay > 0;
+    pveCtx.save();
+    pveCtx.globalAlpha = warning ? 0.4 : Math.min(1, attack.life / 18);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.fillStyle = `${attack.color}28`;
+    pveCtx.lineWidth = warning ? 3 : 8;
+    pveCtx.setLineDash(warning ? [8, 7] : []);
+    pveCtx.beginPath();
+    pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.stroke();
+    if (!warning && (attack.type === "laser" || attack.type === "annihilator")) {
+      pveCtx.fillStyle = attack.type === "annihilator" ? "rgba(255,48,79,.75)" : "rgba(167,239,255,.7)";
+      pveCtx.fillRect(attack.x - 13, 0, 26, attack.type === "annihilator" ? attack.y : pveCanvas.height);
+    }
+    pveCtx.restore();
   });
   pveGame.projectiles.forEach(projectile => {
     if (projectile.blood) {
@@ -3499,6 +4125,13 @@ function drawPve() {
     pveCtx.font = "900 20px Segoe UI";
     pveCtx.textAlign = "center";
     pveCtx.fillText(`-${text.amount}`, text.x, text.y);
+  });
+  pveGame.floatingTexts.forEach(text => {
+    pveCtx.globalAlpha = Math.min(1, text.life / 30);
+    pveCtx.fillStyle = text.color;
+    pveCtx.font = "900 18px Segoe UI";
+    pveCtx.textAlign = "center";
+    pveCtx.fillText(text.text, text.x, text.y);
   });
   pveCtx.globalAlpha = 1;
 }
@@ -3635,7 +4268,15 @@ ui.backFromPveButton.addEventListener("click", () => {
   showScreen("lobby");
 });
 ui.pveStageButtons.forEach(button => {
-  button.addEventListener("click", () => startPveStage(button.dataset.pveStage));
+  button.addEventListener("click", () => openPveCharacterSelect(button.dataset.pveStage));
+});
+ui.backToPveStagesButton.addEventListener("click", () => showScreen("pve"));
+ui.startPveBattleButton.addEventListener("click", () => {
+  if (!pendingPveStage) return;
+  ui.startPveBattleButton.disabled = true;
+  startPveStage(pendingPveStage).finally(() => {
+    ui.startPveBattleButton.disabled = false;
+  });
 });
 ui.pveResultButton.addEventListener("click", returnToPveSelect);
 document.querySelectorAll("[data-lobby-tab]").forEach(button => {
@@ -3643,7 +4284,20 @@ document.querySelectorAll("[data-lobby-tab]").forEach(button => {
 });
 ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
 ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
+ui.pveNormalSkillButton.addEventListener("click", () => usePveSkill("normal"));
+ui.pveUltimateSkillButton.addEventListener("click", () => usePveSkill("ultimate"));
 document.addEventListener("keydown", event => {
+  if (screens.pveBattle.classList.contains("is-active") && pveGame) {
+    if (event.key === "1") {
+      event.preventDefault();
+      usePveSkill("normal");
+    }
+    if (event.key === "2") {
+      event.preventDefault();
+      usePveSkill("ultimate");
+    }
+    return;
+  }
   if (!game || screens.auth.classList.contains("is-active") || screens.signup.classList.contains("is-active")) return;
   if (event.key === "1") {
     event.preventDefault();

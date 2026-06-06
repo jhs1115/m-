@@ -192,7 +192,8 @@ async function handleApi(req, res) {
 }
 
 function serveStatic(req, res) {
-  const url = req.url === "/" ? "/index.html" : req.url;
+  const pathname = new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname;
+  const url = pathname === "/" ? "/index.html" : pathname;
   if (!PUBLIC_FILES.has(url)) {
     res.writeHead(404);
     res.end("Not found");
