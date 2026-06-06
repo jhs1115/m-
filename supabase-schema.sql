@@ -635,7 +635,7 @@ begin
   event_id := active_user.id::text || '-' || (jsonb_array_length(current_events) + 1)::text;
   match_start_at := coalesce((current_state->>'matchStartAt')::numeric, extract(epoch from now()));
   server_tick := greatest(0, floor((extract(epoch from now()) - match_start_at) * 60)::integer);
-  apply_tick := server_tick + 90;
+  apply_tick := server_tick + 12;
 
   next_state := jsonb_set(
     current_state,
@@ -763,7 +763,10 @@ begin
   end if;
 
   select array_agg(kind) into available
-  from unnest(array['charger', 'grabber', 'poker', 'stealth']::text[]) as kind
+  from unnest(array[
+    'charger', 'grabber', 'poker', 'stealth', 'enhancer',
+    'tank', 'beamer', 'wild', 'vampire', 'brawler'
+  ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
   if available is null or array_length(available, 1) = 0 then

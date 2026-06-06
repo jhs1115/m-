@@ -150,17 +150,59 @@ const characters = {
     canGrab: false,
     canPoker: false,
     canStealth: true
+  },
+  enhancer: {
+    name: "강화하는 색히",
+    color: "#ff9f43",
+    accent: "#ffe28a",
+    contactDamage: 0
+  },
+  tank: {
+    name: "개쳐맞는 색히",
+    color: "#75808f",
+    accent: "#d5dde8",
+    contactDamage: 5
+  },
+  beamer: {
+    name: "빔쏘는 색히",
+    color: "#42a5ff",
+    accent: "#a7efff",
+    contactDamage: 0
+  },
+  wild: {
+    name: "야생의힘쓰는 색히",
+    color: "#78c850",
+    accent: "#d8ff75",
+    contactDamage: 0
+  },
+  vampire: {
+    name: "피흡하는 색히",
+    color: "#9c1647",
+    accent: "#ff5f87",
+    contactDamage: 0
+  },
+  brawler: {
+    name: "맨몸격투하는 색히",
+    color: "#d9823b",
+    accent: "#ffd08a",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
   charger: { normal: "격노", ultimate: "불가항력" },
   grabber: { normal: "그랩", ultimate: "충격파" },
   poker: { normal: "드로우", ultimate: "힐 다이스" },
-  stealth: { normal: "암살", ultimate: "하이퍼 히든" }
+  stealth: { normal: "암살", ultimate: "하이퍼 히든" },
+  enhancer: { normal: "용광로", ultimate: "갓 웨폰" },
+  tank: { normal: "도발", ultimate: "야수의 방패" },
+  beamer: { normal: "슬로우 빔", ultimate: "절멸자" },
+  wild: { normal: "추격", ultimate: "야생의 본능" },
+  vampire: { normal: "흡혈", ultimate: "핏빛 서곡" },
+  brawler: { normal: "투지", ultimate: "야수성" }
 };
 
 let currentUser = null;
@@ -181,6 +223,7 @@ let gameSpeed = 1;
 let selectedMode = "";
 let roomPollId = null;
 let roomRealtimeChannel = null;
+let roomRealtimeCode = "";
 let matchSelectionTouched = false;
 let matchmakingPollId = null;
 let selectedCharacterReady = false;
@@ -283,12 +326,15 @@ function setRoomPolling(enabled) {
 }
 
 function setRoomRealtime(roomCode) {
+  if (roomRealtimeChannel && roomRealtimeCode === roomCode) return;
   if (roomRealtimeChannel) {
     supabaseClient?.removeChannel(roomRealtimeChannel);
     roomRealtimeChannel = null;
+    roomRealtimeCode = "";
   }
   if (!roomCode || !supabaseClient) return;
 
+  roomRealtimeCode = roomCode;
   roomRealtimeChannel = supabaseClient
     .channel(`room-${roomCode}`)
     .on("postgres_changes", {
@@ -296,8 +342,19 @@ function setRoomRealtime(roomCode) {
       schema: "public",
       table: "app_rooms",
       filter: `code=eq.${roomCode}`
-    }, () => {
-      refreshRoom();
+    }, payload => {
+      const row = payload?.new;
+      if (!row?.prep_state || !currentRoom || currentRoom.code !== roomCode) {
+        refreshRoom();
+        return;
+      }
+      currentRoom = {
+        ...currentRoom,
+        ...row,
+        prepState: row.prep_state
+      };
+      processSkillEvents(row.prep_state);
+      maybeStartReadyMatch();
     })
     .subscribe();
 }
@@ -406,7 +463,10 @@ function renderLobby() {
 }
 
 function characterInitial(kind) {
-  return ({ thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S" })[kind] || "?";
+  return ({
+    thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
+    enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F"
+  })[kind] || "?";
 }
 
 function renderInventory() {
@@ -729,7 +789,7 @@ async function drawCharacter() {
 
     ui.gachaReveal.classList.remove("is-rolling");
     ui.gachaReveal.classList.add("is-hit");
-    ui.gachaReveal.querySelector("span").textContent = ({ charger: "B", grabber: "G", poker: "P", stealth: "S" })[picked] || "?";
+    ui.gachaReveal.querySelector("span").textContent = characterInitial(picked);
     ui.gachaResultName.textContent = characters[picked].name;
     ui.gachaMessage.textContent = `${currentUser.name}: ${characters[picked].name} 획득!`;
     renderLobby();
@@ -867,7 +927,13 @@ function normalSkillCooldown(kind) {
     charger: 600,
     grabber: 900,
     poker: 600,
-    stealth: 900
+    stealth: 900,
+    enhancer: 600,
+    tank: 720,
+    beamer: 720,
+    wild: 1080,
+    vampire: 0,
+    brawler: 0
   }[kind] ?? Infinity;
 }
 
@@ -877,7 +943,13 @@ function ultimateCooldown(kind) {
     charger: 1380,
     grabber: 1680,
     poker: 2400,
-    stealth: 2400
+    stealth: 2400,
+    enhancer: 300,
+    tank: 2400,
+    beamer: 3600,
+    wild: 0,
+    vampire: 3000,
+    brawler: 0
   }[kind] ?? Infinity;
 }
 
@@ -918,8 +990,8 @@ function makeFighter(kind, label, ownerId, x, y) {
     hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
-    skillTimer: 480,
-    ultimateTimer: 480,
+    skillTimer: kind === "vampire" || kind === "brawler" ? 0 : 480,
+    ultimateTimer: kind === "wild" || kind === "brawler" ? 0 : 480,
     rageTime: 0,
     unstoppableTime: 0,
     unstoppableHit: false,
@@ -928,7 +1000,28 @@ function makeFighter(kind, label, ownerId, x, y) {
     hasteTime: 0,
     hitFlash: 0,
     lockOnTime: 0,
-    lockOnPulse: 0
+    lockOnPulse: 0,
+    attackPower: kind === "enhancer" ? 1 : character.contactDamage,
+    enhanceTimer: 60,
+    furnaceCharges: 0,
+    weaponActive: false,
+    weaponTimer: 0,
+    weaponFlight: 0,
+    weaponHit: false,
+    damageReduction: kind === "tank" ? 0.2 : 0,
+    shieldTime: 0,
+    shieldBlastPending: false,
+    silenceTime: 0,
+    beamTimer: kind === "beamer" ? 180 : Infinity,
+    annihilatorTime: 0,
+    wildTimer: kind === "wild" ? 360 : Infinity,
+    chaseTime: 0,
+    bloodTimer: kind === "vampire" ? 300 : Infinity,
+    bloodPreludeTime: 0,
+    punchTimer: 0,
+    gritUsed: false,
+    gritActive: false,
+    idleAttackTime: 0
   };
 }
 
@@ -952,6 +1045,9 @@ function resetGame() {
     grapples: [],
     pokerShots: [],
     shockwaves: [],
+    areaAttacks: [],
+    beams: [],
+    weapons: [],
     damageTexts: [],
     visualEffects: [],
     contactLock: false,
@@ -993,12 +1089,26 @@ function updateHud() {
   ui.playerTwoHealthBar.style.width = `${(p2Hp / game.fighters[1].maxHp) * 100}%`;
 }
 
-function damage(fighter, amount) {
+function damage(fighter, amount, attacker = null) {
   if (amount <= 0 || game.over) return;
   if (fighter.stealthTime > 0) return;
-  fighter.hp = clamp(fighter.hp - amount, 0, fighter.maxHp);
+  let finalAmount = amount;
+  if (attacker?.bloodPreludeTime > 0) finalAmount *= 2;
+  const reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
+  finalAmount *= 1 - reduction;
+  finalAmount = Math.max(0, finalAmount);
+  fighter.hp = clamp(fighter.hp - finalAmount, 0, fighter.maxHp);
   fighter.hitFlash = 10;
-  addDamageText(fighter.x, fighter.y - fighter.radius, amount);
+  addDamageText(fighter.x, fighter.y - fighter.radius, Math.round(finalAmount * 10) / 10);
+  if (attacker?.kind === "vampire") {
+    heal(attacker, finalAmount * 0.3);
+  }
+  if (fighter.kind === "brawler" && !fighter.gritUsed && fighter.hp <= fighter.maxHp * 0.5 && fighter.hp > 0) {
+    fighter.gritUsed = true;
+    fighter.gritActive = true;
+    heal(fighter, fighter.maxHp * 0.3);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "투지!", fighter.accent);
+  }
   updateHud();
   if (fighter.hp <= 0) finishGame(fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0]);
 }
@@ -1007,28 +1117,30 @@ function contactDamagePair(a, b) {
   if (game.over) return;
   if (a.stealthTime > 0 || b.stealthTime > 0) {
     if (a.stealthTime > 0 && a.stealthDamageCooldown <= 0) {
-      damage(b, a.stealthDamage);
+      damage(b, a.stealthDamage, a);
       a.stealthDamageCooldown = 24;
     }
     if (b.stealthTime > 0 && b.stealthDamageCooldown <= 0) {
-      damage(a, b.stealthDamage);
+      damage(a, b.stealthDamage, b);
       b.stealthDamageCooldown = 24;
     }
     return;
   }
-  const nextA = clamp(a.hp - b.contactDamage, 0, a.maxHp);
-  const nextB = clamp(b.hp - a.contactDamage, 0, b.maxHp);
-  if (b.contactDamage > 0) {
-    a.hitFlash = 10;
-    addDamageText(a.x, a.y - a.radius, b.contactDamage);
+  if (a.kind === "wild" && a.chaseTime > 0) createWildSlashes(a, b.x, b.y);
+  if (b.kind === "wild" && b.chaseTime > 0) createWildSlashes(b, a.x, a.y);
+  const aDamage = a.kind === "enhancer" ? a.attackPower : a.contactDamage;
+  const bDamage = b.kind === "enhancer" ? b.attackPower : b.contactDamage;
+  if (a.kind === "charger" && b.kind === "charger" && a.hp <= bDamage && b.hp <= aDamage) {
+    a.hp = 0;
+    b.hp = 0;
+    addDamageText(a.x, a.y - a.radius, bDamage);
+    addDamageText(b.x, b.y - b.radius, aDamage);
+    updateHud();
+    finishDraw();
+    return;
   }
-  if (a.contactDamage > 0) {
-    b.hitFlash = 10;
-    addDamageText(b.x, b.y - b.radius, a.contactDamage);
-  }
-  a.hp = nextA;
-  b.hp = nextB;
-  updateHud();
+  if (bDamage > 0) damage(a, bDamage, b);
+  if (aDamage > 0 && !game.over) damage(b, aDamage, a);
   if (a.hp <= 0 && b.hp <= 0 && a.kind === "charger" && b.kind === "charger") {
     finishDraw();
     return;
@@ -1175,6 +1287,40 @@ function triggerNormalSkill(fighter) {
     if (fighter.stealthTime <= 0) return;
     assassinate(fighter);
     fighter.skillTimer = 900;
+    return;
+  }
+
+  if (fighter.kind === "enhancer") {
+    fighter.furnaceCharges = 3;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "용광로!", fighter.accent);
+    fighter.skillTimer = 600;
+    return;
+  }
+
+  if (fighter.kind === "tank") {
+    const target = opponentOf(fighter);
+    damage(target, 10, fighter);
+    const angle = Math.atan2(fighter.y - target.y, fighter.x - target.x);
+    const speed = Math.hypot(target.vx, target.vy) || 6.8;
+    target.vx = Math.cos(angle) * speed;
+    target.vy = Math.sin(angle) * speed;
+    target.silenceTime = Math.max(target.silenceTime, 120);
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "도발!", fighter.accent);
+    fighter.skillTimer = 720;
+    return;
+  }
+
+  if (fighter.kind === "beamer") {
+    fireSlowBeam(fighter);
+    fighter.stunTime = Math.max(fighter.stunTime, 18);
+    fighter.skillTimer = 720;
+    return;
+  }
+
+  if (fighter.kind === "wild") {
+    fighter.chaseTime = 300;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "추격!", fighter.accent);
+    fighter.skillTimer = 1080;
   }
 }
 
@@ -1222,6 +1368,39 @@ function triggerUltimate(fighter) {
     fighter.hyperStealthNext = true;
     addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "하이퍼 히든!", fighter.accent);
     fighter.ultimateTimer = 2400;
+    return;
+  }
+
+  if (fighter.kind === "enhancer") {
+    fighter.weaponActive = true;
+    fighter.weaponTimer = 1;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "갓 웨폰!", fighter.accent);
+    fighter.ultimateTimer = 300;
+    return;
+  }
+
+  if (fighter.kind === "tank") {
+    fighter.shieldTime = 180;
+    fighter.shieldBlastPending = true;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "야수의 방패!", fighter.accent);
+    fighter.ultimateTimer = 2400;
+    return;
+  }
+
+  if (fighter.kind === "beamer") {
+    fighter.annihilatorTime = 120;
+    fighter.beamTimer = 1;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "절멸자!", fighter.accent);
+    fighter.ultimateTimer = 3600;
+    return;
+  }
+
+  if (fighter.kind === "vampire") {
+    fighter.hp = Math.max(1, fighter.hp * 0.5);
+    fighter.bloodPreludeTime = 180;
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 44, "핏빛 서곡!", fighter.accent);
+    updateHud();
+    fighter.ultimateTimer = 3000;
   }
 }
 
@@ -1237,12 +1416,14 @@ function fighterByOwnerId(ownerId) {
 }
 
 function skillAvailable(fighter, type) {
-  if (!fighter || game?.over || fighter.stunTime > 0) return false;
+  if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
   if (type === "normal") {
+    if (fighter.kind === "vampire" || fighter.kind === "brawler") return false;
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     return true;
   }
+  if (fighter.kind === "wild" || fighter.kind === "brawler") return false;
   return fighter.ultimateTimer <= 0;
 }
 
@@ -1338,6 +1519,7 @@ function updateSkills(fighter, dt) {
 }
 
 function moveFighter(fighter, dt) {
+  if (fighter.silenceTime > 0) fighter.silenceTime -= dt;
   if (fighter.stunTime > 0) {
     fighter.stunTime -= dt;
     if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
@@ -1358,8 +1540,10 @@ function moveFighter(fighter, dt) {
     if (fighter.hitFlash > 0) fighter.hitFlash -= dt;
     return;
   }
-  fighter.x += fighter.vx * dt;
-  fighter.y += fighter.vy * dt;
+  if (fighter.shieldTime <= 0) {
+    fighter.x += fighter.vx * dt;
+    fighter.y += fighter.vy * dt;
+  }
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = fighter.stealthTime > 0
     ? fighter.hyperStealthActive ? 125 : 12.5
@@ -1367,12 +1551,28 @@ function moveFighter(fighter, dt) {
       ? 5.9
       : fighter.canGrab
         ? 6.2
-        : 6.8;
+        : fighter.kind === "tank"
+          ? 5.7
+          : fighter.kind === "brawler"
+            ? 7.1
+            : 6.8;
+  const target = opponentOf(fighter);
+  if (fighter.chaseTime > 0) {
+    const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
+    fighter.vx = Math.cos(angle) * Math.max(baseSpeed * 2, speed);
+    fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 2, speed);
+  }
+  const wildInstinct = fighter.kind === "wild" && target.hp <= target.maxHp * 0.5 ? 2 : 1;
+  const brawlerRamp = fighter.kind === "brawler" ? 1 + fighter.idleAttackTime / 60 * 0.05 : 1;
   const targetSpeed = baseSpeed
     * (fighter.rageTime > 0 ? 1.55 : 1)
     * (fighter.hasteTime > 0 ? 1.35 : 1)
     * (fighter.slowTime > 0 ? 0.58 : 1)
-    * (fighter.unstoppableTime > 0 ? 2.35 : 1);
+    * (fighter.unstoppableTime > 0 ? 2.35 : 1)
+    * (fighter.chaseTime > 0 ? 2 : 1)
+    * (fighter.bloodPreludeTime > 0 ? 2 : 1)
+    * wildInstinct
+    * brawlerRamp;
   if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
@@ -1389,12 +1589,74 @@ function moveFighter(fighter, dt) {
     fighter.unstoppableTime -= dt;
     const target = opponentOf(fighter);
     if (!fighter.unstoppableHit && Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
-      damage(target, 40);
+      damage(target, 40, fighter);
       fighter.unstoppableHit = true;
     }
   }
   if (fighter.slowTime > 0) fighter.slowTime -= dt;
   if (fighter.hasteTime > 0) fighter.hasteTime -= dt;
+  if (fighter.chaseTime > 0) fighter.chaseTime -= dt;
+  if (fighter.bloodPreludeTime > 0) fighter.bloodPreludeTime -= dt;
+
+  if (fighter.kind === "enhancer") {
+    fighter.enhanceTimer -= dt;
+    if (fighter.enhanceTimer <= 0) {
+      fighter.attackPower += fighter.furnaceCharges > 0 ? 3 : 1;
+      if (fighter.furnaceCharges > 0) fighter.furnaceCharges -= 1;
+      fighter.enhanceTimer = 60;
+    }
+    if (fighter.weaponActive) {
+      fighter.weaponTimer -= dt;
+      if (fighter.weaponTimer <= 0) {
+        launchGodWeapon(fighter);
+        fighter.weaponTimer = 300;
+      }
+    }
+  }
+
+  if (fighter.kind === "tank" && fighter.shieldTime > 0) {
+    fighter.shieldTime -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    if (fighter.shieldTime <= 0 && fighter.shieldBlastPending) {
+      fighter.shieldBlastPending = false;
+      createTankBlast(fighter);
+    }
+  }
+
+  if (fighter.kind === "beamer") {
+    fighter.beamTimer -= dt;
+    if (fighter.beamTimer <= 0) {
+      createSkyLaser(fighter);
+      fighter.beamTimer = fighter.annihilatorTime > 0 ? 12 : 180;
+    }
+    if (fighter.annihilatorTime > 0) fighter.annihilatorTime -= dt;
+  }
+
+  if (fighter.kind === "wild") {
+    fighter.wildTimer -= dt;
+    if (fighter.wildTimer <= 0) {
+      createWildSlashes(fighter);
+      fighter.wildTimer = 360;
+    }
+  }
+
+  if (fighter.kind === "vampire") {
+    fighter.bloodTimer -= dt;
+    if (fighter.bloodTimer <= 0) {
+      fireBloodBullet(fighter);
+      fighter.bloodTimer = 300;
+    }
+  }
+
+  if (fighter.kind === "brawler") {
+    if (fighter.punchTimer > 0) fighter.punchTimer -= dt;
+    fighter.idleAttackTime += dt;
+    const distance = Math.hypot(target.x - fighter.x, target.y - fighter.y);
+    if (distance < fighter.radius + target.radius + 52 && fighter.punchTimer <= 0) {
+      punchTarget(fighter, target);
+    }
+  }
 
   if (fighter.canThrow) {
     fighter.throwTimer -= dt;
@@ -1560,12 +1822,140 @@ function createShockwave(owner) {
     color: owner.accent
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damage(target, 30);
+    damage(target, 30, owner);
     target.stunTime = Math.max(target.stunTime, 60);
     target.vx *= 0.25;
     target.vy *= 0.25;
   }
   addFloatingText(owner.x, owner.y - owner.radius - 44, "충격파!", owner.accent);
+}
+
+function fireSlowBeam(owner) {
+  const target = opponentOf(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  game.beams.push({
+    type: "slow",
+    owner,
+    x1: owner.x,
+    y1: owner.y,
+    x2: owner.x + Math.cos(angle) * 760,
+    y2: owner.y + Math.sin(angle) * 760,
+    life: 36,
+    maxLife: 36,
+    delay: 18,
+    hit: false,
+    color: owner.accent
+  });
+}
+
+function createSkyLaser(owner) {
+  const target = opponentOf(owner);
+  game.areaAttacks.push({
+    type: "laser",
+    owner,
+    x: target.x,
+    y: target.y,
+    radius: 62,
+    delay: 60,
+    life: 84,
+    hit: false,
+    damage: 20,
+    color: owner.accent
+  });
+}
+
+function createWildSlashes(owner, x = null, y = null) {
+  for (let index = 0; index < 2; index += 1) {
+    game.areaAttacks.push({
+      type: "slash",
+      owner,
+      x: x ?? 70 + seededRandom() * (canvas.width - 140),
+      y: y ?? 70 + seededRandom() * (canvas.height - 140),
+      radius: 58,
+      delay: 28 + index * 8,
+      life: 55 + index * 8,
+      hit: false,
+      damage: 25,
+      color: owner.accent,
+      angle: seededRandom() * Math.PI
+    });
+  }
+}
+
+function fireBloodBullet(owner) {
+  const target = opponentOf(owner);
+  const hpMissing = 1 - owner.hp / owner.maxHp;
+  const damageAmount = 10 + hpMissing * 20;
+  const speed = 9.5 + hpMissing * 8;
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  game.balls.push({
+    owner,
+    x: owner.x + Math.cos(angle) * (owner.radius + 18),
+    y: owner.y + Math.sin(angle) * (owner.radius + 18),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    radius: 12,
+    life: 300,
+    hitCooldown: 0,
+    damage: damageAmount,
+    speed,
+    color: "#ff174f",
+    homing: false,
+    star: false,
+    blood: true
+  });
+}
+
+function launchGodWeapon(owner) {
+  const target = opponentOf(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  game.weapons.push({
+    owner,
+    target,
+    x: owner.x,
+    y: owner.y,
+    vx: Math.cos(angle) * 13,
+    vy: Math.sin(angle) * 13,
+    damage: owner.attackPower * 2,
+    returning: false,
+    hit: false,
+    life: 150,
+    color: owner.accent
+  });
+}
+
+function createTankBlast(owner) {
+  const target = opponentOf(owner);
+  game.shockwaves.push({
+    owner,
+    x: owner.x,
+    y: owner.y,
+    radius: 28,
+    maxRadius: 174,
+    life: 42,
+    color: "#d5dde8"
+  });
+  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + 174) {
+    damage(target, 50, owner);
+    target.stunTime = Math.max(target.stunTime, 180);
+  }
+}
+
+function punchTarget(owner, target) {
+  const damageAmount = 20 + (owner.gritActive ? 15 : 0);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  damage(target, damageAmount, owner);
+  target.vx = Math.cos(angle) * 13;
+  target.vy = Math.sin(angle) * 13;
+  owner.punchTimer = 60;
+  owner.idleAttackTime = 0;
+  addVisualEffect({
+    type: "rage-burst",
+    fighter: target,
+    life: 18,
+    maxLife: 18,
+    color: owner.accent
+  });
 }
 
 function throwDrawCard(owner) {
@@ -1714,7 +2104,8 @@ function updateBalls(dt) {
       const dy = target.y - ball.y;
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
         if (target !== ball.owner) {
-          damage(target, ball.damage);
+          damage(target, ball.damage, ball.owner);
+          if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
           if (!ball.star) return false;
         }
         const angle = Math.atan2(dy, dx);
@@ -1751,7 +2142,7 @@ function updateGrapples(dt) {
       target.vx = Math.cos(pullAngle) * 5.2;
       target.vy = Math.sin(pullAngle) * 5.2;
       bounceOnWalls(target);
-      damage(target, 20);
+      damage(target, 20, grapple.owner);
       target.stunTime = Math.max(target.stunTime, 30);
       return false;
     }
@@ -1792,7 +2183,7 @@ function applyPokerCardHit(card) {
     addFloatingText(card.owner.x, card.owner.y - card.owner.radius - 44, "킹 x2 준비", card.owner.accent);
     return;
   }
-  damage(card.target, card.damage);
+  damage(card.target, card.damage, card.owner);
   if (card.effect === "A") {
     card.target.slowTime = Math.max(card.target.slowTime, 180);
   }
@@ -1806,6 +2197,64 @@ function updateShockwaves(dt) {
     wave.life -= dt;
     wave.radius = Math.min(wave.maxRadius, wave.radius + 7.2 * dt);
     return wave.life > 0;
+  });
+}
+
+function updateAreaAttacks(dt) {
+  game.areaAttacks = game.areaAttacks.filter(attack => {
+    attack.delay -= dt;
+    attack.life -= dt;
+    if (attack.delay <= 0 && !attack.hit) {
+      attack.hit = true;
+      const target = opponentOf(attack.owner);
+      if (Math.hypot(target.x - attack.x, target.y - attack.y) < target.radius + attack.radius) {
+        damage(target, attack.damage, attack.owner);
+      }
+    }
+    return attack.life > 0;
+  });
+}
+
+function updateBeams(dt) {
+  game.beams = game.beams.filter(beam => {
+    beam.delay -= dt;
+    beam.life -= dt;
+    if (beam.delay <= 0 && !beam.hit) {
+      beam.hit = true;
+      const target = opponentOf(beam.owner);
+      const lineDx = beam.x2 - beam.x1;
+      const lineDy = beam.y2 - beam.y1;
+      const lengthSquared = lineDx * lineDx + lineDy * lineDy || 1;
+      const t = clamp(((target.x - beam.x1) * lineDx + (target.y - beam.y1) * lineDy) / lengthSquared, 0, 1);
+      const closestX = beam.x1 + lineDx * t;
+      const closestY = beam.y1 + lineDy * t;
+      if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 18) {
+        damage(target, 5, beam.owner);
+        target.slowTime = Math.max(target.slowTime, 180);
+      }
+    }
+    return beam.life > 0;
+  });
+}
+
+function updateWeapons(dt) {
+  game.weapons = game.weapons.filter(weapon => {
+    weapon.life -= dt;
+    const destination = weapon.returning ? weapon.owner : weapon.target;
+    const angle = Math.atan2(destination.y - weapon.y, destination.x - weapon.x);
+    weapon.vx = Math.cos(angle) * 13;
+    weapon.vy = Math.sin(angle) * 13;
+    weapon.x += weapon.vx * dt;
+    weapon.y += weapon.vy * dt;
+    if (!weapon.returning && Math.hypot(weapon.target.x - weapon.x, weapon.target.y - weapon.y) < weapon.target.radius + 18) {
+      if (!weapon.hit) damage(weapon.target, weapon.damage, weapon.owner);
+      weapon.hit = true;
+      weapon.returning = true;
+    }
+    if (weapon.returning && Math.hypot(weapon.owner.x - weapon.x, weapon.owner.y - weapon.y) < weapon.owner.radius + 14) {
+      return false;
+    }
+    return weapon.life > 0;
   });
 }
 
@@ -1844,6 +2293,9 @@ function drawArena() {
   }
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
+  game.areaAttacks.forEach(drawAreaAttack);
+  game.beams.forEach(drawBeam);
+  game.weapons.forEach(drawWeapon);
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
@@ -1998,10 +2450,43 @@ function drawFighter(fighter) {
     drawStealthAura(fighter);
   }
   if (fighter.lockOnTime > 0) drawLockOnMark(fighter);
+  if (fighter.shieldTime > 0) {
+    ctx.strokeStyle = "#d5dde8";
+    ctx.fillStyle = "rgba(213, 221, 232, 0.18)";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  if (fighter.weaponActive) {
+    const angle = game.tick * 0.055;
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.fillStyle = fighter.accent;
+    ctx.fillRect(fighter.radius + 12, -5, 34, 10);
+    ctx.restore();
+  }
   ctx.restore();
   drawFighterName(fighter);
   drawFighterHealthBar(fighter);
   drawPokerHand(fighter);
+  if (fighter.kind === "enhancer") {
+    addFighterStatLabel(fighter, `공격력 ${Math.floor(fighter.attackPower)}`, fighter.accent);
+  }
+}
+
+function addFighterStatLabel(fighter, label, color) {
+  ctx.save();
+  ctx.font = "900 12px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "rgba(0,0,0,0.8)";
+  ctx.lineWidth = 3;
+  const y = fighter.y + fighter.radius + 42;
+  ctx.strokeText(label, fighter.x, y);
+  ctx.fillText(label, fighter.x, y);
+  ctx.restore();
 }
 
 function drawFighterAuras(fighter) {
@@ -2172,6 +2657,11 @@ function drawBall(ball) {
     ctx.restore();
     return;
   }
+  ctx.save();
+  if (ball.blood) {
+    ctx.shadowColor = "#ff174f";
+    ctx.shadowBlur = 18;
+  }
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = ball.color;
@@ -2180,6 +2670,66 @@ function drawBall(ball) {
   ctx.arc(ball.x - 3, ball.y - 4, 3, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.fill();
+  ctx.restore();
+}
+
+function drawAreaAttack(attack) {
+  ctx.save();
+  const warning = attack.delay > 0;
+  ctx.globalAlpha = warning ? 0.42 + Math.sin(game.tick * 0.32) * 0.12 : clamp(attack.life / 24, 0, 1);
+  ctx.strokeStyle = attack.type === "laser" ? "#62dfff" : attack.color;
+  ctx.fillStyle = attack.type === "laser" ? "rgba(66,165,255,0.16)" : "rgba(216,255,117,0.12)";
+  ctx.lineWidth = warning ? 3 : 8;
+  ctx.setLineDash(warning ? [8, 7] : []);
+  ctx.beginPath();
+  ctx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  if (!warning && attack.type === "laser") {
+    ctx.fillStyle = "rgba(167,239,255,0.7)";
+    ctx.fillRect(attack.x - 18, 0, 36, canvas.height);
+  }
+  if (!warning && attack.type === "slash") {
+    ctx.translate(attack.x, attack.y);
+    ctx.rotate(attack.angle);
+    ctx.strokeStyle = "#d8ff75";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(-attack.radius, -18);
+    ctx.lineTo(attack.radius, 18);
+    ctx.moveTo(-attack.radius, 18);
+    ctx.lineTo(attack.radius, -18);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBeam(beam) {
+  ctx.save();
+  ctx.globalAlpha = beam.delay > 0 ? 0.35 : clamp(beam.life / 24, 0, 1);
+  ctx.strokeStyle = beam.color;
+  ctx.shadowColor = beam.color;
+  ctx.shadowBlur = beam.delay > 0 ? 8 : 24;
+  ctx.lineWidth = beam.delay > 0 ? 3 : 15;
+  ctx.setLineDash(beam.delay > 0 ? [12, 10] : []);
+  ctx.beginPath();
+  ctx.moveTo(beam.x1, beam.y1);
+  ctx.lineTo(beam.x2, beam.y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawWeapon(weapon) {
+  ctx.save();
+  ctx.translate(weapon.x, weapon.y);
+  ctx.rotate(Math.atan2(weapon.vy, weapon.vx));
+  ctx.shadowColor = weapon.color;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = weapon.color;
+  ctx.fillRect(-20, -5, 40, 10);
+  ctx.fillStyle = "#f7f4eb";
+  ctx.fillRect(8, -9, 10, 18);
+  ctx.restore();
 }
 
 function drawShockwave(wave) {
@@ -2275,6 +2825,9 @@ function stepGame(dt) {
     updateGrapples(dt);
     updatePokerShots(dt);
     updateShockwaves(dt);
+    updateAreaAttacks(dt);
+    updateBeams(dt);
+    updateWeapons(dt);
     updateDamageTexts(dt);
     updateVisualEffects(dt);
     updateSkillHud();
