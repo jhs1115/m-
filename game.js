@@ -3937,16 +3937,16 @@ const SURVIVAL_WEAPONS = {
 
 const SURVIVAL_ITEMS = {
   scope: { name: "룩 온 조준경", icon: "⌖", weapon: "pulse", description: "이제부터 모든 공이 적을 추적하여 공격합니다.", effect: "모든 공 유도" },
-  engine: { name: "분노 엔진", icon: "▲", weapon: "charge", description: "이동속도가 25% 증가하고 돌진 파동이 커집니다.", effect: "이속 +25%" },
-  reel: { name: "초장력 릴", icon: "∞", weapon: "grapple", description: "그랩이 더 넓어지고 적을 끌어당깁니다.", effect: "그랩 범위 증가" },
-  deck: { name: "왕의 덱", icon: "K", weapon: "poker", description: "카드가 확률적으로 두 배의 피해를 줍니다.", effect: "카드 치명타" },
-  cloak: { name: "심연의 망토", icon: "☾", weapon: "shadow", description: "참격 후 잠시 무적 상태가 됩니다.", effect: "참격 무적" },
-  furnace: { name: "영원의 용광로", icon: "♨", weapon: "forge", description: "갓 웨폰이 하나 더 생성됩니다.", effect: "무기 수 +1" },
-  core: { name: "진동 코어", icon: "◈", weapon: "shock", description: "충격파가 적을 1초간 기절시킵니다.", effect: "기절 부여" },
-  lens: { name: "절멸 렌즈", icon: "◇", weapon: "beam", description: "레이저 폭이 넓어지고 두 번 포격합니다.", effect: "레이저 2회" },
-  fang: { name: "포식자의 송곳니", icon: "V", weapon: "wild", description: "체력이 낮은 적에게 50% 추가 피해를 줍니다.", effect: "처형 피해" },
-  chalice: { name: "핏빛 성배", icon: "♥", weapon: "blood", description: "입힌 피해의 20%를 회복합니다.", effect: "피해 흡혈 20%" },
-  knuckle: { name: "투지의 너클", icon: "F", weapon: "fist", description: "체력이 절반 이하일 때 난타 피해와 범위가 증가합니다.", effect: "위기 시 난타 강화" }
+  engine: { name: "분노 엔진", icon: "▲", weapon: "charge", description: "이동속도가 15% 증가하고 돌진 계열 공격의 크기가 증가합니다.", effect: "이속 +15%" },
+  reel: { name: "초장력 릴", icon: "∞", weapon: "grapple", description: "그랩 계열 공격의 폭이 약 30% 넓어집니다.", effect: "그랩 폭 +30%" },
+  deck: { name: "왕의 덱", icon: "K", weapon: "poker", description: "카드가 일정 확률로 75%의 추가 피해를 줍니다.", effect: "카드 치명타" },
+  cloak: { name: "심연의 망토", icon: "☾", weapon: "shadow", description: "암살의 잔상을 발동하면 잠깐 피해를 받지 않습니다.", effect: "짧은 무적" },
+  furnace: { name: "영원의 용광로", icon: "♨", weapon: "forge", description: "갓 웨폰이 하나 더 생성되지만 각 무기의 피해는 낮아집니다.", effect: "무기 수 +1" },
+  core: { name: "진동 코어", icon: "◈", weapon: "shock", description: "충격파 계열 공격이 적을 짧게 기절시킵니다.", effect: "짧은 기절" },
+  lens: { name: "절멸 렌즈", icon: "◇", weapon: "beam", description: "천공 레이저를 두 번 포격하지만 각 포격의 피해는 감소합니다.", effect: "레이저 분할 포격" },
+  fang: { name: "포식자의 송곳니", icon: "V", weapon: "wild", description: "체력이 절반 이하인 적에게 35% 추가 피해를 줍니다.", effect: "약한 적 추격" },
+  chalice: { name: "핏빛 성배", icon: "♥", weapon: "blood", description: "입힌 피해의 12%를 회복합니다.", effect: "피해 흡혈 12%" },
+  knuckle: { name: "투지의 너클", icon: "F", weapon: "fist", description: "체력이 절반 이하일 때 난타의 피해와 범위가 적당히 증가합니다.", effect: "위기 시 난타 강화" }
 };
 
 const SURVIVAL_SUBS = [
@@ -4014,7 +4014,7 @@ async function startPveStage(stage) {
       damageMultiplier: 1,
       speedMultiplier: 1,
       cooldownMultiplier: 1,
-      magnetRadius: 120,
+      magnetRadius: 340,
       invulnerableTime: 0
     },
     enemies: [],
@@ -5222,6 +5222,9 @@ function spawnSurvivalProjectile(options) {
     bounce: Boolean(options.bounce),
     homing: Boolean(options.homing),
     slow: Boolean(options.slow),
+    visual: options.visual || "orb",
+    label: options.label || "",
+    trail: options.trail || "",
     hitIds: new Set(),
     hitCooldown: 0
   });
@@ -5255,7 +5258,9 @@ function fireSurvivalWeapon(id) {
         color: "#67e8f9",
         homing: itemOwned,
         pierce: entry.awakened ? 2 : 0,
-        life: 150
+        life: 150,
+        visual: "pulse",
+        trail: "#67e8f9"
       });
     }
   } else if (id === "star") {
@@ -5265,26 +5270,34 @@ function fireSurvivalWeapon(id) {
         color: "#fde68a",
         homing: itemOwned,
         pierce: entry.awakened ? 8 : 2,
-        life: entry.awakened ? 720 : 480
+        life: entry.awakened ? 720 : 480,
+        visual: "star",
+        trail: "#fde68a"
       });
     }
   } else if (id === "ram") {
     projectile(0, 15.5, 15, 18, {
       color: "#fb7185",
       pierce: entry.awakened ? 8 : 2,
-      life: 68
+      life: 68,
+      visual: "ram",
+      trail: "#fb7185"
     });
   } else if (id === "charge") {
     projectile(0, 17.5, 22, 24, {
       color: "#fb7185",
       pierce: entry.awakened ? 99 : 5,
-      life: 80
+      life: 80,
+      visual: "ram",
+      trail: "#ff304f"
     });
   } else if (id === "grapple") {
-    projectile(0, 20, 18, itemOwned ? 18 : 12, {
+    projectile(0, 20, 18, itemOwned ? 16 : 12, {
       color: "#c4b5fd",
       pierce: entry.awakened ? 99 : 7,
-      life: 95
+      life: 95,
+      visual: "lance",
+      trail: "#c4b5fd"
     });
   } else if (id === "grapplePlus") {
     const count = entry.awakened ? 3 : 1;
@@ -5292,26 +5305,38 @@ function fireSurvivalWeapon(id) {
       projectile((index - (count - 1) / 2) * 0.12, 22, 22, itemOwned ? 22 : 17, {
         color: "#ddd6fe",
         pierce: entry.awakened ? 99 : 12,
-        life: 115
+        life: 115,
+        visual: "lance",
+        trail: "#ddd6fe"
       });
     }
   } else if (id === "poker") {
     const count = entry.awakened ? 9 : 5;
+    const ranks = ["JOKER", "A", "K", "Q", "J"];
     for (let index = 0; index < count; index += 1) {
-      const critical = itemOwned && pveRandomIndex(100) < 25;
-      projectile((index - (count - 1) / 2) * 0.1, 15.8, 4.5 * (critical ? 2 : 1), 8, {
+      const rank = ranks[pveRandomIndex(ranks.length)];
+      const critical = itemOwned && pveRandomIndex(100) < 22;
+      projectile((index - (count - 1) / 2) * 0.1, 15.8, 4.5 * (critical ? 1.75 : 1), 10, {
         color: critical ? "#fbbf24" : "#fda4af",
         pierce: entry.awakened ? 1 : 0,
-        life: 130
+        life: 130,
+        visual: "card",
+        label: rank,
+        trail: critical ? "#fbbf24" : "#fda4af"
       });
     }
   } else if (id === "draw") {
-    const critical = itemOwned && pveRandomIndex(100) < 35;
-    projectile(0, 17.2, critical ? 24 : 12, 10, {
+    const ranks = ["JOKER", "A", "K", "Q", "J"];
+    const rank = ranks[pveRandomIndex(ranks.length)];
+    const critical = itemOwned && pveRandomIndex(100) < 28;
+    projectile(0, 17.2, 12 * (critical ? 1.75 : 1), 10, {
       color: critical ? "#fbbf24" : "#fb7185",
       homing: entry.awakened,
       pierce: entry.awakened ? 5 : 0,
-      life: 150
+      life: 150,
+      visual: "card",
+      label: rank,
+      trail: critical ? "#fbbf24" : "#fb7185"
     });
   } else if (id === "shadow") {
     const radius = 90 * stats.sizeScale;
@@ -5320,7 +5345,7 @@ function fireSurvivalWeapon(id) {
       delay: 8, life: 30, hit: false, color: "#60a5fa", type: "slash",
       stun: 0, survival: true
     });
-    if (itemOwned) player.invulnerableTime = Math.max(player.invulnerableTime, 45);
+    if (itemOwned) player.invulnerableTime = Math.max(player.invulnerableTime, 24);
     if (entry.awakened) {
       pveGame.areaAttacks.push({
         x: player.x, y: player.y, radius: 130, damage: 20 * stats.damageScale,
@@ -5338,11 +5363,13 @@ function fireSurvivalWeapon(id) {
   } else if (id === "forge") {
     const count = (itemOwned ? 2 : 1) + (entry.awakened ? 3 : 0);
     for (let index = 0; index < count; index += 1) {
-      projectile((index - (count - 1) / 2) * 0.16, 13.5, 14, 10, {
+      projectile((index - (count - 1) / 2) * 0.16, 13.5, itemOwned ? 9 : 14, 10, {
         color: "#fbbf24",
         homing: true,
         pierce: entry.awakened ? 3 : 1,
-        life: 220
+        life: 220,
+        visual: "blade",
+        trail: "#fbbf24"
       });
     }
   } else if (id === "shock") {
@@ -5350,7 +5377,7 @@ function fireSurvivalWeapon(id) {
       x: player.x, y: player.y,
       radius: (entry.awakened ? 240 : 145) * stats.sizeScale,
       damage: 18 * stats.damageScale, delay: 0, life: 34, hit: false,
-      color: "#94a3b8", type: "shockwave", stun: itemOwned ? 60 : 0, survival: true
+      color: "#94a3b8", type: "shockwave", stun: itemOwned ? 36 : 0, survival: true
     });
   } else if (id === "taunt") {
     pveGame.areaAttacks.push({
@@ -5364,7 +5391,7 @@ function fireSurvivalWeapon(id) {
     pveGame.areaAttacks.push({
       x: player.x, y: player.y, radius: (entry.awakened ? 290 : 205) * stats.sizeScale,
       damage: 34 * stats.damageScale, delay: 28, life: 62, hit: false,
-      color: "#e2e8f0", type: "shockwave", stun: itemOwned ? 90 : 30, survival: true
+      color: "#e2e8f0", type: "shockwave", stun: itemOwned ? 60 : 30, survival: true
     });
   } else if (id === "beam") {
     const count = itemOwned ? 2 : 1;
@@ -5372,18 +5399,32 @@ function fireSurvivalWeapon(id) {
       pveGame.areaAttacks.push({
         x: target.x + (index ? 70 : 0), y: target.y,
         radius: (entry.awakened ? 100 : 62) * stats.sizeScale,
-        damage: 28 * stats.damageScale, delay: 45 + index * 12, life: 72 + index * 12,
+        damage: (itemOwned ? 20 : 28) * stats.damageScale, delay: 45 + index * 12, life: 72 + index * 12,
         hit: false, color: "#38bdf8", type: "laser", stun: 0, survival: true
       });
     }
   } else if (id === "slowBeam") {
     const count = entry.awakened ? 3 : 1;
     for (let index = 0; index < count; index += 1) {
-      projectile((index - (count - 1) / 2) * 0.13, 18, 8, itemOwned ? 20 : 14, {
+      const beamAngle = angle + (index - (count - 1) / 2) * 0.12;
+      const beamLength = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.15;
+      pveGame.areaAttacks.push({
+        x: player.x,
+        y: player.y,
+        x1: player.x,
+        y1: player.y,
+        x2: player.x + Math.cos(beamAngle) * beamLength,
+        y2: player.y + Math.sin(beamAngle) * beamLength,
+        radius: (itemOwned ? 28 : 20) * stats.sizeScale,
+        damage: 8 * stats.damageScale,
+        delay: 12,
+        life: 34,
+        hit: false,
         color: "#7dd3fc",
-        pierce: 99,
-        life: 90,
-        slow: true
+        type: "lineLaser",
+        slow: true,
+        stun: 0,
+        survival: true
       });
     }
   } else if (id === "wild") {
@@ -5391,7 +5432,7 @@ function fireSurvivalWeapon(id) {
     const count = entry.awakened ? 7 : 3;
     for (let index = 0; index < count; index += 1) {
       const victim = targets[pveRandomIndex(targets.length)] || target;
-      const execute = itemOwned && victim.hp <= victim.maxHp * 0.5 ? 1.5 : 1;
+      const execute = itemOwned && victim.hp <= victim.maxHp * 0.5 ? 1.35 : 1;
       pveGame.areaAttacks.push({
         x: victim.x + (pveRandomIndex(61) - 30), y: victim.y + (pveRandomIndex(61) - 30),
         radius: 58 * stats.sizeScale, damage: 13 * stats.damageScale * execute,
@@ -5404,16 +5445,18 @@ function fireSurvivalWeapon(id) {
     projectile(0, 13 + missing * 8, 10 + missing * 24, 11, {
       color: "#f43f5e",
       homing: true,
-      pierce: entry.awakened ? 4 : 0,
-      life: 230
+      pierce: entry.awakened ? 8 : 3,
+      life: 230,
+      visual: "blood",
+      trail: "#f43f5e"
     });
   } else if (id === "fist") {
     const desperate = itemOwned && player.hp <= player.maxHp * 0.5;
     pveGame.areaAttacks.push({
       x: player.x,
       y: player.y,
-      radius: (entry.awakened ? 150 : desperate ? 105 : 78) * stats.sizeScale,
-      damage: (entry.awakened ? 24 : desperate ? 17 : 11) * stats.damageScale,
+      radius: (entry.awakened ? 150 : desperate ? 92 : 78) * stats.sizeScale,
+      damage: (entry.awakened ? 24 : desperate ? 14 : 11) * stats.damageScale,
       delay: 0,
       life: 20,
       hit: false,
@@ -5438,11 +5481,11 @@ function spawnSurvivalEnemy() {
         : (roll < 30 ? "melee" : roll < 50 ? "dasher" : roll < 70 ? "thrower" : roll < 88 ? "brute" : "bomber");
   const difficulty = 1 + seconds / 120;
   const base = {
-    melee: { hp: 20, speed: 2.35, radius: 20, damage: 7, xp: 2, color: "#ef476f" },
-    dasher: { hp: 34, speed: 3.8, radius: 19, damage: 10, xp: 3, color: "#fb923c" },
-    thrower: { hp: 28, speed: 2.2, radius: 21, damage: 6, xp: 4, color: "#a78bfa" },
-    brute: { hp: 85, speed: 1.65, radius: 30, damage: 14, xp: 7, color: "#94a3b8" },
-    bomber: { hp: 55, speed: 2, radius: 23, damage: 12, xp: 6, color: "#d946ef" }
+    melee: { hp: 20, speed: 2.1, radius: 20, damage: 7, xp: 2, color: "#ef476f" },
+    dasher: { hp: 34, speed: 3.35, radius: 19, damage: 10, xp: 3, color: "#fb923c" },
+    thrower: { hp: 28, speed: 1.95, radius: 21, damage: 6, xp: 4, color: "#a78bfa" },
+    brute: { hp: 85, speed: 1.45, radius: 30, damage: 14, xp: 7, color: "#94a3b8" },
+    bomber: { hp: 55, speed: 1.75, radius: 23, damage: 12, xp: 6, color: "#d946ef" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({
@@ -5476,7 +5519,7 @@ function spawnSurvivalBoss() {
     y: 65,
     vx: 0,
     vy: 1.25,
-    baseSpeed: 1.25 + count * 0.05,
+    baseSpeed: 1.08 + count * 0.045,
     radius: 46,
     hp,
     maxHp: hp,
@@ -5511,16 +5554,22 @@ function gainSurvivalXp(amount) {
     pveGame.level += 1;
     pveGame.xpRequired = Math.floor(10 + pveGame.level * 4.5 + pveGame.level ** 1.25);
     pveGame.pendingLevels += 1;
+    healPvePlayer(pveGame.player.maxHp * 0.1);
+    addPveFloating("LEVEL UP · 체력 10% 회복", "#67e8f9");
   }
   if (pveGame.pendingLevels > 0 && !pveGame.pausedForAugment) openSurvivalAugments();
 }
 
 function survivalChoicePool() {
+  const ownedWeaponIds = Object.keys(pveGame.weapons);
   const weaponIds = Object.keys(SURVIVAL_WEAPONS).filter(id => {
     const owned = pveGame.weapons[id];
-    return owned ? owned.stars < 5 : Object.keys(pveGame.weapons).length < 4;
+    return owned ? owned.stars < 5 : ownedWeaponIds.length < 4;
   });
-  const itemIds = Object.keys(SURVIVAL_ITEMS).filter(id => !pveGame.items[id] && Object.keys(pveGame.items).length < 5);
+  const itemIds = ownedWeaponIds.length < 2 ? [] : Object.keys(SURVIVAL_ITEMS).filter(id =>
+    !pveGame.items[id]
+    && Object.keys(pveGame.items).length < 5
+    && ownedWeaponIds.some(weaponId => SURVIVAL_WEAPONS[weaponId].item === id));
   const pool = [];
   weaponIds.forEach(id => {
     const weight = pveGame.weapons[id] ? 110 : 100;
@@ -5575,7 +5624,7 @@ function describeSurvivalChoice(choice) {
       icon: item.icon,
       color: "#fbbf24",
       level: item.effect,
-      description: `${item.description} 5성 ${SURVIVAL_WEAPONS[item.weapon].name}의 각성 조건입니다.`
+      description: item.description
     };
   }
   const sub = SURVIVAL_SUBS.find(item => item.id === choice.id);
@@ -5651,9 +5700,13 @@ function renderSurvivalBuild() {
   if (!pveGame || !ui.pveBuildList) return;
   const weapons = Object.entries(pveGame.weapons).map(([id, weapon]) => {
     const definition = SURVIVAL_WEAPONS[id];
-    return `<div class="build-effect weapon ${weapon.awakened ? "is-awakened" : ""}">
+    return `<div class="build-effect weapon ${weapon.awakened ? "is-awakened" : ""}" data-build-weapon="${id}">
       <span style="--effect-color:${definition.color}">${definition.icon}</span>
-      <div><strong>${definition.name}</strong><small>${weapon.awakened ? "각성" : `${weapon.stars}성`}</small></div>
+      <div>
+        <strong>${definition.name}</strong>
+        <small>${weapon.awakened ? "각성" : `${weapon.stars}성`}</small>
+        <small class="build-live-stat"></small>
+      </div>
     </div>`;
   });
   const items = Object.keys(pveGame.items).map(id => {
@@ -5664,7 +5717,36 @@ function renderSurvivalBuild() {
     const sub = SURVIVAL_SUBS.find(item => item.id === id);
     return `<div class="build-effect sub"><span>${sub.icon}</span><div><strong>${sub.name}</strong><small>${count}중첩</small></div></div>`;
   });
-  ui.pveBuildList.innerHTML = [...weapons, ...items, ...subs].join("");
+  const section = (title, entries, emptyText) => `<section class="build-section">
+    <h3>${title}<b>${entries.length}</b></h3>
+    <div class="build-section-list">${entries.length ? entries.join("") : `<p>${emptyText}</p>`}</div>
+  </section>`;
+  ui.pveBuildList.innerHTML = [
+    section("무기", weapons, "획득한 무기가 없습니다."),
+    section("아이템", items, "획득한 아이템이 없습니다."),
+    ...(subs.length ? [section("서브", subs, "")] : [])
+  ].join("");
+  updateSurvivalBuildStats();
+}
+
+function updateSurvivalBuildStats() {
+  if (!pveGame || !ui.pveBuildList) return;
+  const changingStats = {
+    temper: () => {
+      const baseDamage = Math.min(28, 7 + pveGame.tick / 900);
+      return `현재 피해 ${(baseDamage * survivalWeaponStats("temper").damageScale).toFixed(1)}`;
+    },
+    blood: () => {
+      const missingHealth = 1 - pveGame.player.hp / pveGame.player.maxHp;
+      const damage = (10 + missingHealth * 24) * survivalWeaponStats("blood").damageScale;
+      return `현재 피해 ${damage.toFixed(1)}`;
+    }
+  };
+  Object.entries(changingStats).forEach(([id, getText]) => {
+    if (!pveGame.weapons[id]) return;
+    const stat = ui.pveBuildList.querySelector(`[data-build-weapon="${id}"] .build-live-stat`);
+    if (stat) stat.textContent = getText();
+  });
 }
 
 function updateSurvivalHud() {
@@ -5677,6 +5759,7 @@ function updateSurvivalHud() {
   ui.pveLevel.textContent = String(pveGame.level);
   ui.pveXpText.textContent = `${Math.floor(pveGame.xp)} / ${pveGame.xpRequired} XP`;
   ui.pveXpBar.style.width = `${clamp(pveGame.xp / pveGame.xpRequired, 0, 1) * 100}%`;
+  updateSurvivalBuildStats();
 }
 
 function damageSurvivalEnemy(enemy, amount) {
@@ -5684,11 +5767,22 @@ function damageSurvivalEnemy(enemy, amount) {
   enemy.hp -= actual;
   pveGame.player.damageDealt += actual;
   addPveDamage(enemy.x, enemy.y - enemy.radius, Math.round(actual * 10) / 10);
-  if (pveGame.items.chalice) healPvePlayer(actual * 0.2);
+  if (pveGame.items.chalice) healPvePlayer(actual * 0.12);
   if (enemy.hp <= 0 && !enemy.dead) {
     enemy.dead = true;
     pveGame.kills += 1;
     dropSurvivalXp(enemy);
+    if (pveRandomIndex(100) < 5) {
+      if (pveRandomIndex(2) === 0) {
+        pveGame.enemies.forEach(target => {
+          if (!target.dead) target.stunTime = Math.max(target.stunTime, 120);
+        });
+        addPveFloating("행운 · 적 전체 2초 정지", "#a5f3fc");
+      } else {
+        healPvePlayer(pveGame.player.maxHp * 0.3);
+        addPveFloating("행운 · 체력 30% 회복", "#86efac");
+      }
+    }
   }
 }
 
@@ -5718,7 +5812,7 @@ function stepSurvivalPve() {
     }
   });
 
-  const moveSpeed = 5.8 * player.speedMultiplier * (pveGame.items.engine ? 1.25 : 1);
+  const moveSpeed = 5.8 * player.speedMultiplier * (pveGame.items.engine ? 1.15 : 1);
   const currentSpeed = Math.hypot(player.vx, player.vy) || 1;
   player.vx = player.vx / currentSpeed * moveSpeed;
   player.vy = player.vy / currentSpeed * moveSpeed;
@@ -5839,9 +5933,20 @@ function stepSurvivalPve() {
       attack.hit = true;
       pveGame.enemies.forEach(enemy => {
         if (enemy.dead) return;
-        const hit = attack.type === "laser"
-          ? Math.abs(enemy.x - attack.x) < enemy.radius + attack.radius * 0.35
-          : Math.hypot(enemy.x - attack.x, enemy.y - attack.y) < enemy.radius + attack.radius;
+        let hit;
+        if (attack.type === "lineLaser") {
+          const lineDx = attack.x2 - attack.x1;
+          const lineDy = attack.y2 - attack.y1;
+          const lengthSquared = lineDx * lineDx + lineDy * lineDy || 1;
+          const t = clamp(((enemy.x - attack.x1) * lineDx + (enemy.y - attack.y1) * lineDy) / lengthSquared, 0, 1);
+          const closestX = attack.x1 + lineDx * t;
+          const closestY = attack.y1 + lineDy * t;
+          hit = Math.hypot(enemy.x - closestX, enemy.y - closestY) < enemy.radius + attack.radius;
+        } else {
+          hit = attack.type === "laser"
+            ? Math.abs(enemy.x - attack.x) < enemy.radius + attack.radius * 0.35
+            : Math.hypot(enemy.x - attack.x, enemy.y - attack.y) < enemy.radius + attack.radius;
+        }
         if (hit) {
           damageSurvivalEnemy(enemy, attack.damage);
           if (attack.stun) enemy.stunTime = Math.max(enemy.stunTime, attack.stun);
@@ -5909,11 +6014,20 @@ function drawSurvivalPve() {
     pveCtx.globalAlpha = warning ? 0.35 : Math.min(1, attack.life / 20);
     pveCtx.strokeStyle = attack.color;
     pveCtx.fillStyle = `${attack.color}24`;
-    pveCtx.lineWidth = warning ? 3 : 8;
+    pveCtx.lineWidth = attack.type === "lineLaser"
+      ? (warning ? Math.max(3, attack.radius * 0.25) : attack.radius * 2)
+      : (warning ? 3 : 8);
     pveCtx.setLineDash(warning ? [9, 7] : []);
     pveCtx.beginPath();
-    pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
-    pveCtx.fill(); pveCtx.stroke();
+    if (attack.type === "lineLaser") {
+      pveCtx.moveTo(attack.x1, attack.y1);
+      pveCtx.lineTo(attack.x2, attack.y2);
+      pveCtx.stroke();
+    } else {
+      pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
+      pveCtx.fill();
+      pveCtx.stroke();
+    }
     if (!warning && attack.type === "laser") {
       pveCtx.fillStyle = `${attack.color}aa`;
       pveCtx.fillRect(attack.x - attack.radius * 0.35, 0, attack.radius * 0.7, pveCanvas.height);
@@ -5922,12 +6036,93 @@ function drawSurvivalPve() {
   });
   pveGame.projectiles.forEach(projectile => {
     pveCtx.save();
+    const angle = Math.atan2(projectile.vy, projectile.vx);
+    const speed = Math.hypot(projectile.vx, projectile.vy);
+    if (projectile.trail) {
+      pveCtx.globalAlpha = 0.42;
+      pveCtx.strokeStyle = projectile.trail;
+      pveCtx.lineWidth = Math.max(3, projectile.radius * 0.65);
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.x, projectile.y);
+      pveCtx.lineTo(
+        projectile.x - Math.cos(angle) * (18 + speed * 1.4),
+        projectile.y - Math.sin(angle) * (18 + speed * 1.4)
+      );
+      pveCtx.stroke();
+      pveCtx.globalAlpha = 1;
+    }
+    pveCtx.translate(projectile.x, projectile.y);
+    pveCtx.rotate(angle);
     pveCtx.fillStyle = projectile.color;
     pveCtx.shadowColor = projectile.color;
     pveCtx.shadowBlur = 12;
-    pveCtx.beginPath();
-    pveCtx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
-    pveCtx.fill();
+    if (projectile.visual === "card") {
+      pveCtx.fillStyle = "#f7f4eb";
+      pveCtx.strokeStyle = projectile.color;
+      pveCtx.lineWidth = 2;
+      pveCtx.fillRect(-15, -10, 30, 20);
+      pveCtx.strokeRect(-15, -10, 30, 20);
+      pveCtx.fillStyle = projectile.color;
+      pveCtx.font = "900 9px Segoe UI";
+      pveCtx.textAlign = "center";
+      pveCtx.textBaseline = "middle";
+      pveCtx.fillText(projectile.label, 0, 0);
+    } else if (projectile.visual === "blood") {
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.radius + 9, 0);
+      pveCtx.lineTo(-projectile.radius, -projectile.radius * 0.62);
+      pveCtx.lineTo(-projectile.radius * 0.32, 0);
+      pveCtx.lineTo(-projectile.radius, projectile.radius * 0.62);
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else if (projectile.visual === "lance") {
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.radius + 13, 0);
+      pveCtx.lineTo(-projectile.radius, -projectile.radius * 0.42);
+      pveCtx.lineTo(-projectile.radius * 0.55, 0);
+      pveCtx.lineTo(-projectile.radius, projectile.radius * 0.42);
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else if (projectile.visual === "blade") {
+      pveCtx.fillRect(-projectile.radius, -3, projectile.radius * 2, 6);
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.radius + 8, 0);
+      pveCtx.lineTo(projectile.radius - 2, -7);
+      pveCtx.lineTo(projectile.radius - 2, 7);
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else if (projectile.visual === "ram") {
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.radius + 8, 0);
+      pveCtx.lineTo(-projectile.radius * 0.8, -projectile.radius);
+      pveCtx.lineTo(-projectile.radius * 0.35, 0);
+      pveCtx.lineTo(-projectile.radius * 0.8, projectile.radius);
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else if (projectile.visual === "star") {
+      pveCtx.beginPath();
+      for (let point = 0; point < 10; point += 1) {
+        const radius = point % 2 === 0 ? projectile.radius : projectile.radius * 0.44;
+        const pointAngle = -Math.PI / 2 + point * Math.PI / 5;
+        const x = Math.cos(pointAngle) * radius;
+        const y = Math.sin(pointAngle) * radius;
+        if (point === 0) pveCtx.moveTo(x, y);
+        else pveCtx.lineTo(x, y);
+      }
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else {
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, projectile.radius, 0, Math.PI * 2);
+      pveCtx.fill();
+      if (projectile.visual === "pulse") {
+        pveCtx.strokeStyle = "#d9fbff";
+        pveCtx.lineWidth = 2;
+        pveCtx.beginPath();
+        pveCtx.arc(0, 0, projectile.radius + 4, 0, Math.PI * 2);
+        pveCtx.stroke();
+      }
+    }
     pveCtx.restore();
   });
   pveGame.enemies.forEach(enemy => {
@@ -6064,8 +6259,11 @@ async function finishSurvivalPve() {
   const player = pveGame.player;
   const elapsedSeconds = Math.floor(pveGame.tick / 60);
   const elapsed = formatBattleTime(pveGame.tick);
-  const expectedReward = Math.min(1000, Math.floor(elapsedSeconds / 30) * 10
-    + Math.floor(elapsedSeconds / 300) * 50 + pveGame.bonusCoins);
+  const earlyIntervals = Math.floor(Math.min(elapsedSeconds, 300) / 30);
+  const midIntervals = Math.floor(Math.min(Math.max(elapsedSeconds - 300, 0), 300) / 30);
+  const lateIntervals = Math.floor(Math.max(elapsedSeconds - 600, 0) / 30);
+  const expectedReward = Math.min(1000, earlyIntervals * 5 + midIntervals * 12
+    + lateIntervals * 18 + Math.floor(elapsedSeconds / 300) * 50 + pveGame.bonusCoins);
   pveGame.over = true;
   pveGame.pausedForAugment = false;
   ui.pveAugmentOverlay.classList.remove("is-active");

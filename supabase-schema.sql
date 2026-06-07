@@ -953,7 +953,9 @@ begin
   safe_bonus := least(25, greatest(0, bonus_coins));
   survival_reward := least(
     1000,
-    floor(elapsed_seconds / 30.0)::integer * 10
+    floor(least(elapsed_seconds, 300) / 30.0)::integer * 5
+      + floor(least(greatest(elapsed_seconds - 300, 0), 300) / 30.0)::integer * 12
+      + floor(greatest(elapsed_seconds - 600, 0) / 30.0)::integer * 18
       + floor(elapsed_seconds / 300.0)::integer * 50
       + safe_bonus
   );
