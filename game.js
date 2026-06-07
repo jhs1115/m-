@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607n";
+const SIMULATION_VERSION = "20260607o";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -85,6 +85,13 @@ const ui = {
   pveModeButton: document.getElementById("pveModeButton"),
   backFromPveButton: document.getElementById("backFromPveButton"),
   pveStageButtons: document.querySelectorAll("[data-pve-stage]"),
+  pveStageDetailCode: document.getElementById("pveStageDetailCode"),
+  pveStageDetailTitle: document.getElementById("pveStageDetailTitle"),
+  pveStageDetailDescription: document.getElementById("pveStageDetailDescription"),
+  pveStageDetailEnemies: document.getElementById("pveStageDetailEnemies"),
+  pveStageDetailReward: document.getElementById("pveStageDetailReward"),
+  pveStageDetailStatus: document.getElementById("pveStageDetailStatus"),
+  pveStageStartButton: document.getElementById("pveStageStartButton"),
   pveSelectedStageLabel: document.getElementById("pveSelectedStageLabel"),
   pveCharacterGrid: document.getElementById("pveCharacterGrid"),
   pveCharacterMessage: document.getElementById("pveCharacterMessage"),
@@ -346,6 +353,29 @@ let pveGame = null;
 let pveAnimationId = null;
 let pendingPveStage = "";
 let selectedPveCharacter = DEFAULT_CHARACTER;
+let selectedPveMapStage = "1-1";
+let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
+
+const PVE_STAGES = {
+  "1-1": {
+    title: "첫 충돌",
+    description: "기본 움직임과 충돌 전투를 익히는 첫 작전입니다.",
+    enemies: "근접형 1기",
+    reward: 10
+  },
+  "1-2": {
+    title: "협공 지대",
+    description: "서로 다른 궤도로 움직이는 근접형 적 둘을 상대합니다.",
+    enemies: "근접형 2기",
+    reward: 10
+  },
+  "1-3": {
+    title: "탄환 교차로",
+    description: "투척형의 탄환을 피하면서 근접형 적을 함께 처리합니다.",
+    enemies: "근접형 1기 · 투척형 1기",
+    reward: 10
+  }
+};
 
 function normalizePlayer(user) {
   return {
@@ -894,16 +924,66 @@ async function cancelMatchmaking() {
   showScreen("lobby");
 }
 
-function selectPveMode() {
+async function selectPveMode() {
   if (matchmakingActive) {
-    cancelMatchmaking();
+    await cancelMatchmaking();
   }
   selectedMode = "pve";
   ui.pveModeButton.classList.add("is-selected");
   ui.pvpModeButton.classList.remove("is-selected");
   ui.modeMessage.textContent = "";
-  renderPveCharacterOptions();
   showScreen("pve");
+  await loadPveProgress();
+}
+
+function computeUnlockedPveStages(completedStages) {
+  const unlocked = ["1-1"];
+  if (completedStages.includes("1-1")) unlocked.push("1-2");
+  if (completedStages.includes("1-2")) unlocked.push("1-3");
+  return unlocked;
+}
+
+async function loadPveProgress() {
+  try {
+    const data = await rpc("get_pve_progress", { session_token: appSessionToken });
+    const completedStages = data.completedStages || data.completed_stages || [];
+    pveProgress = {
+      completedStages,
+      unlockedStages: data.unlockedStages || data.unlocked_stages || computeUnlockedPveStages(completedStages)
+    };
+  } catch (error) {
+    pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
+    ui.modeMessage.textContent = error.message;
+  }
+  if (!pveProgress.unlockedStages.includes(selectedPveMapStage)) {
+    selectedPveMapStage = pveProgress.unlockedStages.at(-1) || "1-1";
+  }
+  renderPveWorldMap();
+}
+
+function renderPveWorldMap() {
+  ui.pveStageButtons.forEach(button => {
+    const stage = button.dataset.pveStage;
+    const locked = !pveProgress.unlockedStages.includes(stage);
+    button.disabled = locked;
+    button.classList.toggle("is-locked", locked);
+    button.classList.toggle("is-completed", pveProgress.completedStages.includes(stage));
+    button.classList.toggle("is-selected", stage === selectedPveMapStage);
+    button.setAttribute("aria-pressed", stage === selectedPveMapStage ? "true" : "false");
+  });
+
+  const stage = PVE_STAGES[selectedPveMapStage];
+  const completed = pveProgress.completedStages.includes(selectedPveMapStage);
+  const locked = !pveProgress.unlockedStages.includes(selectedPveMapStage);
+  ui.pveStageDetailCode.textContent = `STAGE ${selectedPveMapStage}`;
+  ui.pveStageDetailTitle.textContent = stage.title;
+  ui.pveStageDetailDescription.textContent = stage.description;
+  ui.pveStageDetailEnemies.textContent = stage.enemies;
+  ui.pveStageDetailReward.textContent = `${stage.reward}C`;
+  ui.pveStageDetailStatus.textContent = locked ? "이전 스테이지 클리어 필요" : completed ? "클리어 완료" : "도전 가능";
+  ui.pveStageDetailStatus.classList.toggle("is-completed", completed);
+  ui.pveStageStartButton.disabled = locked;
+  ui.pveStageStartButton.textContent = locked ? "잠김" : "게임 시작";
 }
 
 function renderPveCharacterOptions() {
@@ -1321,22 +1401,13 @@ function ultimateCooldown(kind) {
   }[kind] ?? Infinity;
 }
 
-function makeFighter(kind, label, ownerId, x, y) {
+function makeCharacterCombatState(kind) {
   const character = characters[kind];
-  const velocity = randomVelocity(6.5);
-
   return {
     kind,
-    label,
-    ownerId,
-    ownerName: getPlayer(ownerId).name,
     name: character.name,
     color: character.color,
     accent: character.accent,
-    x,
-    y,
-    vx: velocity.vx,
-    vy: velocity.vy,
     radius: 32,
     hp: 200,
     maxHp: 200,
@@ -1392,6 +1463,29 @@ function makeFighter(kind, label, ownerId, x, y) {
     gritUsed: false,
     gritActive: false,
     idleAttackTime: 0
+  };
+}
+
+function characterBaseSpeed(fighter) {
+  if (fighter.stealthTime > 0) return fighter.hyperStealthActive ? 125 : 12.5;
+  if (fighter.canThrow) return 5.9;
+  if (fighter.canGrab) return 6.2;
+  if (fighter.kind === "tank") return 5.7;
+  if (fighter.kind === "brawler") return 7.1;
+  return 6.8;
+}
+
+function makeFighter(kind, label, ownerId, x, y) {
+  const velocity = randomVelocity(6.5);
+  return {
+    ...makeCharacterCombatState(kind),
+    label,
+    ownerId,
+    ownerName: getPlayer(ownerId).name,
+    x,
+    y,
+    vx: velocity.vx,
+    vy: velocity.vy
   };
 }
 
@@ -1989,17 +2083,7 @@ function moveFighter(fighter, dt) {
     fighter.y += fighter.vy * dt;
   }
   const speed = Math.hypot(fighter.vx, fighter.vy);
-  const baseSpeed = fighter.stealthTime > 0
-    ? fighter.hyperStealthActive ? 125 : 12.5
-    : fighter.canThrow
-      ? 5.9
-      : fighter.canGrab
-        ? 6.2
-        : fighter.kind === "tank"
-          ? 5.7
-          : fighter.kind === "brawler"
-            ? 7.1
-            : 6.8;
+  const baseSpeed = characterBaseSpeed(fighter);
   const target = opponentOf(fighter);
   if (fighter.chaseTime > 0 && fighter.chaseBounceTime <= 0) {
     const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
@@ -3404,7 +3488,7 @@ async function startPveStage(stage) {
   }
   const kind = selectedPveCharacter || DEFAULT_CHARACTER;
   const character = characters[kind];
-  const playerVelocity = { vx: 5.8, vy: 4.6 };
+  const playerVelocity = { vx: 5.1, vy: 4.1 };
   pveGame = {
     stage,
     runId: pveRun.runId || pveRun.run_id,
@@ -3414,40 +3498,13 @@ async function startPveStage(stage) {
     accumulator: 0,
     over: false,
     player: {
-      kind,
+      ...makeCharacterCombatState(kind),
       x: 120,
       y: pveCanvas.height / 2,
       vx: playerVelocity.vx,
       vy: playerVelocity.vy,
-      radius: 32,
-      hp: 200,
-      maxHp: 200,
-      color: character.color,
-      accent: character.accent,
       shotTimer: 50,
-      hitFlash: 0,
-      skillTimer: kind === "vampire" || kind === "brawler" ? 0 : 480,
-      ultimateTimer: kind === "wild" || kind === "brawler" ? 0 : 480,
-      rageTime: 0,
-      unstoppableWindup: 0,
-      unstoppableDirectionX: 0,
-      unstoppableDirectionY: 0,
-      unstoppableTime: 0,
-      stealthTime: 0,
-      stealthTimer: kind === "stealth" ? 420 : Infinity,
-      hyperStealthNext: false,
-      hyperStealth: false,
-      furnaceCharges: 0,
-      attackPower: kind === "enhancer" ? 1 : 0,
-      enhanceTimer: 120,
-      godWeapons: [],
-      shieldTime: 0,
-      bloodPreludeTime: 0,
-      gritUsed: false,
-      gritActive: false,
-      idleAttackTime: 0,
-      chaseTime: 0,
-      pokerBoostMultiplier: 1
+      attackPower: kind === "enhancer" ? 1 : character.contactDamage
     },
     enemies: [],
     projectiles: [],
@@ -3476,6 +3533,7 @@ async function startPveStage(stage) {
 }
 
 function openPveCharacterSelect(stage) {
+  if (!pveProgress.unlockedStages.includes(stage)) return;
   pendingPveStage = stage;
   ui.pveSelectedStageLabel.textContent = `STAGE ${stage}`;
   ui.pveCharacterMessage.textContent = "";
@@ -3776,13 +3834,13 @@ function stepPve() {
   if (player.kind === "stealth") {
     player.stealthTimer -= 1;
     if (player.stealthTimer <= 0) {
-      player.hyperStealth = player.hyperStealthNext;
+      player.hyperStealthActive = player.hyperStealthNext;
       player.hyperStealthNext = false;
-      player.stealthTime = player.hyperStealth ? 240 : 180;
+      player.stealthTime = player.hyperStealthActive ? 240 : 180;
       player.stealthTimer = 420;
-      addPveFloating(player.hyperStealth ? "하이퍼 은신!" : "은신", player.accent);
+      addPveFloating(player.hyperStealthActive ? "하이퍼 은신!" : "은신", player.accent);
     }
-    if (player.stealthTime <= 0) player.hyperStealth = false;
+    if (player.stealthTime <= 0) player.hyperStealthActive = false;
   }
   if (player.kind === "enhancer") {
     player.enhanceTimer -= 1;
@@ -3804,18 +3862,28 @@ function stepPve() {
   const closest = nearestPveEnemy();
   if (player.chaseTime > 0 && closest) {
     const angle = Math.atan2(closest.y - player.y, closest.x - player.x);
-    player.vx = Math.cos(angle) * 18;
-    player.vy = Math.sin(angle) * 18;
+    player.vx = Math.cos(angle) * Math.max(characterBaseSpeed(player) * 3, Math.hypot(player.vx, player.vy));
+    player.vy = Math.sin(angle) * Math.max(characterBaseSpeed(player) * 3, Math.hypot(player.vx, player.vy));
   }
   const speedMultiplier = (player.rageTime > 0 ? 1.55 : 1)
-    * (player.stealthTime > 0 ? player.hyperStealth ? 10 : 1.8 : 1)
     * (player.kind === "wild" && closest && closest.hp <= closest.maxHp * 0.5 ? 3.5 : 1)
     * (player.bloodPreludeTime > 0 ? 2 : 1)
-    * (player.unstoppableTime > 0 ? 8.8 : 1)
+    * (player.unstoppableTime > 0 ? 3.525 : 1)
+    * (player.chaseTime > 0 ? 3 : 1)
     * (player.kind === "brawler" ? 1 + player.idleAttackTime / 60 * 0.06 : 1);
+  const targetSpeed = characterBaseSpeed(player) * speedMultiplier;
+  const currentSpeed = Math.hypot(player.vx, player.vy);
+  if (currentSpeed > 0) {
+    player.vx = player.vx / currentSpeed * targetSpeed;
+    player.vy = player.vy / currentSpeed * targetSpeed;
+  } else {
+    const velocity = pveVelocity(targetSpeed);
+    player.vx = velocity.vx;
+    player.vy = velocity.vy;
+  }
   if (player.shieldTime <= 0 && player.unstoppableWindup <= 0) {
-    player.x += player.vx * speedMultiplier;
-    player.y += player.vy * speedMultiplier;
+    player.x += player.vx;
+    player.y += player.vy;
   }
   bouncePveBody(player);
   if (player.hitFlash > 0) player.hitFlash -= 1;
@@ -3881,17 +3949,24 @@ function stepPve() {
     if (distance < player.radius + enemy.radius) {
       if (player.stealthTime > 0) {
         if (enemy.contactCooldown <= 0) {
-          damagePveEnemy(enemy, player.hyperStealth ? 10 : 15);
+          damagePveEnemy(enemy, player.hyperStealthActive ? 10 : 15);
           enemy.contactCooldown = 24;
         }
         return;
       }
       const nx = dx / (distance || 1);
       const ny = dy / (distance || 1);
-      player.vx = nx * 6;
-      player.vy = ny * 6;
-      enemy.vx = -nx * 4.4;
-      enemy.vy = -ny * 4.4;
+      const overlap = player.radius + enemy.radius - distance;
+      player.x += nx * overlap * 0.5;
+      player.y += ny * overlap * 0.5;
+      enemy.x -= nx * overlap * 0.5;
+      enemy.y -= ny * overlap * 0.5;
+      const playerNormalSpeed = player.vx * nx + player.vy * ny;
+      const enemyNormalSpeed = enemy.vx * nx + enemy.vy * ny;
+      player.vx += (enemyNormalSpeed - playerNormalSpeed) * nx;
+      player.vy += (enemyNormalSpeed - playerNormalSpeed) * ny;
+      enemy.vx += (playerNormalSpeed - enemyNormalSpeed) * nx;
+      enemy.vy += (playerNormalSpeed - enemyNormalSpeed) * ny;
       if (enemy.contactCooldown <= 0) {
         damagePvePlayer(5);
         const contactDamage = player.unstoppableTime > 0 ? 40
@@ -4050,6 +4125,14 @@ function drawPve() {
   pveCtx.fillStyle = "#101319";
   pveCtx.fill();
   pveCtx.globalAlpha = 1;
+  pveCtx.textAlign = "center";
+  pveCtx.font = "800 13px Segoe UI";
+  pveCtx.fillStyle = "#f7f4eb";
+  pveCtx.fillText(currentUser?.name || "PLAYER", player.x, player.y - player.radius - 14);
+  pveCtx.fillStyle = "#101319";
+  pveCtx.fillRect(player.x - 34, player.y + player.radius + 10, 68, 7);
+  pveCtx.fillStyle = player.accent;
+  pveCtx.fillRect(player.x - 34, player.y + player.radius + 10, 68 * player.hp / player.maxHp, 7);
   pveGame.enemies.forEach(enemy => {
     pveCtx.beginPath();
     pveCtx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
@@ -4165,6 +4248,7 @@ async function finishPve(won) {
     currentUser = normalizePlayer(data.user);
     players = players.map(player => player.id === currentUser.id ? currentUser : player);
     ui.pveResultText.textContent = `${completedStage} 클리어 · +${data.reward ?? 10}C`;
+    await loadPveProgress();
     renderLobby();
   } catch (error) {
     ui.pveResultText.textContent = `${completedStage} 클리어 · 보상 오류: ${error.message}`;
@@ -4182,8 +4266,8 @@ function stopPveGame() {
 function returnToPveSelect() {
   stopPveGame();
   ui.pveResultOverlay.classList.remove("is-active");
-  renderPveCharacterOptions();
   showScreen("pve");
+  loadPveProgress();
 }
 
 function stopGame() {
@@ -4266,8 +4350,12 @@ ui.backFromPveButton.addEventListener("click", () => {
   showScreen("lobby");
 });
 ui.pveStageButtons.forEach(button => {
-  button.addEventListener("click", () => openPveCharacterSelect(button.dataset.pveStage));
+  button.addEventListener("click", () => {
+    selectedPveMapStage = button.dataset.pveStage;
+    renderPveWorldMap();
+  });
 });
+ui.pveStageStartButton.addEventListener("click", () => openPveCharacterSelect(selectedPveMapStage));
 ui.backToPveStagesButton.addEventListener("click", () => showScreen("pve"));
 ui.startPveBattleButton.addEventListener("click", () => {
   if (!pendingPveStage) return;

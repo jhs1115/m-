@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260607n">
+  <link rel="stylesheet" href="style.css?v=20260607o">
 </head>
 <body>
   <main class="app">
@@ -49,8 +49,10 @@
           <article>
             <strong>PVE 및 상점</strong>
             <ul>
-              <li>스테이지 선택 후 별도의 캐릭터 선택 화면을 거쳐 출전하도록 변경했습니다.</li>
-              <li>PVE에서도 캐릭터별 일반 공격, 스킬, 궁극기와 상태 효과를 사용할 수 있습니다.</li>
+              <li>PVE 선택 화면을 경로형 월드맵으로 개편했습니다.</li>
+              <li>이전 스테이지를 클리어해야 다음 스테이지가 해금됩니다.</li>
+              <li>PVE 캐릭터의 체력, 크기, 이동속도, 상태 효과와 충돌 반응을 PVP 전투 규칙과 통합했습니다.</li>
+              <li>스테이지 선택 후 별도의 캐릭터 선택 화면을 거쳐 출전합니다.</li>
               <li>적 캐릭터 내부 글자를 제거하고 캐릭터 뽑기 화면의 소환 연출을 강화했습니다.</li>
             </ul>
           </article>
@@ -298,16 +300,35 @@
           </div>
           <button id="backFromPveButton" class="ghost-button" type="button">로비로</button>
         </div>
-        <div class="pve-stage-grid">
-          <button class="pve-stage-card" type="button" data-pve-stage="1-1">
-            <span>STAGE</span><strong>1-1</strong><em>근접형 1기</em>
-          </button>
-          <button class="pve-stage-card" type="button" data-pve-stage="1-2">
-            <span>STAGE</span><strong>1-2</strong><em>근접형 2기</em>
-          </button>
-          <button class="pve-stage-card" type="button" data-pve-stage="1-3">
-            <span>STAGE</span><strong>1-3</strong><em>근접형 + 투척형</em>
-          </button>
+        <div class="pve-world-shell">
+          <div class="pve-world-map" aria-label="PVE 월드맵">
+            <div class="pve-map-landmark">
+              <span>CHAPTER 01</span>
+              <strong>균열의 외곽</strong>
+            </div>
+            <span class="pve-map-route route-one" aria-hidden="true"></span>
+            <span class="pve-map-route route-two" aria-hidden="true"></span>
+            <button class="pve-map-node node-one is-selected" type="button" data-pve-stage="1-1" aria-pressed="true">
+              <span>1-1</span><small>첫 충돌</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-two" type="button" data-pve-stage="1-2" aria-pressed="false">
+              <span>1-2</span><small>협공 지대</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-three" type="button" data-pve-stage="1-3" aria-pressed="false">
+              <span>1-3</span><small>탄환 교차로</small><i aria-hidden="true">✓</i>
+            </button>
+          </div>
+          <aside class="pve-stage-detail">
+            <span id="pveStageDetailCode">STAGE 1-1</span>
+            <h2 id="pveStageDetailTitle">첫 충돌</h2>
+            <p id="pveStageDetailDescription">기본 움직임과 충돌 전투를 익히는 첫 작전입니다.</p>
+            <dl>
+              <div><dt>적 구성</dt><dd id="pveStageDetailEnemies">근접형 1기</dd></div>
+              <div><dt>클리어 보상</dt><dd id="pveStageDetailReward">10C</dd></div>
+            </dl>
+            <strong id="pveStageDetailStatus" class="pve-stage-status">도전 가능</strong>
+            <button id="pveStageStartButton" class="primary-button" type="button">게임 시작</button>
+          </aside>
         </div>
       </div>
     </section>
@@ -589,7 +610,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260607n"></script>
-  <script src="game.js?v=20260607n"></script>
+  <script src="supabase-config.js?v=20260607o"></script>
+  <script src="game.js?v=20260607o"></script>
 </body>
 </html>

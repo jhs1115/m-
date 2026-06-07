@@ -894,6 +894,7 @@ declare
   active_user public.app_users;
   run_id uuid;
   normalized_stage text := trim(stage_code);
+  required_stage text;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -904,11 +905,67 @@ begin
     raise exception 'invalid pve stage';
   end if;
 
+  required_stage := case normalized_stage
+    when '1-2' then '1-1'
+    when '1-3' then '1-2'
+    else null
+  end;
+
+  if required_stage is not null and not exists (
+    select 1
+    from public.pve_runs
+    where user_id = active_user.id
+      and stage = required_stage
+      and completed_at is not null
+  ) then
+    raise exception 'previous pve stage not cleared';
+  end if;
+
   insert into public.pve_runs (user_id, stage)
   values (active_user.id, normalized_stage)
   returning id into run_id;
 
   return jsonb_build_object('runId', run_id, 'stage', normalized_stage);
+end;
+$$;
+
+create or replace function public.get_pve_progress(session_token text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  completed_stages jsonb;
+  unlocked_stages jsonb := '["1-1"]'::jsonb;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select coalesce(jsonb_agg(stage order by stage), '[]'::jsonb)
+  into completed_stages
+  from (
+    select distinct stage
+    from public.pve_runs
+    where user_id = active_user.id
+      and completed_at is not null
+  ) completed;
+
+  if completed_stages ? '1-1' then
+    unlocked_stages := unlocked_stages || '["1-2"]'::jsonb;
+  end if;
+  if completed_stages ? '1-2' then
+    unlocked_stages := unlocked_stages || '["1-3"]'::jsonb;
+  end if;
+
+  return jsonb_build_object(
+    'completedStages', completed_stages,
+    'unlockedStages', unlocked_stages
+  );
 end;
 $$;
 
@@ -1180,6 +1237,7 @@ grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.claim_free_coins(text) to anon, authenticated;
 grant execute on function public.begin_pve_run(text, text) to anon, authenticated;
+grant execute on function public.get_pve_progress(text) to anon, authenticated;
 grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;
 grant execute on function public.get_rankings(text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
