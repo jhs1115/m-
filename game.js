@@ -3914,7 +3914,7 @@ function populatePveStage(stage) {
 }
 
 const SURVIVAL_WEAPONS = {
-  pulse: { name: "공 투척기", icon: "●", color: "#67e8f9", item: "scope", baseCooldown: 180, description: "가장 가까운 적에게 빠르고 튕기지 않는 공을 발사합니다." },
+  pulse: { name: "공 투척기", icon: "●", color: "#67e8f9", item: "scope", baseCooldown: 105, description: "가장 가까운 적에게 크고 빠른 공을 발사합니다." },
   star: { name: "스타 스트라이크", icon: "★", color: "#fde68a", item: "scope", baseCooldown: 480, description: "수명이 긴 별 탄환 두 개를 발사합니다." },
   ram: { name: "몸통 박치기", icon: "B", color: "#fb7185", item: "engine", baseCooldown: 210, description: "적을 향해 짧고 굵은 돌진 탄환을 발사합니다." },
   charge: { name: "불가항력", icon: "➤", color: "#fb7185", item: "engine", baseCooldown: 360, description: "적을 향해 강력한 돌진 파동을 발사합니다." },
@@ -3994,10 +3994,10 @@ async function startPveStage(stage) {
     xpRequired: 10,
     kills: 0,
     bonusCoins: 0,
-    spawnTimer: 15,
+    spawnTimer: 75,
     nextBossTick: 18000,
     bossCount: 0,
-    weapons: { pulse: { stars: 1, awakened: false, timer: 180 } },
+    weapons: { pulse: { stars: 1, awakened: false, timer: 20 } },
     items: {},
     subs: {},
     xpOrbs: [],
@@ -5251,11 +5251,11 @@ function fireSurvivalWeapon(id) {
   if (id === "pulse") {
     const count = entry.awakened ? 4 : entry.stars >= 4 ? 2 : 1;
     for (let index = 0; index < count; index += 1) {
-      projectile((index - (count - 1) / 2) * 0.1, 16.5, 9, 7, {
+      projectile((index - (count - 1) / 2) * 0.1, 19, 12, 10, {
         color: "#67e8f9",
         homing: itemOwned,
         pierce: entry.awakened ? 2 : 0,
-        life: 120
+        life: 150
       });
     }
   } else if (id === "star") {
@@ -5438,7 +5438,7 @@ function spawnSurvivalEnemy() {
         : (roll < 30 ? "melee" : roll < 50 ? "dasher" : roll < 70 ? "thrower" : roll < 88 ? "brute" : "bomber");
   const difficulty = 1 + seconds / 120;
   const base = {
-    melee: { hp: 24, speed: 2.7, radius: 20, damage: 7, xp: 2, color: "#ef476f" },
+    melee: { hp: 20, speed: 2.35, radius: 20, damage: 7, xp: 2, color: "#ef476f" },
     dasher: { hp: 34, speed: 3.8, radius: 19, damage: 10, xp: 3, color: "#fb923c" },
     thrower: { hp: 28, speed: 2.2, radius: 21, damage: 6, xp: 4, color: "#a78bfa" },
     brute: { hp: 85, speed: 1.65, radius: 30, damage: 14, xp: 7, color: "#94a3b8" },
@@ -5705,9 +5705,9 @@ function stepSurvivalPve() {
   }
   pveGame.spawnTimer -= 1;
   if (pveGame.spawnTimer <= 0) {
-    const count = 1 + Math.floor(seconds / 75);
-    for (let index = 0; index < Math.min(5, count); index += 1) spawnSurvivalEnemy();
-    pveGame.spawnTimer = Math.max(16, 62 - seconds * 0.12);
+    const count = 1 + Math.floor(Math.max(0, seconds - 120) / 90);
+    for (let index = 0; index < Math.min(4, count); index += 1) spawnSurvivalEnemy();
+    pveGame.spawnTimer = seconds < 45 ? 100 : Math.max(22, 74 - seconds * 0.1);
   }
 
   Object.entries(pveGame.weapons).forEach(([id, weapon]) => {
@@ -5778,10 +5778,20 @@ function stepSurvivalPve() {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     if (distance < player.radius + enemy.radius && enemy.contactCooldown <= 0) {
       if (player.invulnerableTime <= 0) damagePvePlayer(enemy.contactDamage);
+      damageSurvivalEnemy(enemy, 5);
       const nx = (enemy.x - player.x) / (distance || 1);
-      enemy.vx += nx * 4;
-      enemy.vy += (enemy.y - player.y) / (distance || 1) * 4;
-      enemy.contactCooldown = 35;
+      const ny = (enemy.y - player.y) / (distance || 1);
+      const overlap = player.radius + enemy.radius - distance;
+      player.x -= nx * (overlap * 0.5 + 2);
+      player.y -= ny * (overlap * 0.5 + 2);
+      enemy.x += nx * (overlap * 0.5 + 2);
+      enemy.y += ny * (overlap * 0.5 + 2);
+      player.vx = -nx * 7.2;
+      player.vy = -ny * 7.2;
+      enemy.vx = nx * 6;
+      enemy.vy = ny * 6;
+      player.invulnerableTime = Math.max(player.invulnerableTime, 24);
+      enemy.contactCooldown = 42;
     }
   });
   if (pveGame.over) return;
