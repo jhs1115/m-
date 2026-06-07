@@ -647,27 +647,24 @@ h2 {
   font-size: 1.45rem;
 }
 
-.pve-map-route {
+.pve-map-routes {
   position: absolute;
+  inset: 0;
   z-index: 1;
-  height: 4px;
-  background: linear-gradient(90deg, rgba(61, 214, 208, 0.45), rgba(242, 193, 78, 0.7));
-  box-shadow: 0 0 16px rgba(61, 214, 208, 0.28);
-  transform-origin: left center;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.route-one {
-  left: 24%;
-  bottom: 27%;
-  width: 31%;
-  transform: rotate(-31deg);
-}
-
-.route-two {
-  left: 52%;
-  top: 43%;
-  width: 29%;
-  transform: rotate(34deg);
+.pve-map-routes path {
+  fill: none;
+  stroke: rgba(111, 215, 185, 0.78);
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 7px rgba(61, 214, 208, 0.38));
 }
 
 .pve-map-node {
@@ -688,7 +685,7 @@ h2 {
 
 .pve-map-node:hover:not(:disabled),
 .pve-map-node.is-selected {
-  transform: scale(1.09);
+  transform: translate(-50%, -50%) scale(1.09);
   box-shadow: 0 0 0 10px rgba(242, 193, 78, 0.17), 0 0 28px rgba(242, 193, 78, 0.44);
 }
 
@@ -750,18 +747,21 @@ h2 {
 }
 
 .node-one {
-  left: 15%;
-  bottom: 17%;
+  left: 18%;
+  top: 78%;
+  transform: translate(-50%, -50%);
 }
 
 .node-two {
-  left: 48%;
-  top: 31%;
+  left: 52%;
+  top: 38%;
+  transform: translate(-50%, -50%);
 }
 
 .node-three {
-  right: 11%;
-  bottom: 17%;
+  left: 84%;
+  top: 78%;
+  transform: translate(-50%, -50%);
 }
 
 .pve-stage-detail {
@@ -2729,15 +2729,4 @@ h2 {
     height: 76px;
   }
 
-  .node-one {
-    left: 10%;
-  }
-
-  .node-two {
-    left: 45%;
-  }
-
-  .node-three {
-    right: 8%;
-  }
 }
