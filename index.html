@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260607r">
+  <link rel="stylesheet" href="style.css?v=20260607w">
 </head>
 <body>
   <main class="app">
     <button id="patchNoteButton" class="patch-note-button" type="button">패치노트</button>
-    <button id="coinBadge" class="coin-badge" type="button">COIN <strong><span id="globalCoinAmount">0</span>C</strong></button>
+    <div id="coinBadge" class="coin-badge">COIN <strong><span id="globalCoinAmount">0</span>C</strong></div>
     <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
       <div class="patch-note-box">
         <button id="patchNoteCloseButton" class="patch-note-close" type="button">닫기</button>
@@ -54,6 +54,29 @@
               <li>PVE 캐릭터의 체력, 크기, 이동속도, 상태 효과와 충돌 반응을 PVP 전투 규칙과 통합했습니다.</li>
               <li>스테이지 선택 후 별도의 캐릭터 선택 화면을 거쳐 출전합니다.</li>
               <li>적 캐릭터 내부 글자를 제거하고 캐릭터 뽑기 화면의 소환 연출을 강화했습니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>승급 보상</strong>
+            <ul>
+              <li>새 티어로 승급할 때마다 200C를 획득합니다.</li>
+              <li>코인 표시를 눌러 무료 코인을 받던 기능을 삭제했습니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>챕터 1 완성</strong>
+            <ul>
+              <li>PVE 스테이지 1-4부터 1-10까지 추가했습니다.</li>
+              <li>중장갑, 추격형, 포격형 적과 패턴 없는 미니보스가 등장합니다.</li>
+              <li>1-10 보스는 균열 탄막, 추적 붕괴, 광폭 돌진 패턴을 사용합니다.</li>
+              <li>1-10 최초 클리어 보상은 100C입니다.</li>
+            </ul>
+          </article>
+          <article>
+            <strong>은신 미러전 이스터에그</strong>
+            <ul>
+              <li>은신하는 색히끼리 대전하면 50% 확률로 승자가 결정되는 전용 연출이 시작됩니다.</li>
+              <li>암전과 연속 참격 후 승자 한 명만 2초 동안 남고 경기가 종료됩니다.</li>
             </ul>
           </article>
         </div>
@@ -169,28 +192,43 @@
         </div>
 
         <div class="lobby-tab-panel" data-lobby-panel="codex">
-          <div class="panel codex-panel">
-            <div class="codex-header">
-              <div>
-                <span>CHARACTER ARCHIVE</span>
-                <h2>도감</h2>
-              </div>
-              <strong id="codexOwnedCount">0 / 11 보유</strong>
-            </div>
-            <div class="codex-layout">
-              <div id="codexCharacterList" class="codex-character-list"></div>
-              <article id="codexDetail" class="codex-detail">
-                <div class="codex-preview-stage">
-                  <div id="codexPreview" class="codex-preview">
-                    <span id="codexPreviewInitial">T</span>
-                  </div>
-                  <div>
-                    <span id="codexOwnership" class="codex-ownership">보유중</span>
-                    <h3 id="codexCharacterName">공던지는 색히</h3>
-                  </div>
+          <div class="codex-shell">
+            <aside class="codex-type-panel" aria-label="도감 종류">
+              <span>ARCHIVE</span>
+              <button class="codex-type-button is-active" type="button" data-codex-type="character">
+                <b>C</b>
+                <strong>캐릭터 도감</strong>
+                <small>CHARACTER</small>
+              </button>
+              <button class="codex-type-button" type="button" data-codex-type="enemy">
+                <b>E</b>
+                <strong>적 도감</strong>
+                <small>ENEMY</small>
+              </button>
+            </aside>
+            <div class="panel codex-panel">
+              <div class="codex-header">
+                <div>
+                  <span id="codexArchiveLabel">CHARACTER ARCHIVE</span>
+                  <h2>도감</h2>
                 </div>
-                <div id="codexSkillList" class="codex-skill-list"></div>
-              </article>
+                <strong id="codexOwnedCount">0 / 11 보유</strong>
+              </div>
+              <div class="codex-layout">
+                <div id="codexCharacterList" class="codex-character-list"></div>
+                <article id="codexDetail" class="codex-detail">
+                  <div class="codex-preview-stage">
+                    <div id="codexPreview" class="codex-preview">
+                      <span id="codexPreviewInitial">T</span>
+                    </div>
+                    <div>
+                      <span id="codexOwnership" class="codex-ownership">보유중</span>
+                      <h3 id="codexCharacterName">공던지는 색히</h3>
+                    </div>
+                  </div>
+                  <div id="codexSkillList" class="codex-skill-list"></div>
+                </article>
+              </div>
             </div>
           </div>
         </div>
@@ -307,7 +345,7 @@
               <strong>균열의 외곽</strong>
             </div>
             <svg class="pve-map-routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M 18 78 L 52 38 L 84 78"></path>
+              <path d="M 10 86 L 27 68 L 44 83 L 61 63 L 82 75 L 77 45 L 58 31 L 39 47 L 21 28 L 50 13"></path>
             </svg>
             <button class="pve-map-node node-one is-selected" type="button" data-pve-stage="1-1" aria-pressed="true">
               <span>1-1</span><small>첫 충돌</small><i aria-hidden="true">✓</i>
@@ -317,6 +355,27 @@
             </button>
             <button class="pve-map-node node-three" type="button" data-pve-stage="1-3" aria-pressed="false">
               <span>1-3</span><small>탄환 교차로</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-four" type="button" data-pve-stage="1-4" aria-pressed="false">
+              <span>1-4</span><small>중장갑 초소</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-five is-mini-boss" type="button" data-pve-stage="1-5" aria-pressed="false">
+              <span>1-5</span><small>철갑 거체</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-six" type="button" data-pve-stage="1-6" aria-pressed="false">
+              <span>1-6</span><small>추격 협곡</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-seven" type="button" data-pve-stage="1-7" aria-pressed="false">
+              <span>1-7</span><small>폭격 지대</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-eight" type="button" data-pve-stage="1-8" aria-pressed="false">
+              <span>1-8</span><small>혼성 부대</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-nine" type="button" data-pve-stage="1-9" aria-pressed="false">
+              <span>1-9</span><small>성문 돌파</small><i aria-hidden="true">✓</i>
+            </button>
+            <button class="pve-map-node node-ten is-boss" type="button" data-pve-stage="1-10" aria-pressed="false">
+              <span>1-10</span><small>균열의 지배자</small><i aria-hidden="true">✓</i>
             </button>
           </div>
           <aside class="pve-stage-detail">
@@ -383,10 +442,47 @@
         </button>
       </div>
       <div id="pveResultOverlay" class="result-overlay">
-        <div class="result-box">
-          <p id="pveResultTitle">STAGE CLEAR</p>
-          <span id="pveResultText">전투가 완료되었습니다.</span>
-          <button id="pveResultButton" class="primary-button" type="button">스테이지 선택</button>
+        <div class="battle-result">
+          <div class="battle-result-topline">
+            <span>게임 시간 <strong id="pveResultTimeTop">00:00</strong></span>
+            <b>Mzzang · PVE</b>
+          </div>
+          <header class="battle-result-heading">
+            <span id="pveResultEyebrow">MISSION COMPLETE</span>
+            <p id="pveResultTitle">STAGE CLEAR</p>
+            <strong id="pveResultText">전투가 완료되었습니다.</strong>
+          </header>
+          <div class="battle-result-grid">
+            <section class="result-character-panel">
+              <span>캐릭터</span>
+              <div class="result-character-visual">
+                <div id="pveResultCharacterOrb" class="result-character-orb">T</div>
+              </div>
+              <div class="result-player-identity">
+                <strong id="pveResultPlayerName">PLAYER</strong>
+                <span id="pveResultCharacterName">공던지는 색히</span>
+              </div>
+            </section>
+            <div class="result-side-column">
+              <section class="result-reward-panel">
+                <span>보상</span>
+                <div class="result-reward-icon">C</div>
+                <strong id="pveResultReward">+0C</strong>
+                <small id="pveResultRewardLabel">클리어 보상</small>
+              </section>
+              <section class="result-stats-panel">
+                <span>통계</span>
+                <dl>
+                  <div><dt>준 피해량</dt><dd id="pveResultDamageDealt">0</dd></div>
+                  <div><dt>받은 피해량</dt><dd id="pveResultDamageTaken">0</dd></div>
+                  <div><dt>회복량</dt><dd id="pveResultHealing">0</dd></div>
+                  <div><dt>남은 체력</dt><dd id="pveResultHealth">0</dd></div>
+                  <div><dt>게임 시간</dt><dd id="pveResultTime">00:00</dd></div>
+                </dl>
+              </section>
+            </div>
+          </div>
+          <button id="pveResultButton" class="result-return-button" type="button">스테이지 선택</button>
         </div>
       </div>
     </section>
@@ -601,17 +697,59 @@
       </div>
 
       <div id="resultOverlay" class="result-overlay">
-        <div class="result-box">
-          <p id="resultTitle">PLAYER 1 승리!</p>
-          <span id="resultText">정산이 완료되었습니다.</span>
-          <button id="againButton" class="primary-button">로비로 돌아가기</button>
+        <div id="resultBox" class="battle-result">
+          <div class="battle-result-topline">
+            <span>게임 시간 <strong id="resultTimeTop">00:00</strong></span>
+            <b>Mzzang · LP MATCH</b>
+          </div>
+          <header class="battle-result-heading">
+            <span id="resultEyebrow">MATCH RESULT</span>
+            <p id="resultTitle">승리!</p>
+            <strong id="resultText">정산이 완료되었습니다.</strong>
+          </header>
+          <div class="battle-result-grid">
+            <section class="result-character-panel">
+              <span>캐릭터</span>
+              <div class="result-character-visual">
+                <div id="resultCharacterOrb" class="result-character-orb">T</div>
+              </div>
+              <div class="result-player-identity">
+                <strong id="resultPlayerName">PLAYER</strong>
+                <span id="resultCharacterName">공던지는 색히</span>
+              </div>
+              <div class="result-lp-row">
+                <span>현재 LP</span>
+                <strong id="resultCurrentLp">1000 LP</strong>
+                <em id="resultLpGain">+14 LP</em>
+              </div>
+            </section>
+            <div class="result-side-column">
+              <section class="result-reward-panel">
+                <span>보상</span>
+                <div class="result-reward-icon">LP</div>
+                <strong id="resultReward">+14 LP</strong>
+                <small id="resultRewardLabel">랭크 승리 보상</small>
+              </section>
+              <section class="result-stats-panel">
+                <span>통계</span>
+                <dl>
+                  <div><dt>준 피해량</dt><dd id="resultDamageDealt">0</dd></div>
+                  <div><dt>받은 피해량</dt><dd id="resultDamageTaken">0</dd></div>
+                  <div><dt>회복량</dt><dd id="resultHealing">0</dd></div>
+                  <div><dt>남은 체력</dt><dd id="resultHealth">0</dd></div>
+                  <div><dt>게임 시간</dt><dd id="resultTime">00:00</dd></div>
+                </dl>
+              </section>
+            </div>
+          </div>
+          <button id="againButton" class="result-return-button">로비로 돌아가기</button>
         </div>
       </div>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=20260607r"></script>
-  <script src="game.js?v=20260607r"></script>
+  <script src="supabase-config.js?v=20260607v"></script>
+  <script src="game.js?v=20260607w"></script>
 </body>
 </html>

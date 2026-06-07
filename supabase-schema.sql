@@ -858,30 +858,7 @@ begin
 end;
 $$;
 
-create or replace function public.claim_free_coins(session_token text)
-returns jsonb
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $$
-declare
-  active_user public.app_users;
-  updated_user public.app_users;
-begin
-  active_user := public.app_user_from_token(session_token);
-  if active_user.id is null then
-    raise exception 'login required';
-  end if;
-
-  update public.app_users
-  set coins = coins + 200
-  where id = active_user.id
-  returning * into updated_user;
-
-  return public.app_user_json(updated_user);
-end;
-$$;
+drop function if exists public.claim_free_coins(text);
 
 create or replace function public.begin_pve_run(session_token text, stage_code text)
 returns jsonb
@@ -895,21 +872,19 @@ declare
   run_id uuid;
   normalized_stage text := trim(stage_code);
   required_stage text;
+  stage_number integer;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
     raise exception 'login required';
   end if;
 
-  if normalized_stage not in ('1-1', '1-2', '1-3') then
+  if normalized_stage !~ '^1-([1-9]|10)$' then
     raise exception 'invalid pve stage';
   end if;
 
-  required_stage := case normalized_stage
-    when '1-2' then '1-1'
-    when '1-3' then '1-2'
-    else null
-  end;
+  stage_number := split_part(normalized_stage, '-', 2)::integer;
+  required_stage := case when stage_number > 1 then '1-' || (stage_number - 1)::text else null end;
 
   if required_stage is not null and not exists (
     select 1
@@ -940,6 +915,7 @@ declare
   active_user public.app_users;
   completed_stages jsonb;
   unlocked_stages jsonb := '["1-1"]'::jsonb;
+  stage_number integer;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -955,12 +931,10 @@ begin
       and completed_at is not null
   ) completed;
 
-  if completed_stages ? '1-1' then
-    unlocked_stages := unlocked_stages || '["1-2"]'::jsonb;
-  end if;
-  if completed_stages ? '1-2' then
-    unlocked_stages := unlocked_stages || '["1-3"]'::jsonb;
-  end if;
+  for stage_number in 1..9 loop
+    exit when not (completed_stages ? ('1-' || stage_number::text));
+    unlocked_stages := unlocked_stages || jsonb_build_array('1-' || (stage_number + 1)::text);
+  end loop;
 
   return jsonb_build_object(
     'completedStages', completed_stages,
@@ -980,11 +954,18 @@ declare
   active_user public.app_users;
   active_run public.pve_runs;
   updated_user public.app_users;
+  first_clear boolean;
+  stage_reward integer;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
     raise exception 'login required';
   end if;
+
+  select * into active_user
+  from public.app_users
+  where id = active_user.id
+  for update;
 
   select * into active_run
   from public.pve_runs
@@ -1003,17 +984,32 @@ begin
     raise exception 'pve stage completed too quickly';
   end if;
 
+  select not exists (
+    select 1
+    from public.pve_runs
+    where user_id = active_user.id
+      and stage = active_run.stage
+      and completed_at is not null
+      and id <> active_run.id
+  ) into first_clear;
+
+  stage_reward := case
+    when active_run.stage = '1-10' and first_clear then 100
+    else 10
+  end;
+
   update public.pve_runs
   set completed_at = now()
   where id = active_run.id;
 
   update public.app_users
-  set coins = coins + 10
+  set coins = coins + stage_reward
   where id = active_user.id
   returning * into updated_user;
 
   return jsonb_build_object(
-    'reward', 10,
+    'reward', stage_reward,
+    'firstClear', first_clear,
     'stage', active_run.stage,
     'user', public.app_user_json(updated_user)
   );
@@ -1149,6 +1145,11 @@ declare
   room_state jsonb;
   settled_winner_id uuid;
   settled_loser_id uuid;
+  old_lp integer;
+  old_tier text;
+  new_tier text;
+  promoted boolean := false;
+  promotion_reward integer := 0;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -1191,26 +1192,52 @@ begin
     return jsonb_build_object(
       'winner', public.app_user_json(winner_user),
       'loser', public.app_user_json(loser_user),
-      'lpGain', 0
+      'lpGain', coalesce((room_state->>'lpGain')::integer, 14),
+      'promoted', coalesce((room_state->>'promoted')::boolean, false),
+      'oldTier', room_state->>'oldTier',
+      'newTier', room_state->>'newTier',
+      'promotionReward', coalesce((room_state->>'promotionReward')::integer, 0)
     );
   end if;
 
   select * into loser_user from public.app_users where id = loser_id for update;
   select * into winner_user from public.app_users where id = winner_id for update;
 
+  old_lp := winner_user.lp;
+  old_tier := case
+    when old_lp >= 1800 then '다이아'
+    when old_lp >= 1600 then '플레'
+    when old_lp >= 1400 then '골드'
+    when old_lp >= 1200 then '실버'
+    else '브론즈'
+  end;
+  new_tier := case
+    when old_lp + 14 >= 1800 then '다이아'
+    when old_lp + 14 >= 1600 then '플레'
+    when old_lp + 14 >= 1400 then '골드'
+    when old_lp + 14 >= 1200 then '실버'
+    else '브론즈'
+  end;
+  promoted := old_tier <> new_tier;
+  promotion_reward := case when promoted then 200 else 0 end;
+
   update public.app_users
-  set lp = lp + 14
+  set lp = lp + 14,
+      coins = coins + promotion_reward
   where id = winner_id
   returning * into winner_user;
 
   select * into loser_user from public.app_users where id = loser_id;
 
   update public.app_rooms
-  set prep_state = jsonb_set(
-    jsonb_set(room_state, array['settled'], 'true'::jsonb, true),
-    array['winnerId'],
-    to_jsonb(winner_id),
-    true
+  set prep_state = room_state || jsonb_build_object(
+    'settled', true,
+    'winnerId', winner_id,
+    'lpGain', 14,
+    'promoted', promoted,
+    'oldTier', old_tier,
+    'newTier', new_tier,
+    'promotionReward', promotion_reward
   )
   where code = normalized_code;
 
@@ -1220,7 +1247,11 @@ begin
   return jsonb_build_object(
     'winner', public.app_user_json(winner_user),
     'loser', public.app_user_json(loser_user),
-    'lpGain', 14
+    'lpGain', 14,
+    'promoted', promoted,
+    'oldTier', old_tier,
+    'newTier', new_tier,
+    'promotionReward', promotion_reward
   );
 end;
 $$;
@@ -1235,7 +1266,6 @@ revoke execute on function public.join_room(text, text) from anon, authenticated
 grant execute on function public.leave_room(text, text) to anon, authenticated;
 grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
-grant execute on function public.claim_free_coins(text) to anon, authenticated;
 grant execute on function public.begin_pve_run(text, text) to anon, authenticated;
 grant execute on function public.get_pve_progress(text) to anon, authenticated;
 grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;

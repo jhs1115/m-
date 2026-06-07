@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260607o";
+const SIMULATION_VERSION = "20260607t";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -63,6 +63,8 @@ const ui = {
   playerList: document.getElementById("playerList"),
   inventoryGrid: document.getElementById("inventoryGrid"),
   codexCharacterList: document.getElementById("codexCharacterList"),
+  codexArchiveLabel: document.getElementById("codexArchiveLabel"),
+  codexTypeButtons: document.querySelectorAll("[data-codex-type]"),
   codexOwnedCount: document.getElementById("codexOwnedCount"),
   codexDetail: document.getElementById("codexDetail"),
   codexPreview: document.getElementById("codexPreview"),
@@ -105,8 +107,20 @@ const ui = {
   pveEnemyCount: document.getElementById("pveEnemyCount"),
   pveEnemyHealthBar: document.getElementById("pveEnemyHealthBar"),
   pveResultOverlay: document.getElementById("pveResultOverlay"),
+  pveResultTimeTop: document.getElementById("pveResultTimeTop"),
+  pveResultEyebrow: document.getElementById("pveResultEyebrow"),
   pveResultTitle: document.getElementById("pveResultTitle"),
   pveResultText: document.getElementById("pveResultText"),
+  pveResultCharacterOrb: document.getElementById("pveResultCharacterOrb"),
+  pveResultPlayerName: document.getElementById("pveResultPlayerName"),
+  pveResultCharacterName: document.getElementById("pveResultCharacterName"),
+  pveResultReward: document.getElementById("pveResultReward"),
+  pveResultRewardLabel: document.getElementById("pveResultRewardLabel"),
+  pveResultDamageDealt: document.getElementById("pveResultDamageDealt"),
+  pveResultDamageTaken: document.getElementById("pveResultDamageTaken"),
+  pveResultHealing: document.getElementById("pveResultHealing"),
+  pveResultHealth: document.getElementById("pveResultHealth"),
+  pveResultTime: document.getElementById("pveResultTime"),
   pveResultButton: document.getElementById("pveResultButton"),
   pveNormalSkillButton: document.getElementById("pveNormalSkillButton"),
   pveUltimateSkillButton: document.getElementById("pveUltimateSkillButton"),
@@ -147,8 +161,23 @@ const ui = {
   normalSkillCooldown: document.getElementById("normalSkillCooldown"),
   ultimateSkillCooldown: document.getElementById("ultimateSkillCooldown"),
   resultOverlay: document.getElementById("resultOverlay"),
+  resultBox: document.getElementById("resultBox"),
+  resultTimeTop: document.getElementById("resultTimeTop"),
+  resultEyebrow: document.getElementById("resultEyebrow"),
   resultTitle: document.getElementById("resultTitle"),
-  resultText: document.getElementById("resultText")
+  resultText: document.getElementById("resultText"),
+  resultCharacterOrb: document.getElementById("resultCharacterOrb"),
+  resultPlayerName: document.getElementById("resultPlayerName"),
+  resultCharacterName: document.getElementById("resultCharacterName"),
+  resultCurrentLp: document.getElementById("resultCurrentLp"),
+  resultLpGain: document.getElementById("resultLpGain"),
+  resultReward: document.getElementById("resultReward"),
+  resultRewardLabel: document.getElementById("resultRewardLabel"),
+  resultDamageDealt: document.getElementById("resultDamageDealt"),
+  resultDamageTaken: document.getElementById("resultDamageTaken"),
+  resultHealing: document.getElementById("resultHealing"),
+  resultHealth: document.getElementById("resultHealth"),
+  resultTime: document.getElementById("resultTime")
 };
 
 const characters = {
@@ -310,6 +339,93 @@ const characterGuide = {
   }
 };
 
+const enemyGuide = {
+  melee: {
+    name: "근접형",
+    initial: "M",
+    color: "#ef476f",
+    accent: "#ff9bb0",
+    badge: "일반 적",
+    entries: [
+      ["기본 능력", "체력 65", "일정한 속도로 필드를 튕겨 다니며 플레이어와 충돌하려고 합니다."],
+      ["몸통 충돌", "피해 5", "플레이어에게 닿으면 5의 피해를 주고 서로 반대 방향으로 튕겨납니다."],
+      ["특징", "단순", "별도의 스킬이나 상태 효과가 없는 기본 근접 적입니다."]
+    ]
+  },
+  thrower: {
+    name: "투척형",
+    initial: "T",
+    color: "#9b7cff",
+    accent: "#d1c4ff",
+    badge: "원거리 적",
+    entries: [
+      ["기본 능력", "체력 55", "근접형보다 느리게 이동하며 거리를 유지하지 않고 필드를 튕겨 다닙니다."],
+      ["탄환 투척", "5초 · 피해 5", "5초마다 플레이어가 있는 방향으로 탄환을 발사합니다. 탄환은 벽과 플레이어에게 튕깁니다."],
+      ["몸통 충돌", "피해 5", "직접 부딪혀도 5의 피해를 입힙니다."]
+    ]
+  },
+  brute: {
+    name: "중장갑",
+    initial: "H",
+    color: "#7d8796",
+    accent: "#d5dde8",
+    badge: "방어형 적",
+    entries: [
+      ["기본 능력", "체력 190", "이동속도는 매우 느리지만 크기와 체력이 높아 통로를 막는 역할을 합니다."],
+      ["중량 충돌", "피해 10", "큰 피격 범위로 플레이어를 밀어내며 10의 접촉 피해를 줍니다."],
+      ["효과", "둔중함", "느려짐 효과를 받으면 이동속도가 더욱 크게 떨어져 공격 기회를 만들 수 있습니다."]
+    ]
+  },
+  dasher: {
+    name: "추격형",
+    initial: "R",
+    color: "#ff8f3d",
+    accent: "#ffd08a",
+    badge: "돌진형 적",
+    entries: [
+      ["기본 능력", "체력 85", "평상시에는 보통 속도로 이동하다가 돌진을 준비합니다."],
+      ["추적 돌진", "약 3초 · 피해 8", "주기적으로 플레이어가 있던 방향을 조준해 빠르게 돌진합니다."],
+      ["효과", "가속", "돌진 중 이동속도가 크게 증가하지만 방향을 다시 꺾지 못합니다."]
+    ]
+  },
+  bomber: {
+    name: "포격형",
+    initial: "A",
+    color: "#d85cff",
+    accent: "#f2b4ff",
+    badge: "범위형 적",
+    entries: [
+      ["기본 능력", "체력 80", "느린 속도로 움직이며 직접 전투보다 범위 공격을 사용합니다."],
+      ["위치 포격", "4초 · 피해 12", "플레이어가 있던 위치에 보라색 경고 범위를 생성하고 약 1.2초 후 폭발시킵니다."],
+      ["몸통 충돌", "피해 5", "포격을 피하는 중 직접 부딪히면 추가로 5의 피해를 받습니다."]
+    ]
+  },
+  miniboss: {
+    name: "철갑 거체",
+    initial: "MB",
+    color: "#b26a35",
+    accent: "#ffe0a3",
+    badge: "미니보스",
+    entries: [
+      ["기본 능력", "체력 520", "일반 적보다 훨씬 크고 무거우며 느린 속도로 필드를 압박합니다."],
+      ["철갑 충돌", "피해 15", "큰 몸으로 충돌해 15의 피해를 주고 플레이어의 이동 궤적을 크게 흔듭니다."],
+      ["패턴", "없음", "별도의 공격 패턴 없이 높은 체력과 충돌 능력만으로 싸우는 미니보스입니다."]
+    ]
+  },
+  boss: {
+    name: "균열의 지배자",
+    initial: "B",
+    color: "#9c1647",
+    accent: "#ff8aad",
+    badge: "CHAPTER BOSS",
+    entries: [
+      ["균열 탄막", "피해 8", "주변 모든 방향으로 탄환을 발사합니다. 체력이 50% 이하가 되면 탄환 수와 속도가 증가합니다."],
+      ["추적 붕괴", "피해 14~18", "플레이어 위치와 주변에 여러 개의 경고 범위를 생성한 뒤 순차 폭발시킵니다."],
+      ["광폭 돌진", "접촉 피해 18", "플레이어 방향으로 초고속 돌진합니다. 체력이 50% 이하일 때 돌진 시간과 속도가 증가합니다."]
+    ]
+  }
+};
+
 let currentUser = null;
 let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
 let currentRoom = null;
@@ -355,6 +471,7 @@ let pendingPveStage = "";
 let selectedPveCharacter = DEFAULT_CHARACTER;
 let selectedPveMapStage = "1-1";
 let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
+let codexType = "character";
 
 const PVE_STAGES = {
   "1-1": {
@@ -374,6 +491,48 @@ const PVE_STAGES = {
     description: "투척형의 탄환을 피하면서 근접형 적을 함께 처리합니다.",
     enemies: "근접형 1기 · 투척형 1기",
     reward: 10
+  },
+  "1-4": {
+    title: "중장갑 초소",
+    description: "느리지만 체력과 충돌 피해가 높은 중장갑 적이 길을 막습니다.",
+    enemies: "중장갑 1기 · 투척형 1기",
+    reward: 10
+  },
+  "1-5": {
+    title: "철갑 거체",
+    description: "복잡한 패턴 없이 압도적인 체력과 무게로 밀어붙이는 미니보스입니다.",
+    enemies: "미니보스 철갑 거체",
+    reward: 10
+  },
+  "1-6": {
+    title: "추격 협곡",
+    description: "주기적으로 플레이어를 향해 가속 돌진하는 추격형이 등장합니다.",
+    enemies: "추격형 2기 · 근접형 1기",
+    reward: 10
+  },
+  "1-7": {
+    title: "폭격 지대",
+    description: "플레이어가 있던 위치를 조준해 위험 지대를 생성하는 포격형 부대입니다.",
+    enemies: "포격형 2기 · 중장갑 1기",
+    reward: 10
+  },
+  "1-8": {
+    title: "혼성 부대",
+    description: "투척, 추격, 중장갑 병력이 서로 다른 방식으로 압박합니다.",
+    enemies: "투척형 · 추격형 · 중장갑",
+    reward: 10
+  },
+  "1-9": {
+    title: "성문 돌파",
+    description: "챕터 보스 직전의 정예 혼성 부대를 돌파해야 합니다.",
+    enemies: "중장갑 2기 · 추격형 · 포격형",
+    reward: 10
+  },
+  "1-10": {
+    title: "균열의 지배자",
+    description: "탄막, 추적 포격, 광폭 돌진을 순환하는 챕터 1 보스입니다.",
+    enemies: "보스 균열의 지배자",
+    reward: 100
   }
 };
 
@@ -674,11 +833,19 @@ function renderInventory() {
 
 function renderCodex(selectedKind = null) {
   if (!ui.codexCharacterList || !currentUser) return;
+  ui.codexTypeButtons.forEach(button => {
+    button.classList.toggle("is-active", button.dataset.codexType === codexType);
+  });
+  if (codexType === "enemy") {
+    renderEnemyCodex(selectedKind);
+    return;
+  }
   const owned = currentUser.ownedCharacters || [];
   const activeKind = selectedKind
     || ui.codexCharacterList.querySelector(".is-active")?.dataset.character
     || DEFAULT_CHARACTER;
 
+  ui.codexArchiveLabel.textContent = "CHARACTER ARCHIVE";
   ui.codexOwnedCount.textContent = `${owned.length} / ${Object.keys(characters).length} 보유`;
   ui.codexCharacterList.innerHTML = Object.entries(characters).map(([kind, character]) => {
     const unlocked = owned.includes(kind);
@@ -697,6 +864,27 @@ function renderCodex(selectedKind = null) {
     button.addEventListener("click", () => renderCodex(button.dataset.character));
   });
   renderCodexDetail(activeKind);
+}
+
+function renderEnemyCodex(selectedType = null) {
+  const activeType = selectedType && enemyGuide[selectedType]
+    ? selectedType
+    : ui.codexCharacterList.querySelector(".is-active")?.dataset.enemy || "melee";
+  ui.codexArchiveLabel.textContent = "ENEMY ARCHIVE";
+  ui.codexOwnedCount.textContent = `${Object.keys(enemyGuide).length}종 기록`;
+  ui.codexCharacterList.innerHTML = Object.entries(enemyGuide).map(([type, enemy]) => `
+    <button class="codex-character-button codex-enemy-button ${type === activeType ? "is-active" : ""}"
+      type="button" data-enemy="${type}"
+      style="--char-color:${enemy.color}; --char-accent:${enemy.accent};">
+      <span class="codex-list-orb">${enemy.initial}</span>
+      <strong>${enemy.name}</strong>
+      <em>${enemy.badge}</em>
+    </button>
+  `).join("");
+  ui.codexCharacterList.querySelectorAll("[data-enemy]").forEach(button => {
+    button.addEventListener("click", () => renderEnemyCodex(button.dataset.enemy));
+  });
+  renderEnemyCodexDetail(activeType);
 }
 
 function renderCodexDetail(kind) {
@@ -725,6 +913,32 @@ function renderCodexDetail(kind) {
       <p>${skill[2]}</p>
     </section>
   `).join("");
+}
+
+function renderEnemyCodexDetail(type) {
+  const enemy = enemyGuide[type] || enemyGuide.melee;
+  ui.codexDetail.style.setProperty("--char-color", enemy.color);
+  ui.codexDetail.style.setProperty("--char-accent", enemy.accent);
+  ui.codexPreview.style.setProperty("--char-color", enemy.color);
+  ui.codexPreview.style.setProperty("--char-accent", enemy.accent);
+  ui.codexPreviewInitial.textContent = enemy.initial;
+  ui.codexCharacterName.textContent = enemy.name;
+  ui.codexOwnership.textContent = enemy.badge;
+  ui.codexOwnership.classList.remove("is-locked");
+  ui.codexSkillList.innerHTML = enemy.entries.map(([typeLabel, title, description]) => `
+    <section class="codex-skill codex-enemy-skill">
+      <span>${typeLabel}</span>
+      <h4>${title}</h4>
+      <em>PVE</em>
+      <p>${description}</p>
+    </section>
+  `).join("");
+}
+
+function setCodexType(type) {
+  if (!["character", "enemy"].includes(type)) return;
+  codexType = type;
+  renderCodex(type === "enemy" ? "melee" : DEFAULT_CHARACTER);
 }
 
 async function loadRankings() {
@@ -938,8 +1152,10 @@ async function selectPveMode() {
 
 function computeUnlockedPveStages(completedStages) {
   const unlocked = ["1-1"];
-  if (completedStages.includes("1-1")) unlocked.push("1-2");
-  if (completedStages.includes("1-2")) unlocked.push("1-3");
+  for (let index = 1; index < 10; index += 1) {
+    if (!completedStages.includes(`1-${index}`)) break;
+    unlocked.push(`1-${index + 1}`);
+  }
   return unlocked;
 }
 
@@ -979,7 +1195,9 @@ function renderPveWorldMap() {
   ui.pveStageDetailTitle.textContent = stage.title;
   ui.pveStageDetailDescription.textContent = stage.description;
   ui.pveStageDetailEnemies.textContent = stage.enemies;
-  ui.pveStageDetailReward.textContent = `${stage.reward}C`;
+  ui.pveStageDetailReward.textContent = selectedPveMapStage === "1-10"
+    ? pveProgress.completedStages.includes("1-10") ? "재도전 10C" : "최초 클리어 100C"
+    : `${stage.reward}C`;
   ui.pveStageDetailStatus.textContent = locked ? "이전 스테이지 클리어 필요" : completed ? "클리어 완료" : "도전 가능";
   ui.pveStageDetailStatus.classList.toggle("is-completed", completed);
   ui.pveStageStartButton.disabled = locked;
@@ -1230,21 +1448,6 @@ async function drawCharacter() {
   }
 }
 
-async function claimFreeCoins() {
-  if (!currentUser) return;
-  ui.coinBadge.disabled = true;
-  try {
-    const data = await rpc("claim_free_coins", { session_token: appSessionToken });
-    currentUser = normalizePlayer(data);
-    players = players.map(player => player.id === currentUser.id ? currentUser : player);
-    renderLobby();
-  } catch (error) {
-    ui.modeMessage.textContent = error.message;
-  } finally {
-    ui.coinBadge.disabled = false;
-  }
-}
-
 function updateCharacterCards(playerKey, player) {
   const owned = player.ownedCharacters;
   if (selections[playerKey] !== "random" && !owned.includes(selections[playerKey])) {
@@ -1462,7 +1665,10 @@ function makeCharacterCombatState(kind) {
     punchTimer: 0,
     gritUsed: false,
     gritActive: false,
-    idleAttackTime: 0
+    idleAttackTime: 0,
+    damageDealt: 0,
+    damageTaken: 0,
+    healingDone: 0
   };
 }
 
@@ -1500,6 +1706,8 @@ function resetGame() {
     selections.p2
   ].join("|"));
 
+  const stealthMirror = selections.p1 === "stealth" && selections.p2 === "stealth";
+  const easterWinnerIndex = stealthMirror && seededRandom() < 0.5 ? 0 : 1;
   game = {
     fighters: [
       makeFighter(selections.p1, "PLAYER 1", p1.id, 120, canvas.height / 2),
@@ -1517,6 +1725,13 @@ function resetGame() {
     contactLock: false,
     over: false,
     tick: 0,
+    easterEgg: stealthMirror ? {
+      active: true,
+      winnerIndex: easterWinnerIndex,
+      revealTick: 180,
+      finishTick: 300,
+      revealed: false
+    } : null,
     startTimeMs: Number((currentRoom?.prepState || currentRoom?.prep_state || {}).matchStartAt || 0) * 1000 || serverNowMs()
   };
   appliedSkillEvents = new Set();
@@ -1566,7 +1781,10 @@ function damage(fighter, amount, attacker = null) {
   const reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
   finalAmount *= 1 - reduction;
   finalAmount = Math.max(0, finalAmount);
+  const actualDamage = Math.min(fighter.hp, finalAmount);
   fighter.hp = clamp(fighter.hp - finalAmount, 0, fighter.maxHp);
+  fighter.damageTaken += actualDamage;
+  if (attacker && attacker !== fighter) attacker.damageDealt += actualDamage;
   fighter.hitFlash = 10;
   addDamageText(fighter.x, fighter.y - fighter.radius, Math.round(finalAmount * 10) / 10);
   if (attacker?.kind === "vampire") {
@@ -1614,6 +1832,12 @@ function contactDamagePair(a, b) {
   const aDamage = a.kind === "enhancer" ? a.attackPower : a.contactDamage;
   const bDamage = b.kind === "enhancer" ? b.attackPower : b.contactDamage;
   if (a.kind === "charger" && b.kind === "charger" && a.hp <= bDamage && b.hp <= aDamage) {
+    const damageToA = Math.min(a.hp, bDamage);
+    const damageToB = Math.min(b.hp, aDamage);
+    a.damageTaken += damageToA;
+    b.damageTaken += damageToB;
+    a.damageDealt += damageToB;
+    b.damageDealt += damageToA;
     a.hp = 0;
     b.hp = 0;
     addDamageText(a.x, a.y - a.radius, bDamage);
@@ -1656,12 +1880,62 @@ function finishGame(winner) {
   presentGameWinner(winner);
 }
 
+function formatBattleTime(ticks) {
+  const totalSeconds = Math.max(0, Math.round((ticks || 0) / 60));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function formatResultNumber(value) {
+  const rounded = Math.round((Number(value) || 0) * 10) / 10;
+  return rounded.toLocaleString("ko-KR", { maximumFractionDigits: 1 });
+}
+
+function setResultCharacter(orb, fighter) {
+  orb.textContent = characterInitial(fighter.kind);
+  orb.style.setProperty("--result-color", fighter.color);
+  orb.style.setProperty("--result-accent", fighter.accent);
+}
+
+function renderPvpResultSummary(fighter, outcome) {
+  const elapsed = formatBattleTime(game?.tick);
+  const player = getPlayer(fighter.ownerId);
+  setResultCharacter(ui.resultCharacterOrb, fighter);
+  ui.resultTimeTop.textContent = elapsed;
+  ui.resultTime.textContent = elapsed;
+  ui.resultPlayerName.textContent = fighter.ownerName || player.name;
+  ui.resultCharacterName.textContent = fighter.name;
+  ui.resultCurrentLp.textContent = `${player.lp} LP`;
+  ui.resultDamageDealt.textContent = formatResultNumber(fighter.damageDealt);
+  ui.resultDamageTaken.textContent = formatResultNumber(fighter.damageTaken);
+  ui.resultHealing.textContent = formatResultNumber(fighter.healingDone);
+  ui.resultHealth.textContent = `${Math.ceil(fighter.hp)} / ${fighter.maxHp}`;
+
+  if (outcome === "draw") {
+    ui.resultEyebrow.textContent = "MATCH DRAW";
+    ui.resultTitle.textContent = "무승부";
+    ui.resultText.textContent = "승부를 가리지 못했습니다.";
+    ui.resultLpGain.textContent = "+0 LP";
+    ui.resultReward.textContent = "변동 없음";
+    ui.resultRewardLabel.textContent = "무승부";
+    return;
+  }
+
+  ui.resultEyebrow.textContent = "MATCH VICTORY";
+  ui.resultTitle.textContent = "승리!";
+  ui.resultText.textContent = `${fighter.ownerName} · ${fighter.name} 승리`;
+  ui.resultLpGain.textContent = "정산 중";
+  ui.resultReward.textContent = "+14 LP";
+  ui.resultRewardLabel.textContent = "랭크 승리 보상";
+}
+
 function presentGameWinner(winner) {
   const loser = winner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
-  ui.resultTitle.textContent = `${winner.ownerName} 승리!`;
-  ui.resultText.textContent = `${winner.name} 승. 정산 중...`;
+  renderPvpResultSummary(winner, "win");
+  ui.resultBox.classList.remove("is-promotion");
   ui.resultOverlay.classList.add("is-active");
   if (settlementRequestedWinnerId !== winner.ownerId) {
     if (settlementTimeoutId) clearTimeout(settlementTimeoutId);
@@ -1691,9 +1965,23 @@ async function settleMatch(winnerPlayer, loserPlayer) {
     });
     if (currentUser?.id === updatedWinner.id) currentUser = updatedWinner;
     if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
-    ui.resultText.textContent = `${characters[game.fighters.find(item => item.ownerId === updatedWinner.id)?.kind || DEFAULT_CHARACTER].name} 승. ${data.lpGain ?? 14} LP 획득. ${updatedWinner.name} ${updatedWinner.lp} LP / ${updatedLoser.name} ${updatedLoser.lp} LP`;
+    if (data.promoted) {
+      ui.resultBox.classList.add("is-promotion");
+      ui.resultTitle.textContent = `${data.newTier} 승급!`;
+      ui.resultText.textContent = `${updatedWinner.name} 승리 · ${data.newTier} 승급`;
+      ui.resultReward.textContent = `+${data.lpGain ?? 14} LP · +${data.promotionReward ?? 200}C`;
+      ui.resultRewardLabel.textContent = `${data.newTier} 승급 보상`;
+    } else {
+      ui.resultBox.classList.remove("is-promotion");
+      ui.resultText.textContent = `${updatedWinner.name} 승리 · 랭크 정산 완료`;
+      ui.resultReward.textContent = `+${data.lpGain ?? 14} LP`;
+      ui.resultRewardLabel.textContent = "랭크 승리 보상";
+    }
+    ui.resultCurrentLp.textContent = `${updatedWinner.lp} LP`;
+    ui.resultLpGain.textContent = `+${data.lpGain ?? 14} LP`;
   } catch (error) {
     ui.resultText.textContent = `정산 실패: ${error.message}`;
+    ui.resultReward.textContent = "정산 실패";
   }
 }
 
@@ -1711,8 +1999,8 @@ function presentGameDraw() {
     settlementTimeoutId = null;
     settlementRequestedWinnerId = "";
   }
-  ui.resultTitle.textContent = "무승부!";
-  ui.resultText.textContent = "돌진하는 색히끼리 끝까지 맞짱. 코인은 그대로 유지됩니다.";
+  renderPvpResultSummary(myFighter() || game.fighters[0], "draw");
+  ui.resultBox.classList.remove("is-promotion");
   ui.resultOverlay.classList.add("is-active");
 }
 
@@ -1738,8 +2026,12 @@ function startStealth(fighter) {
 
 function heal(fighter, amount) {
   if (amount <= 0 || game.over) return;
+  const before = fighter.hp;
   fighter.hp = clamp(fighter.hp + amount, 0, fighter.maxHp);
-  const shownAmount = Math.round(amount * 10) / 10;
+  const actualHealing = fighter.hp - before;
+  fighter.healingDone += actualHealing;
+  const shownAmount = Math.round(actualHealing * 10) / 10;
+  if (shownAmount <= 0) return;
   addFloatingText(fighter.x, fighter.y - fighter.radius - 28, `+${shownAmount}`, "#7bd88f");
   updateHud();
 }
@@ -1947,6 +2239,7 @@ function executeSkill(fighter, type) {
 }
 
 async function useSkill(type) {
+  if (game?.easterEgg?.active) return;
   const fighter = myFighter();
   if (!skillAvailable(fighter, type)) {
     updateSkillHud();
@@ -2833,9 +3126,59 @@ function drawArena() {
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
-  game.fighters.forEach(drawFighter);
+  game.fighters
+    .filter((fighter, index) => !game.easterEgg?.revealed || index === game.easterEgg.winnerIndex)
+    .forEach(drawFighter);
   game.visualEffects.filter(effect => effect.type === "assassinate-slash").forEach(drawVisualEffect);
   game.damageTexts.forEach(drawDamageText);
+  if (game.easterEgg?.active) drawStealthMirrorEasterEgg();
+}
+
+function drawStealthMirrorEasterEgg() {
+  const easterEgg = game.easterEgg;
+  const tick = game.tick;
+  ctx.save();
+  if (!easterEgg.revealed) {
+    ctx.fillStyle = tick < 34 ? `rgba(0,0,0,${Math.min(1, tick / 22)})` : "rgba(0,0,0,0.96)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (tick >= 34) {
+      const slashCount = Math.min(24, Math.floor((tick - 34) / 5));
+      for (let index = 0; index < slashCount; index += 1) {
+        const seed = hashSeed(`${currentRoom?.code}|stealth|${index}`);
+        const x1 = (seed % 1000) / 1000 * canvas.width;
+        const y1 = ((seed >>> 10) % 1000) / 1000 * canvas.height;
+        const angle = ((seed >>> 20) % 628) / 100;
+        const length = 130 + seed % 240;
+        const pulse = Math.max(0.12, 1 - ((tick - 34 - index * 5) % 28) / 28);
+        ctx.globalAlpha = pulse;
+        ctx.strokeStyle = index % 3 === 0 ? "#f7f4eb" : index % 2 === 0 ? "#8d7cff" : "#3dd6d0";
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 22;
+        ctx.lineWidth = index % 3 === 0 ? 3 : 7;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 + Math.cos(angle) * length, y1 + Math.sin(angle) * length);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.28 + Math.sin(tick * 0.7) * 0.16;
+      ctx.fillStyle = "#8d7cff";
+      ctx.fillRect(0, canvas.height * (0.5 + Math.sin(tick * 0.09) * 0.12), canvas.width, 3);
+    }
+  } else {
+    const revealProgress = clamp((tick - easterEgg.revealTick) / 30, 0, 1);
+    ctx.fillStyle = `rgba(0,0,0,${0.82 * (1 - revealProgress)})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const winner = game.fighters[easterEgg.winnerIndex];
+    ctx.globalAlpha = 1 - revealProgress * 0.42;
+    ctx.strokeStyle = "#8d7cff";
+    ctx.shadowColor = "#8d7cff";
+    ctx.shadowBlur = 34;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(winner.x, winner.y, winner.radius + 28 + Math.sin(tick * 0.2) * 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawVisualEffect(effect) {
@@ -3388,6 +3731,25 @@ function drawDamageText(text) {
 function stepGame(dt) {
   if (!game.over) {
     game.tick += 1;
+    if (game.easterEgg?.active) {
+      const easterEgg = game.easterEgg;
+      if (!easterEgg.revealed && game.tick >= easterEgg.revealTick) {
+        easterEgg.revealed = true;
+        const winner = game.fighters[easterEgg.winnerIndex];
+        const loser = game.fighters[1 - easterEgg.winnerIndex];
+        winner.x = canvas.width / 2;
+        winner.y = canvas.height / 2;
+        winner.vx = 0;
+        winner.vy = 0;
+        loser.hp = 0;
+        updateHud();
+      }
+      if (game.tick >= easterEgg.finishTick) {
+        easterEgg.active = false;
+        finishGame(game.fighters[easterEgg.winnerIndex]);
+      }
+      return;
+    }
     const prep = currentRoom?.prepState || currentRoom?.prep_state || {};
     processSkillEvents(prep);
     game.fighters.forEach(fighter => moveFighter(fighter, dt));
@@ -3455,22 +3817,79 @@ function pveRandomIndex(length) {
 }
 
 function makePveEnemy(type, x, y, offset) {
-  const velocity = pveVelocity(type === "thrower" ? 3.4 : 4.2, offset);
+  const stats = {
+    melee: { speed: 4.2, radius: 26, hp: 65, contactDamage: 5, color: "#ef476f" },
+    thrower: { speed: 3.4, radius: 26, hp: 55, contactDamage: 5, color: "#9b7cff" },
+    brute: { speed: 2.15, radius: 35, hp: 190, contactDamage: 10, color: "#7d8796" },
+    dasher: { speed: 3.8, radius: 25, hp: 85, contactDamage: 8, color: "#ff8f3d" },
+    bomber: { speed: 2.8, radius: 27, hp: 80, contactDamage: 5, color: "#d85cff" },
+    miniboss: { speed: 2.65, radius: 45, hp: 520, contactDamage: 15, color: "#b26a35" },
+    boss: { speed: 3.1, radius: 50, hp: 1000, contactDamage: 18, color: "#9c1647" }
+  }[type];
+  const velocity = pveVelocity(stats.speed, offset);
   return {
     type,
     x,
     y,
     vx: velocity.vx,
     vy: velocity.vy,
-    radius: 26,
-    hp: type === "thrower" ? 55 : 65,
-    maxHp: type === "thrower" ? 55 : 65,
+    baseSpeed: stats.speed,
+    radius: stats.radius,
+    hp: stats.hp,
+    maxHp: stats.hp,
+    contactDamage: stats.contactDamage,
+    color: stats.color,
     contactCooldown: 0,
     throwTimer: type === "thrower" ? 300 : Infinity,
+    dashTimer: type === "dasher" ? 150 + offset * 20 : Infinity,
+    dashTime: 0,
+    bombTimer: type === "bomber" ? 190 + offset * 25 : Infinity,
+    patternTimer: type === "boss" ? 150 : Infinity,
+    patternStep: 0,
     slowTime: 0,
     stunTime: 0,
     silenceTime: 0
   };
+}
+
+function populatePveStage(stage) {
+  const add = (type, x, y, offset) => pveGame.enemies.push(makePveEnemy(type, x, y, offset));
+  if (stage === "1-1") add("melee", 480, 260, 1);
+  if (stage === "1-2") {
+    add("melee", 455, 170, 1);
+    add("melee", 500, 350, 2);
+  }
+  if (stage === "1-3") {
+    add("thrower", 460, 150, 1);
+    add("melee", 500, 350, 2);
+  }
+  if (stage === "1-4") {
+    add("brute", 470, 300, 1);
+    add("thrower", 500, 130, 2);
+  }
+  if (stage === "1-5") add("miniboss", 470, 260, 1);
+  if (stage === "1-6") {
+    add("dasher", 440, 130, 1);
+    add("dasher", 500, 390, 2);
+    add("melee", 520, 260, 3);
+  }
+  if (stage === "1-7") {
+    add("bomber", 430, 120, 1);
+    add("bomber", 500, 390, 2);
+    add("brute", 500, 260, 3);
+  }
+  if (stage === "1-8") {
+    add("thrower", 430, 100, 1);
+    add("dasher", 520, 260, 2);
+    add("brute", 450, 410, 3);
+  }
+  if (stage === "1-9") {
+    add("brute", 440, 120, 1);
+    add("brute", 500, 400, 2);
+    add("dasher", 530, 250, 3);
+    add("bomber", 380, 260, 4);
+  }
+  if (stage === "1-10") add("boss", 470, 260, 1);
 }
 
 async function startPveStage(stage) {
@@ -3492,7 +3911,7 @@ async function startPveStage(stage) {
   pveGame = {
     stage,
     runId: pveRun.runId || pveRun.run_id,
-    seed: stage === "1-1" ? 11 : stage === "1-2" ? 22 : 33,
+    seed: Number(stage.split("-")[1]) * 101 + 7,
     tick: 0,
     lastTime: performance.now(),
     accumulator: 0,
@@ -3510,18 +3929,11 @@ async function startPveStage(stage) {
     projectiles: [],
     grapples: [],
     areaAttacks: [],
+    enemyAreas: [],
     damageTexts: [],
     floatingTexts: []
   };
-  if (stage === "1-1") {
-    pveGame.enemies.push(makePveEnemy("melee", 480, 260, 1));
-  } else if (stage === "1-2") {
-    pveGame.enemies.push(makePveEnemy("melee", 455, 170, 1));
-    pveGame.enemies.push(makePveEnemy("melee", 500, 350, 2));
-  } else {
-    pveGame.enemies.push(makePveEnemy("thrower", 460, 150, 1));
-    pveGame.enemies.push(makePveEnemy("melee", 500, 350, 2));
-  }
+  populatePveStage(stage);
   ui.pvePlayerLabel.textContent = currentUser.name;
   ui.pvePlayerCharacter.textContent = character.name;
   ui.pveStageLabel.textContent = stage;
@@ -3561,11 +3973,15 @@ function addPveFloating(text, color = "#f7f4eb") {
 
 function healPvePlayer(amount) {
   if (!pveGame || pveGame.over) return;
+  const before = pveGame.player.hp;
   pveGame.player.hp = Math.min(pveGame.player.maxHp, pveGame.player.hp + amount);
+  const actualHealing = pveGame.player.hp - before;
+  pveGame.player.healingDone += actualHealing;
+  if (actualHealing <= 0) return;
   pveGame.floatingTexts.push({
     x: pveGame.player.x,
     y: pveGame.player.y - 40,
-    text: `+${Math.round(amount * 10) / 10}`,
+    text: `+${Math.round(actualHealing * 10) / 10}`,
     color: "#7bd88f",
     life: 50
   });
@@ -3588,7 +4004,9 @@ function damagePvePlayer(amount) {
   if (player.stealthTime > 0) return;
   const reduction = player.shieldTime > 0 ? 0.9 : player.kind === "tank" ? 0.2 : 0;
   amount *= 1 - reduction;
+  const actualDamage = Math.min(player.hp, amount);
   player.hp = Math.max(0, player.hp - amount);
+  player.damageTaken += actualDamage;
   pveGame.player.hitFlash = 10;
   addPveDamage(player.x, player.y - 36, Math.round(amount * 10) / 10);
   if (player.kind === "brawler" && !player.gritUsed && player.hp <= player.maxHp * 0.5) {
@@ -3601,9 +4019,11 @@ function damagePvePlayer(amount) {
 }
 
 function damagePveEnemy(enemy, amount) {
+  const actualDamage = Math.min(enemy.hp, amount);
   enemy.hp = Math.max(0, enemy.hp - amount);
+  pveGame.player.damageDealt += actualDamage;
   addPveDamage(enemy.x, enemy.y - 30, Math.round(amount * 10) / 10);
-  if (pveGame.player.kind === "vampire") healPvePlayer(amount * 0.3);
+  if (pveGame.player.kind === "vampire") healPvePlayer(actualDamage * 0.3);
 }
 
 function firePvePlayerShot(options = {}) {
@@ -3784,21 +4204,67 @@ function updatePveSkillHud() {
   ui.pveUltimateSkillButton.disabled = passiveUltimate || ultimateCooldown > 0;
 }
 
-function firePveEnemyShot(enemy) {
-  const angle = Math.atan2(pveGame.player.y - enemy.y, pveGame.player.x - enemy.x);
+function firePveEnemyShot(enemy, angleOverride = null, options = {}) {
+  const angle = angleOverride ?? Math.atan2(pveGame.player.y - enemy.y, pveGame.player.x - enemy.x);
   pveGame.projectiles.push({
     owner: "enemy",
     x: enemy.x,
     y: enemy.y,
-    vx: Math.cos(angle) * 8,
-    vy: Math.sin(angle) * 8,
-    radius: 9,
-    damage: 5,
-    life: 220,
-    color: "#ef476f",
+    vx: Math.cos(angle) * (options.speed || 8),
+    vy: Math.sin(angle) * (options.speed || 8),
+    radius: options.radius || 9,
+    damage: options.damage || 5,
+    life: options.life || 220,
+    color: options.color || "#ef476f",
     blood: false,
     hitCooldown: 0
   });
+}
+
+function createPveEnemyArea(x, y, radius, damageAmount, delay = 60, color = "#ff304f") {
+  pveGame.enemyAreas.push({
+    x: clamp(x, radius, pveCanvas.width - radius),
+    y: clamp(y, radius, pveCanvas.height - radius),
+    radius,
+    damage: damageAmount,
+    delay,
+    life: delay + 26,
+    hit: false,
+    color
+  });
+}
+
+function triggerPveBossPattern(enemy) {
+  const enraged = enemy.hp <= enemy.maxHp * 0.5;
+  const pattern = enemy.patternStep % 3;
+  if (pattern === 0) {
+    const count = enraged ? 16 : 12;
+    for (let index = 0; index < count; index += 1) {
+      firePveEnemyShot(enemy, index / count * Math.PI * 2, {
+        speed: enraged ? 7.2 : 6.2,
+        damage: 8,
+        radius: 8,
+        life: 260,
+        color: "#ff416c"
+      });
+    }
+    addPveFloating("균열 탄막", "#ff8aad");
+  } else if (pattern === 1) {
+    const player = pveGame.player;
+    createPveEnemyArea(player.x, player.y, 72, 18, 62, "#ff304f");
+    createPveEnemyArea(player.x + 115, player.y - 70, 62, 14, 78, "#ff6b6b");
+    createPveEnemyArea(player.x - 115, player.y + 70, 62, 14, 78, "#ff6b6b");
+    if (enraged) createPveEnemyArea(player.x, player.y + 135, 58, 14, 88, "#ff6b6b");
+    addPveFloating("추적 붕괴", "#ff8aad");
+  } else {
+    const angle = Math.atan2(pveGame.player.y - enemy.y, pveGame.player.x - enemy.x);
+    enemy.vx = Math.cos(angle) * (enraged ? 15 : 12);
+    enemy.vy = Math.sin(angle) * (enraged ? 15 : 12);
+    enemy.dashTime = enraged ? 85 : 65;
+    addPveFloating("광폭 돌진", "#ff8aad");
+  }
+  enemy.patternStep += 1;
+  enemy.patternTimer = enraged ? 145 : 190;
 }
 
 function stepPve() {
@@ -3933,6 +4399,48 @@ function stepPve() {
       enemy.vy *= 0.82;
       return;
     }
+    if (enemy.type === "dasher") {
+      if (enemy.dashTime > 0) {
+        enemy.dashTime -= 1;
+      } else {
+        enemy.dashTimer -= 1;
+        if (enemy.dashTimer <= 0) {
+          const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+          enemy.vx = Math.cos(angle) * 12;
+          enemy.vy = Math.sin(angle) * 12;
+          enemy.dashTime = 42;
+          enemy.dashTimer = 180;
+        } else {
+          const speed = Math.hypot(enemy.vx, enemy.vy) || 1;
+          enemy.vx = enemy.vx / speed * enemy.baseSpeed;
+          enemy.vy = enemy.vy / speed * enemy.baseSpeed;
+        }
+      }
+    }
+    if (enemy.type === "bomber" && enemy.silenceTime <= 0) {
+      enemy.bombTimer -= 1;
+      if (enemy.bombTimer <= 0) {
+        createPveEnemyArea(player.x, player.y, 58, 12, 72, "#d85cff");
+        enemy.bombTimer = 240;
+      }
+    }
+    if (enemy.type === "boss" && enemy.silenceTime <= 0) {
+      if (enemy.dashTime > 0) {
+        enemy.dashTime -= 1;
+      } else {
+        const speed = Math.hypot(enemy.vx, enemy.vy) || 1;
+        enemy.vx = enemy.vx / speed * enemy.baseSpeed;
+        enemy.vy = enemy.vy / speed * enemy.baseSpeed;
+      }
+      enemy.patternTimer -= 1;
+      if (enemy.patternTimer <= 0) triggerPveBossPattern(enemy);
+    }
+    if (enemy.dashTime <= 0) {
+      const speed = Math.hypot(enemy.vx, enemy.vy) || 1;
+      const targetSpeed = enemy.baseSpeed * (enemy.slowTime > 0 ? 0.58 : 1);
+      enemy.vx = enemy.vx / speed * targetSpeed;
+      enemy.vy = enemy.vy / speed * targetSpeed;
+    }
     enemy.x += enemy.vx;
     enemy.y += enemy.vy;
     bouncePveBody(enemy);
@@ -3968,7 +4476,7 @@ function stepPve() {
       enemy.vx += (playerNormalSpeed - enemyNormalSpeed) * nx;
       enemy.vy += (playerNormalSpeed - enemyNormalSpeed) * ny;
       if (enemy.contactCooldown <= 0) {
-        damagePvePlayer(5);
+        damagePvePlayer(enemy.contactDamage);
         const contactDamage = player.unstoppableTime > 0 ? 40
           : player.kind === "charger" ? 10
           : player.kind === "tank" ? 5
@@ -4075,6 +4583,17 @@ function stepPve() {
     }
     return attack.life > 0;
   });
+  pveGame.enemyAreas = pveGame.enemyAreas.filter(attack => {
+    attack.delay -= 1;
+    attack.life -= 1;
+    if (attack.delay <= 0 && !attack.hit) {
+      attack.hit = true;
+      if (Math.hypot(player.x - attack.x, player.y - attack.y) < player.radius + attack.radius) {
+        damagePvePlayer(attack.damage);
+      }
+    }
+    return attack.life > 0;
+  });
   pveGame.enemies = pveGame.enemies.filter(enemy => enemy.hp > 0);
   pveGame.damageTexts = pveGame.damageTexts.filter(text => {
     text.y -= 0.6;
@@ -4134,14 +4653,32 @@ function drawPve() {
   pveCtx.fillStyle = player.accent;
   pveCtx.fillRect(player.x - 34, player.y + player.radius + 10, 68 * player.hp / player.maxHp, 7);
   pveGame.enemies.forEach(enemy => {
+    if (enemy.type === "boss") {
+      pveCtx.save();
+      pveCtx.strokeStyle = "rgba(255,48,99,.72)";
+      pveCtx.shadowColor = "#ff3063";
+      pveCtx.shadowBlur = 24;
+      pveCtx.lineWidth = 5;
+      pveCtx.beginPath();
+      pveCtx.arc(enemy.x, enemy.y, enemy.radius + 14 + Math.sin(pveGame.tick * 0.12) * 4, 0, Math.PI * 2);
+      pveCtx.stroke();
+      pveCtx.restore();
+    }
     pveCtx.beginPath();
     pveCtx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    pveCtx.fillStyle = enemy.type === "thrower" ? "#9b7cff" : "#ef476f";
+    pveCtx.fillStyle = enemy.color;
     pveCtx.fill();
+    if (enemy.type === "boss" || enemy.type === "miniboss") {
+      pveCtx.fillStyle = "#f7f4eb";
+      pveCtx.font = "900 12px Segoe UI";
+      pveCtx.textAlign = "center";
+      pveCtx.fillText(enemy.type === "boss" ? "BOSS" : "MINI BOSS", enemy.x, enemy.y - enemy.radius - 14);
+    }
+    const barWidth = enemy.type === "boss" ? 110 : enemy.type === "miniboss" ? 86 : 56;
     pveCtx.fillStyle = "#101319";
-    pveCtx.fillRect(enemy.x - 28, enemy.y + 34, 56, 6);
+    pveCtx.fillRect(enemy.x - barWidth / 2, enemy.y + enemy.radius + 8, barWidth, 7);
     pveCtx.fillStyle = "#ef476f";
-    pveCtx.fillRect(enemy.x - 28, enemy.y + 34, 56 * enemy.hp / enemy.maxHp, 6);
+    pveCtx.fillRect(enemy.x - barWidth / 2, enemy.y + enemy.radius + 8, barWidth * enemy.hp / enemy.maxHp, 7);
   });
   pveGame.grapples.forEach(grapple => {
     const endX = player.x + Math.cos(grapple.angle) * grapple.length;
@@ -4175,6 +4712,22 @@ function drawPve() {
       pveCtx.fillStyle = attack.type === "annihilator" ? "rgba(255,48,79,.75)" : "rgba(167,239,255,.7)";
       pveCtx.fillRect(attack.x - 13, 0, 26, attack.type === "annihilator" ? attack.y : pveCanvas.height);
     }
+    pveCtx.restore();
+  });
+  pveGame.enemyAreas.forEach(attack => {
+    const warning = attack.delay > 0;
+    pveCtx.save();
+    pveCtx.globalAlpha = warning ? 0.34 + Math.sin(pveGame.tick * 0.3) * 0.12 : Math.min(1, attack.life / 20);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.fillStyle = `${attack.color}28`;
+    pveCtx.shadowColor = attack.color;
+    pveCtx.shadowBlur = warning ? 8 : 24;
+    pveCtx.lineWidth = warning ? 3 : 9;
+    pveCtx.setLineDash(warning ? [9, 7] : []);
+    pveCtx.beginPath();
+    pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.stroke();
     pveCtx.restore();
   });
   pveGame.projectiles.forEach(projectile => {
@@ -4233,9 +4786,23 @@ async function finishPve(won) {
   if (!pveGame || pveGame.over) return;
   const completedStage = pveGame.stage;
   const completedRunId = pveGame.runId;
+  const player = pveGame.player;
+  const elapsed = formatBattleTime(pveGame.tick);
   pveGame.over = true;
-  ui.pveResultTitle.textContent = won ? "STAGE CLEAR" : "DEFEAT";
-  ui.pveResultText.textContent = won ? `${completedStage} 클리어 · 보상 지급 중...` : `${completedStage} 실패`;
+  setResultCharacter(ui.pveResultCharacterOrb, player);
+  ui.pveResultTimeTop.textContent = elapsed;
+  ui.pveResultTime.textContent = elapsed;
+  ui.pveResultEyebrow.textContent = won ? "MISSION COMPLETE" : "MISSION FAILED";
+  ui.pveResultTitle.textContent = won ? "승리!" : "패배";
+  ui.pveResultText.textContent = won ? `${completedStage} 스테이지 클리어` : `${completedStage} 공략 실패`;
+  ui.pveResultPlayerName.textContent = currentUser.name;
+  ui.pveResultCharacterName.textContent = player.name;
+  ui.pveResultReward.textContent = won ? "정산 중" : "보상 없음";
+  ui.pveResultRewardLabel.textContent = won ? "클리어 보상" : "다시 도전하세요";
+  ui.pveResultDamageDealt.textContent = formatResultNumber(player.damageDealt);
+  ui.pveResultDamageTaken.textContent = formatResultNumber(player.damageTaken);
+  ui.pveResultHealing.textContent = formatResultNumber(player.healingDone);
+  ui.pveResultHealth.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
   ui.pveResultOverlay.classList.add("is-active");
   if (!won) return;
 
@@ -4247,11 +4814,16 @@ async function finishPve(won) {
     });
     currentUser = normalizePlayer(data.user);
     players = players.map(player => player.id === currentUser.id ? currentUser : player);
-    ui.pveResultText.textContent = `${completedStage} 클리어 · +${data.reward ?? 10}C`;
+    const firstClear = data.firstClear || data.first_clear;
+    ui.pveResultText.textContent = `${completedStage} 스테이지 클리어${firstClear ? " · 최초 클리어" : ""}`;
+    ui.pveResultReward.textContent = `+${data.reward ?? 10}C`;
+    ui.pveResultRewardLabel.textContent = firstClear ? "최초 클리어 보상" : "클리어 보상";
     await loadPveProgress();
     renderLobby();
   } catch (error) {
-    ui.pveResultText.textContent = `${completedStage} 클리어 · 보상 오류: ${error.message}`;
+    ui.pveResultText.textContent = `${completedStage} 클리어 · 보상 오류`;
+    ui.pveResultReward.textContent = "정산 실패";
+    ui.pveResultRewardLabel.textContent = error.message;
   } finally {
     ui.pveResultButton.disabled = false;
   }
@@ -4280,6 +4852,7 @@ function returnToLobby() {
   stopGame();
   stopSelectTimer();
   ui.resultOverlay.classList.remove("is-active");
+  ui.resultBox.classList.remove("is-promotion");
   resetLocalMatchState();
   renderLobby();
   showScreen("lobby");
@@ -4312,7 +4885,6 @@ async function logout() {
 
 ui.loginButton.addEventListener("click", () => authenticate("login"));
 ui.logoutButton.addEventListener("click", logout);
-ui.coinBadge.addEventListener("click", claimFreeCoins);
 ui.patchNoteButton.addEventListener("click", () => setPatchNotesOpen(true));
 ui.patchNoteCloseButton.addEventListener("click", () => setPatchNotesOpen(false));
 ui.patchNoteModal.addEventListener("click", event => {
@@ -4367,6 +4939,9 @@ ui.startPveBattleButton.addEventListener("click", () => {
 ui.pveResultButton.addEventListener("click", returnToPveSelect);
 document.querySelectorAll("[data-lobby-tab]").forEach(button => {
   button.addEventListener("click", () => switchLobbyTab(button.dataset.lobbyTab));
+});
+ui.codexTypeButtons.forEach(button => {
+  button.addEventListener("click", () => setCodexType(button.dataset.codexType));
 });
 ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
 ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
