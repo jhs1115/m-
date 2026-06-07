@@ -517,13 +517,20 @@ h2 {
   border-color: rgba(242, 193, 78, 0.26);
 }
 
-.pve-stage-panel {
-  width: min(1120px, 100%);
+.panel.pve-stage-panel {
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 72px);
   margin: 0 auto;
+  padding: 30px;
   background:
     radial-gradient(circle at 50% 75%, rgba(61, 214, 208, 0.12), transparent 26%),
     rgba(15, 20, 30, 0.94);
   border-color: rgba(242, 193, 78, 0.28);
+}
+
+#pveScreen {
+  width: min(1800px, calc(100vw - 40px));
 }
 
 .pve-character-panel {
@@ -584,14 +591,14 @@ h2 {
 
 .pve-world-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 18px;
-  min-height: 590px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 22px;
+  min-height: max(700px, calc(100vh - 210px));
 }
 
 .pve-world-map {
   position: relative;
-  min-height: 590px;
+  min-height: max(700px, calc(100vh - 210px));
   overflow: hidden;
   background:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
@@ -668,8 +675,8 @@ h2 {
   z-index: 3;
   display: grid;
   place-items: center;
-  width: 92px;
-  height: 92px;
+  width: 108px;
+  height: 108px;
   padding: 0;
   color: #071016;
   background: #52d6b1;
@@ -691,7 +698,7 @@ h2 {
 }
 
 .pve-map-node span {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
   font-weight: 1000;
   line-height: 1;
 }
@@ -699,9 +706,9 @@ h2 {
 .pve-map-node small {
   position: absolute;
   top: calc(100% + 13px);
-  width: 140px;
+  width: 170px;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 900;
   text-shadow: 0 2px 7px #000;
 }
@@ -761,7 +768,7 @@ h2 {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 26px;
+  padding: 32px;
   background: linear-gradient(180deg, rgba(15, 22, 33, 0.98), rgba(5, 9, 15, 0.98));
   border: 1px solid rgba(242, 193, 78, 0.28);
   border-radius: 8px;
@@ -776,7 +783,7 @@ h2 {
 
 .pve-stage-detail h2 {
   margin: 12px 0 10px;
-  font-size: 2rem;
+  font-size: 2.3rem;
 }
 
 .pve-stage-detail p {
