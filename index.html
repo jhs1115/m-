@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260612b">
+  <link rel="stylesheet" href="style.css?v=20260612d">
 </head>
 <body>
   <main class="app">
@@ -319,16 +319,35 @@
     </section>
 
     <section id="pveScreen" class="screen">
-      <div class="panel survival-entry-panel">
+      <div id="survivalEntryPanel" class="panel survival-entry-panel" data-difficulty="easy">
         <div class="survival-entry-copy">
-          <h1>VOID SURVIVER</h1>
+          <span class="survival-entry-mark">M ZZANG · PVE</span>
+          <h1>VOID<br>SURVIVER</h1>
+          <div class="difficulty-selector" role="group" aria-label="PVE 난이도 선택">
+            <button class="difficulty-button is-selected" type="button" data-pve-difficulty="easy">
+              <i>I</i><strong>EASY</strong>
+            </button>
+            <button class="difficulty-button" type="button" data-pve-difficulty="normal">
+              <i>II</i><strong>NORMAL</strong>
+            </button>
+            <button class="difficulty-button" type="button" data-pve-difficulty="hard">
+              <i>III</i><strong>HARD</strong>
+            </button>
+          </div>
           <div class="survival-entry-actions">
             <button id="backFromPveButton" class="ghost-button" type="button">로비로</button>
             <button id="pveStageStartButton" class="primary-button" type="button">생존 시작</button>
           </div>
         </div>
         <div class="survival-entry-visual" aria-hidden="true">
-          <div class="survival-core"></div>
+          <div class="void-sky"></div>
+          <div class="void-shard shard-one"></div>
+          <div class="void-shard shard-two"></div>
+          <div class="void-shard shard-three"></div>
+          <div class="void-orbit orbit-one"></div>
+          <div class="void-orbit orbit-two"></div>
+          <div class="survival-core"><span>M</span></div>
+          <div class="void-horizon"></div>
         </div>
       </div>
     </section>
@@ -549,6 +568,18 @@
               <span class="fighter-icon brawler">F</span>
               <strong data-name="맨몸격투하는 색히">맨몸격투하는 색히</strong>
             </button>
+            <button class="fighter-card" data-player="p1" data-character="timekeeper">
+              <span class="fighter-icon timekeeper">C</span>
+              <strong data-name="시간다루는 색히">시간다루는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p1" data-character="riftmaker">
+              <span class="fighter-icon riftmaker">R</span>
+              <strong data-name="균열일으키는 색히">균열일으키는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p1" data-character="summoner">
+              <span class="fighter-icon summoner">N</span>
+              <strong data-name="소환하는 색히">소환하는 색히</strong>
+            </button>
           </div>
         </div>
 
@@ -602,6 +633,18 @@
             <button class="fighter-card" data-player="p2" data-character="brawler">
               <span class="fighter-icon brawler">F</span>
               <strong data-name="맨몸격투하는 색히">맨몸격투하는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p2" data-character="timekeeper">
+              <span class="fighter-icon timekeeper">C</span>
+              <strong data-name="시간다루는 색히">시간다루는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p2" data-character="riftmaker">
+              <span class="fighter-icon riftmaker">R</span>
+              <strong data-name="균열일으키는 색히">균열일으키는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p2" data-character="summoner">
+              <span class="fighter-icon summoner">N</span>
+              <strong data-name="소환하는 색히">소환하는 색히</strong>
             </button>
           </div>
         </div>
@@ -705,6 +748,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260612b"></script>
+  <script src="game.js?v=20260612d"></script>
 </body>
 </html>

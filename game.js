@@ -86,6 +86,8 @@ const ui = {
   cancelMatchButton: document.getElementById("cancelMatchButton"),
   pveModeButton: document.getElementById("pveModeButton"),
   backFromPveButton: document.getElementById("backFromPveButton"),
+  survivalEntryPanel: document.getElementById("survivalEntryPanel"),
+  pveDifficultyButtons: document.querySelectorAll("[data-pve-difficulty]"),
   pveStageButtons: document.querySelectorAll("[data-pve-stage]"),
   pveStageDetailCode: document.getElementById("pveStageDetailCode"),
   pveStageDetailTitle: document.getElementById("pveStageDetailTitle"),
@@ -506,6 +508,7 @@ let pveAnimationId = null;
 let pendingPveStage = "";
 let selectedPveCharacter = DEFAULT_CHARACTER;
 let selectedPveMapStage = "1-1";
+let selectedPveDifficulty = "easy";
 let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
 let codexType = "character";
 
@@ -1206,6 +1209,7 @@ async function selectPveMode() {
   ui.pveModeButton.classList.add("is-selected");
   ui.pvpModeButton.classList.remove("is-selected");
   ui.modeMessage.textContent = "";
+  selectSurvivalDifficulty(selectedPveDifficulty);
   showScreen("pve");
 }
 
@@ -4362,6 +4366,45 @@ function drawBall(ball) {
   ctx.restore();
 }
 
+function drawPrismaticBeam(renderCtx, x1, y1, x2, y2, width, color, phase = 0, alpha = 1) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy) || 1;
+  const nx = -dy / length;
+  const ny = dx / length;
+  const shimmer = Math.sin(phase * 0.18) * Math.max(2, width * 0.08);
+  renderCtx.save();
+  renderCtx.globalCompositeOperation = "lighter";
+  renderCtx.lineCap = "round";
+  renderCtx.globalAlpha = alpha * 0.2;
+  renderCtx.strokeStyle = color;
+  renderCtx.shadowColor = color;
+  renderCtx.shadowBlur = width * 1.35;
+  renderCtx.lineWidth = width * 1.65;
+  renderCtx.beginPath();
+  renderCtx.moveTo(x1, y1);
+  renderCtx.lineTo(x2, y2);
+  renderCtx.stroke();
+
+  [
+    { offset: -width * 0.17 + shimmer, stroke: "#8d7cff", size: width * 0.5, opacity: 0.7 },
+    { offset: width * 0.17 - shimmer, stroke: "#3dd6d0", size: width * 0.5, opacity: 0.7 },
+    { offset: 0, stroke: color, size: width * 0.72, opacity: 0.95 },
+    { offset: 0, stroke: "#f7fbff", size: Math.max(2, width * 0.2), opacity: 1 }
+  ].forEach(layer => {
+    renderCtx.globalAlpha = alpha * layer.opacity;
+    renderCtx.strokeStyle = layer.stroke;
+    renderCtx.shadowColor = layer.stroke;
+    renderCtx.shadowBlur = layer.size * 0.8;
+    renderCtx.lineWidth = layer.size;
+    renderCtx.beginPath();
+    renderCtx.moveTo(x1 + nx * layer.offset, y1 + ny * layer.offset);
+    renderCtx.lineTo(x2 + nx * layer.offset, y2 + ny * layer.offset);
+    renderCtx.stroke();
+  });
+  renderCtx.restore();
+}
+
 function drawAreaAttack(attack) {
   ctx.save();
   const warning = attack.delay > 0;
@@ -4378,12 +4421,16 @@ function drawAreaAttack(attack) {
   ctx.fill();
   ctx.stroke();
   if (!warning && (attack.type === "laser" || isAnnihilator)) {
-    ctx.fillStyle = isAnnihilator ? "rgba(255,48,79,0.78)" : "rgba(167,239,255,0.7)";
-    ctx.fillRect(
-      attack.x - (isAnnihilator ? 11 : 18),
+    drawPrismaticBeam(
+      ctx,
+      attack.x,
       0,
-      isAnnihilator ? 22 : 36,
-      isAnnihilator ? attack.y : canvas.height
+      attack.x,
+      isAnnihilator ? attack.y : canvas.height,
+      isAnnihilator ? 24 : 38,
+      isAnnihilator ? "#ff304f" : "#7de7ff",
+      game.tick,
+      ctx.globalAlpha
     );
   }
   if (!warning && attack.type === "slash") {
@@ -4402,18 +4449,23 @@ function drawAreaAttack(attack) {
 }
 
 function drawBeam(beam) {
-  ctx.save();
-  ctx.globalAlpha = beam.delay > 0 ? 0.35 : clamp(beam.life / 24, 0, 1);
-  ctx.strokeStyle = beam.color;
-  ctx.shadowColor = beam.color;
-  ctx.shadowBlur = beam.delay > 0 ? 8 : 24;
-  ctx.lineWidth = beam.delay > 0 ? 6 : 34;
-  ctx.setLineDash(beam.delay > 0 ? [12, 10] : []);
-  ctx.beginPath();
-  ctx.moveTo(beam.x1, beam.y1);
-  ctx.lineTo(beam.x2, beam.y2);
-  ctx.stroke();
-  ctx.restore();
+  const alpha = beam.delay > 0 ? 0.35 : clamp(beam.life / 24, 0, 1);
+  if (beam.delay > 0) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = beam.color;
+    ctx.shadowColor = beam.color;
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = 6;
+    ctx.setLineDash([12, 10]);
+    ctx.beginPath();
+    ctx.moveTo(beam.x1, beam.y1);
+    ctx.lineTo(beam.x2, beam.y2);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  drawPrismaticBeam(ctx, beam.x1, beam.y1, beam.x2, beam.y2, 34, beam.color, game.tick, alpha);
 }
 
 function drawWeapon(weapon) {
@@ -4744,6 +4796,53 @@ const SURVIVAL_SUBS = [
   { id: "coin", name: "균열 주화", icon: "C", description: "이번 런의 코인 보상에 5C를 추가합니다." }
 ];
 
+const SURVIVAL_DIFFICULTIES = {
+  easy: {
+    label: "EASY",
+    enemyHp: 1,
+    enemyDamage: 1,
+    enemySpeed: 1,
+    enemyXp: 1,
+    spawnCount: 1,
+    enemyCap: 1,
+    spawnInterval: 1,
+    bossPower: 1
+  },
+  normal: {
+    label: "NORMAL",
+    enemyHp: 1.32,
+    enemyDamage: 1.25,
+    enemySpeed: 1.08,
+    enemyXp: 1.15,
+    spawnCount: 1.25,
+    enemyCap: 1.2,
+    spawnInterval: 0.84,
+    bossPower: 1.3
+  },
+  hard: {
+    label: "HARD",
+    enemyHp: 1.72,
+    enemyDamage: 1.55,
+    enemySpeed: 1.15,
+    enemyXp: 1.3,
+    spawnCount: 1.6,
+    enemyCap: 1.42,
+    spawnInterval: 0.68,
+    bossPower: 1.65
+  }
+};
+
+function selectSurvivalDifficulty(difficulty) {
+  if (!SURVIVAL_DIFFICULTIES[difficulty]) return;
+  selectedPveDifficulty = difficulty;
+  ui.survivalEntryPanel.dataset.difficulty = difficulty;
+  ui.pveDifficultyButtons.forEach(button => {
+    const selected = button.dataset.pveDifficulty === difficulty;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+}
+
 async function startPveStage(stage) {
   stopPveGame();
   let pveRun = null;
@@ -4763,9 +4862,12 @@ async function startPveStage(stage) {
     }
   }
   const velocity = randomVelocity(5.8);
+  const difficulty = SURVIVAL_DIFFICULTIES[selectedPveDifficulty] || SURVIVAL_DIFFICULTIES.easy;
   pveGame = {
     mode: "survival",
     stage: "SURVIVAL",
+    difficultyId: selectedPveDifficulty,
+    difficulty,
     runId: pveRun.runId || pveRun.run_id,
     seed: Date.now() % 100000,
     tick: 0,
@@ -4780,7 +4882,7 @@ async function startPveStage(stage) {
     kills: 0,
     bonusCoins: 0,
     spawnTimer: 105,
-    nextMiniBossTick: 5400,
+    nextMiniBossTick: 7200,
     nextBossTick: 18000,
     bossCount: 0,
     miniBossCount: 0,
@@ -4795,6 +4897,7 @@ async function startPveStage(stage) {
     awakeningPlaying: false,
     reaperActive: false,
     reaperTicks: 0,
+    reaper: null,
     player: {
       ...makeCharacterCombatState(DEFAULT_CHARACTER),
       name: "균열 생존자",
@@ -4817,7 +4920,7 @@ async function startPveStage(stage) {
     damageTexts: [],
     floatingTexts: []
   };
-  ui.pvePlayerLabel.textContent = currentUser.name;
+  ui.pvePlayerLabel.textContent = `${currentUser.name} · ${difficulty.label}`;
   ui.pveResultOverlay.classList.remove("is-active");
   ui.pveAugmentOverlay.classList.remove("is-active");
   renderSurvivalBuild();
@@ -5870,24 +5973,38 @@ function drawPve() {
     pveCtx.fill();
     pveCtx.stroke();
     if (!warning && (attack.type === "laser" || attack.type === "annihilator")) {
-      pveCtx.fillStyle = attack.type === "annihilator" ? "rgba(255,48,79,.75)" : "rgba(167,239,255,.7)";
-      pveCtx.fillRect(attack.x - 13, 0, 26, attack.type === "annihilator" ? attack.y : pveCanvas.height);
+      drawPrismaticBeam(
+        pveCtx,
+        attack.x,
+        0,
+        attack.x,
+        attack.type === "annihilator" ? attack.y : pveCanvas.height,
+        attack.type === "annihilator" ? 26 : 38,
+        attack.type === "annihilator" ? "#ff304f" : "#7de7ff",
+        pveGame.tick,
+        pveCtx.globalAlpha
+      );
     }
     pveCtx.restore();
   });
   pveGame.beams.forEach(beam => {
-    pveCtx.save();
-    pveCtx.globalAlpha = beam.delay > 0 ? 0.35 : Math.min(1, beam.life / 24);
-    pveCtx.strokeStyle = beam.color;
-    pveCtx.shadowColor = beam.color;
-    pveCtx.shadowBlur = beam.delay > 0 ? 8 : 24;
-    pveCtx.lineWidth = beam.delay > 0 ? 6 : 34;
-    pveCtx.setLineDash(beam.delay > 0 ? [12, 10] : []);
-    pveCtx.beginPath();
-    pveCtx.moveTo(beam.x1, beam.y1);
-    pveCtx.lineTo(beam.x2, beam.y2);
-    pveCtx.stroke();
-    pveCtx.restore();
+    const alpha = beam.delay > 0 ? 0.35 : Math.min(1, beam.life / 24);
+    if (beam.delay > 0) {
+      pveCtx.save();
+      pveCtx.globalAlpha = alpha;
+      pveCtx.strokeStyle = beam.color;
+      pveCtx.shadowColor = beam.color;
+      pveCtx.shadowBlur = 12;
+      pveCtx.lineWidth = 6;
+      pveCtx.setLineDash([12, 10]);
+      pveCtx.beginPath();
+      pveCtx.moveTo(beam.x1, beam.y1);
+      pveCtx.lineTo(beam.x2, beam.y2);
+      pveCtx.stroke();
+      pveCtx.restore();
+    } else {
+      drawPrismaticBeam(pveCtx, beam.x1, beam.y1, beam.x2, beam.y2, 34, beam.color, pveGame.tick, alpha);
+    }
   });
   pveGame.weapons.forEach(weapon => {
     pveCtx.save();
@@ -6277,8 +6394,8 @@ function fireSurvivalWeapon(id) {
   } else if (id === "fist") {
     const desperate = itemOwned && player.hp <= player.maxHp * 0.5;
     pveGame.areaAttacks.push({
-      x: player.x,
-      y: player.y,
+      x: target.x,
+      y: target.y,
       radius: (entry.awakened ? 150 : desperate ? 92 : 78) * stats.sizeScale,
       damage: (entry.awakened ? 24 : desperate ? 14 : 11) * stats.damageScale,
       delay: 0,
@@ -6402,6 +6519,8 @@ function fireSurvivalWeapon(id) {
 
 function spawnSurvivalEnemy() {
   const seconds = pveGame.tick / 60;
+  const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+  const lateSurge = seconds >= 420 ? 1.25 + Math.min(0.75, (seconds - 420) / 360) : 1;
   const edge = pveRandomIndex(4);
   const margin = 30;
   const x = edge === 0 ? margin : edge === 1 ? pveCanvas.width - margin : 50 + pveRandomIndex(pveCanvas.width - 100);
@@ -6410,7 +6529,9 @@ function spawnSurvivalEnemy() {
   const type = seconds < 90 ? "melee"
     : seconds < 150 ? (roll < 82 ? "melee" : "dasher")
       : seconds < 240 ? (roll < 55 ? "melee" : roll < 78 ? "dasher" : roll < 92 ? "thrower" : "brute")
-        : (roll < 30 ? "melee" : roll < 50 ? "dasher" : roll < 70 ? "thrower" : roll < 88 ? "brute" : "bomber");
+        : seconds < 420
+          ? (roll < 30 ? "melee" : roll < 50 ? "dasher" : roll < 70 ? "thrower" : roll < 88 ? "brute" : "bomber")
+          : (roll < 18 ? "melee" : roll < 40 ? "dasher" : roll < 61 ? "thrower" : roll < 80 ? "brute" : "bomber");
   const difficulty = 1 + Math.max(0, seconds - 80) / 300;
   const base = {
     melee: { hp: 17, speed: 1.85, radius: 20, damage: 5.5, xp: 2.2, color: "#ef476f" },
@@ -6425,12 +6546,14 @@ function spawnSurvivalEnemy() {
     type, x, y,
     vx: Math.cos(angle) * base.speed,
     vy: Math.sin(angle) * base.speed,
-    baseSpeed: base.speed * Math.min(1.38, 1 + Math.max(0, seconds - 150) / 900),
+    baseSpeed: base.speed * mode.enemySpeed
+      * Math.min(1.68, (1 + Math.max(0, seconds - 150) / 900) * Math.sqrt(lateSurge)),
     radius: base.radius,
-    hp: base.hp * difficulty,
-    maxHp: base.hp * difficulty,
-    contactDamage: base.damage * Math.min(1.85, 1 + Math.max(0, seconds - 60) / 420),
-    xpValue: base.xp,
+    hp: base.hp * difficulty * lateSurge * mode.enemyHp,
+    maxHp: base.hp * difficulty * lateSurge * mode.enemyHp,
+    contactDamage: base.damage * mode.enemyDamage
+      * Math.min(2.6, (1 + Math.max(0, seconds - 60) / 420) * lateSurge),
+    xpValue: base.xp * mode.enemyXp,
     color: base.color,
     contactCooldown: 0,
     attackTimer: type === "thrower" ? 150 : type === "bomber" ? 210 : Infinity,
@@ -6442,7 +6565,8 @@ function spawnSurvivalEnemy() {
 function spawnSurvivalBoss() {
   pveGame.bossCount += 1;
   const count = pveGame.bossCount;
-  const hp = 680 * (1 + (count - 1) * 0.42);
+  const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+  const hp = 680 * (1 + (count - 1) * 0.42) * mode.bossPower;
   pveGame.enemies.push({
     id: `boss-${count}-${pveGame.tick}`,
     type: "survivalBoss",
@@ -6451,12 +6575,12 @@ function spawnSurvivalBoss() {
     y: 65,
     vx: 0,
     vy: 1.25,
-    baseSpeed: 1.08 + count * 0.045,
+    baseSpeed: (1.08 + count * 0.045) * mode.enemySpeed,
     radius: 46,
     hp,
     maxHp: hp,
-    contactDamage: 14 + count * 2,
-    xpValue: 35 + count * 5,
+    contactDamage: (14 + count * 2) * mode.enemyDamage,
+    xpValue: (35 + count * 5) * mode.enemyXp,
     color: "#f43f5e",
     contactCooldown: 0,
     attackTimer: 120,
@@ -6470,7 +6594,8 @@ function spawnSurvivalBoss() {
 function spawnSurvivalMiniBoss() {
   pveGame.miniBossCount += 1;
   const count = pveGame.miniBossCount;
-  const hp = 220 * (1 + (count - 1) * 0.28);
+  const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+  const hp = 220 * (1 + (count - 1) * 0.28) * mode.bossPower;
   pveGame.enemies.push({
     id: `mini-boss-${count}-${pveGame.tick}`,
     type: "survivalMiniBoss",
@@ -6479,12 +6604,12 @@ function spawnSurvivalMiniBoss() {
     y: 70 + pveRandomIndex(Math.max(1, pveCanvas.height - 140)),
     vx: -1,
     vy: 0,
-    baseSpeed: 1.22 + count * 0.04,
+    baseSpeed: (1.22 + count * 0.04) * mode.enemySpeed,
     radius: 36,
     hp,
     maxHp: hp,
-    contactDamage: 9 + count,
-    xpValue: 15 + count * 2,
+    contactDamage: (9 + count) * mode.enemyDamage,
+    xpValue: (35 + count * 5) * mode.enemyXp,
     color: "#f59e0b",
     contactCooldown: 0,
     attackTimer: 150,
@@ -6540,13 +6665,15 @@ function survivalChoicePool() {
   const itemIds = ownedWeaponIds.length < 2 ? [] : Object.keys(SURVIVAL_ITEMS).filter(id =>
     !pveGame.items[id]
     && Object.keys(pveGame.items).length < 6);
+  const relatedItemIds = new Set(ownedWeaponIds.map(id => SURVIVAL_WEAPONS[id]?.item).filter(Boolean));
   const pool = [];
   weaponIds.forEach(id => {
     const weight = pveGame.weapons[id] ? 110 : 100;
     for (let count = 0; count < weight; count += 10) pool.push({ type: "weapon", id });
   });
   itemIds.forEach(id => {
-    for (let count = 0; count < 42; count += 1) pool.push({ type: "item", id });
+    const weight = relatedItemIds.has(id) ? 46 : 38;
+    for (let count = 0; count < weight; count += 1) pool.push({ type: "item", id });
   });
   SURVIVAL_SUBS.forEach(sub => pool.push({ type: "sub", id: sub.id }));
   return pool;
@@ -6592,13 +6719,17 @@ function describeSurvivalChoice(choice) {
   }
   if (choice.type === "item") {
     const item = SURVIVAL_ITEMS[choice.id];
+    const evolutionWeapons = Object.values(SURVIVAL_WEAPONS)
+      .filter(weapon => weapon.item === choice.id)
+      .map(weapon => weapon.name);
     return {
       type: "아이템",
       name: item.name,
       icon: item.icon,
       color: "#fbbf24",
       level: item.effect,
-      description: item.description
+      description: item.description,
+      evolution: evolutionWeapons.length ? `진화 가능 · ${evolutionWeapons.join(" / ")}` : ""
     };
   }
   const sub = SURVIVAL_SUBS.find(item => item.id === choice.id);
@@ -6618,6 +6749,7 @@ function openSurvivalAugments() {
         <div class="augment-graphic">${view.icon}</div>
         <strong>${view.name}</strong>
         <b>${view.level}</b>
+        ${view.evolution ? `<em class="augment-evolution">${view.evolution}</em>` : ""}
         <p>${view.description}</p>
       </button>
     `;
@@ -6653,6 +6785,7 @@ function openStartingWeaponChoices() {
         <div class="augment-graphic">${view.icon}</div>
         <strong>${view.name}</strong>
         <b>${view.level}</b>
+        ${view.evolution ? `<em class="augment-evolution">${view.evolution}</em>` : ""}
         <p>${view.description}</p>
       </button>
     `;
@@ -6845,19 +6978,26 @@ function stepSurvivalPve() {
   if (player.invulnerableTime > 0) player.invulnerableTime -= 1;
 
   const seconds = pveGame.tick / 60;
-  if (pveGame.tick >= 36000) {
-    pveGame.tick = 36000;
+  if (pveGame.tick >= 54000) {
+    pveGame.tick = 54000;
     pveGame.reaperActive = true;
     pveGame.reaperTicks = 0;
+    pveGame.reaper = {
+      x: player.x < pveCanvas.width / 2 ? pveCanvas.width + 90 : -90,
+      y: -110,
+      radius: 54,
+      attached: false,
+      hitTimer: 0
+    };
     pveGame.projectiles = [];
     pveGame.areaAttacks = [];
-    addPveFloating("10:00 · 사신이 도착했습니다", "#ef4444");
+    addPveFloating("15:00 · 사신이 도착했습니다", "#ef4444");
     updateSurvivalHud();
     return;
   }
   if (pveGame.tick >= pveGame.nextMiniBossTick) {
     spawnSurvivalMiniBoss();
-    pveGame.nextMiniBossTick += 5400;
+    pveGame.nextMiniBossTick += 7200;
   }
   if (pveGame.tick >= pveGame.nextBossTick) {
     spawnSurvivalBoss();
@@ -6865,13 +7005,25 @@ function stepSurvivalPve() {
   }
   pveGame.spawnTimer -= 1;
   if (pveGame.spawnTimer <= 0) {
-    const count = 1 + Math.floor(Math.max(0, seconds - 210) / 120);
-    const enemyCap = seconds < 90 ? 13 : seconds < 180 ? 20 : 28 + Math.floor((seconds - 180) / 90) * 4;
+    const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+    const lateRush = seconds >= 420;
+    const baseCount = lateRush
+      ? 5 + Math.floor((seconds - 420) / 90)
+      : 1 + Math.floor(Math.max(0, seconds - 210) / 120);
+    const count = Math.ceil(baseCount * mode.spawnCount);
+    const baseEnemyCap = seconds < 90 ? 13
+      : seconds < 180 ? 20
+        : seconds < 420 ? 32 + Math.floor((seconds - 180) / 90) * 5
+          : 76 + Math.floor((seconds - 420) / 60) * 10;
+    const enemyCap = Math.floor(baseEnemyCap * mode.enemyCap);
     const availableSlots = Math.max(0, enemyCap - pveGame.enemies.filter(enemy => !enemy.dead).length);
-    for (let index = 0; index < Math.min(4, count, availableSlots); index += 1) spawnSurvivalEnemy();
-    pveGame.spawnTimer = seconds < 90 ? 122
+    const waveLimit = Math.ceil((lateRush ? 9 : 4) * mode.spawnCount);
+    for (let index = 0; index < Math.min(waveLimit, count, availableSlots); index += 1) spawnSurvivalEnemy();
+    const baseInterval = seconds < 90 ? 122
       : seconds < 180 ? 102
-        : Math.max(42, 90 - (seconds - 180) * 0.055);
+        : seconds < 420 ? Math.max(38, 82 - (seconds - 180) * 0.06)
+          : Math.max(16, 27 - (seconds - 420) * 0.02);
+    pveGame.spawnTimer = Math.max(10, baseInterval * mode.spawnInterval);
   }
 
   Object.entries(pveGame.weapons).forEach(([id, weapon]) => {
@@ -6908,23 +7060,25 @@ function stepSurvivalPve() {
       enemy.attackTimer -= 1;
       if (enemy.attackTimer <= 0) {
         if (enemy.type === "survivalBoss") {
-          const bulletCount = 10;
+          const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+          const bulletCount = pveGame.difficultyId === "hard" ? 14 : pveGame.difficultyId === "normal" ? 12 : 10;
           for (let index = 0; index < bulletCount; index += 1) {
             const shotAngle = index / bulletCount * Math.PI * 2 + pveGame.tick * 0.006;
             spawnSurvivalProjectile({
               x: enemy.x, y: enemy.y,
               vx: Math.cos(shotAngle) * 4.8,
               vy: Math.sin(shotAngle) * 4.8,
-              damage: 9 + pveGame.bossCount,
+              damage: (9 + pveGame.bossCount) * mode.enemyDamage,
               radius: 9,
               color: "#fb7185",
               life: 220
             });
             pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
           }
-          enemy.attackTimer = 180;
+          enemy.attackTimer = pveGame.difficultyId === "hard" ? 135 : pveGame.difficultyId === "normal" ? 155 : 180;
         } else if (enemy.type === "survivalMiniBoss") {
-          const bulletCount = 6;
+          const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+          const bulletCount = pveGame.difficultyId === "hard" ? 9 : pveGame.difficultyId === "normal" ? 7 : 6;
           for (let index = 0; index < bulletCount; index += 1) {
             const shotAngle = index / bulletCount * Math.PI * 2 + pveGame.tick * 0.004;
             spawnSurvivalProjectile({
@@ -6932,14 +7086,14 @@ function stepSurvivalPve() {
               y: enemy.y,
               vx: Math.cos(shotAngle) * 4.2,
               vy: Math.sin(shotAngle) * 4.2,
-              damage: 6 + pveGame.miniBossCount,
+              damage: (6 + pveGame.miniBossCount) * mode.enemyDamage,
               radius: 8,
               color: "#fbbf24",
               life: 190
             });
             pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
           }
-          enemy.attackTimer = 180;
+          enemy.attackTimer = pveGame.difficultyId === "hard" ? 140 : pveGame.difficultyId === "normal" ? 160 : 180;
         } else {
           const shotAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
           spawnSurvivalProjectile({
@@ -7103,8 +7257,11 @@ function stepSurvivalPve() {
     const dx = player.x - pickup.x;
     const dy = player.y - pickup.y;
     const distance = Math.hypot(dx, dy);
-    if (distance < 150) {
-      const speed = distance < 45 ? 11 : 3.5;
+    const attractionRadius = pickup.type === "heal" ? 260 : 150;
+    if (distance < attractionRadius) {
+      const speed = pickup.type === "heal"
+        ? distance < 55 ? 15 : 5.5 + (attractionRadius - distance) / 55
+        : distance < 45 ? 11 : 3.5;
       pickup.x += dx / (distance || 1) * speed;
       pickup.y += dy / (distance || 1) * speed;
     }
@@ -7140,15 +7297,49 @@ function stepSurvivalReaper() {
   if (!pveGame || pveGame.over) return;
   pveGame.reaperTicks += 1;
   const player = pveGame.player;
-  if (pveGame.reaperTicks % 5 === 0) {
-    const damage = Math.max(12, player.maxHp * 0.08);
+  const reaper = pveGame.reaper;
+  if (!reaper) return;
+
+  const playerSpeed = Math.max(3.2, Math.hypot(player.vx, player.vy));
+  player.x += player.vx / (Math.hypot(player.vx, player.vy) || 1) * playerSpeed;
+  player.y += player.vy / (Math.hypot(player.vx, player.vy) || 1) * playerSpeed;
+  if (player.x < player.radius || player.x > pveCanvas.width - player.radius) {
+    player.vx *= -1;
+    player.x = clamp(player.x, player.radius, pveCanvas.width - player.radius);
+  }
+  if (player.y < player.radius || player.y > pveCanvas.height - player.radius) {
+    player.vy *= -1;
+    player.y = clamp(player.y, player.radius, pveCanvas.height - player.radius);
+  }
+
+  if (!reaper.attached) {
+    const dx = player.x - reaper.x;
+    const dy = player.y - reaper.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const approachSpeed = Math.min(8.4, 1.35 + pveGame.reaperTicks / 105);
+    reaper.x += dx / distance * approachSpeed;
+    reaper.y += dy / distance * approachSpeed;
+    if (distance <= player.radius + reaper.radius * 0.58) {
+      reaper.attached = true;
+      reaper.hitTimer = 0;
+      addPveFloating("사신에게 붙잡혔습니다", "#ff5878");
+    }
+  } else {
+    reaper.x += (player.x - reaper.x) * 0.34;
+    reaper.y += (player.y - 18 - reaper.y) * 0.34;
+    reaper.hitTimer -= 1;
+  }
+
+  if (reaper.attached && reaper.hitTimer <= 0) {
+    reaper.hitTimer = 9;
+    const damage = Math.max(10, player.maxHp * 0.055);
     const actual = Math.min(player.hp, damage);
     player.hp = Math.max(0, player.hp - damage);
     player.damageTaken += actual;
     addPveDamage(player.x + pveRandomIndex(31) - 15, player.y - 28, Math.round(actual));
   }
   updateSurvivalHud();
-  if (player.hp <= 0 || pveGame.reaperTicks >= 90) {
+  if (player.hp <= 0) {
     player.hp = 0;
     finishSurvivalPve(true);
   }
@@ -7217,17 +7408,40 @@ function drawSurvivalPve() {
     pveCtx.setLineDash(warning ? [9, 7] : []);
     pveCtx.beginPath();
     if (attack.type === "lineLaser") {
-      pveCtx.moveTo(attack.x1, attack.y1);
-      pveCtx.lineTo(attack.x2, attack.y2);
-      pveCtx.stroke();
+      if (warning) {
+        pveCtx.moveTo(attack.x1, attack.y1);
+        pveCtx.lineTo(attack.x2, attack.y2);
+        pveCtx.stroke();
+      } else {
+        drawPrismaticBeam(
+          pveCtx,
+          attack.x1,
+          attack.y1,
+          attack.x2,
+          attack.y2,
+          attack.radius * 2,
+          attack.color,
+          pveGame.tick,
+          pveCtx.globalAlpha
+        );
+      }
     } else {
       pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
       pveCtx.fill();
       pveCtx.stroke();
     }
     if (!warning && attack.type === "laser") {
-      pveCtx.fillStyle = `${attack.color}aa`;
-      pveCtx.fillRect(attack.x - attack.radius * 0.35, 0, attack.radius * 0.7, pveCanvas.height);
+      drawPrismaticBeam(
+        pveCtx,
+        attack.x,
+        0,
+        attack.x,
+        pveCanvas.height,
+        attack.radius * 0.8,
+        attack.color,
+        pveGame.tick,
+        pveCtx.globalAlpha
+      );
     }
     pveCtx.restore();
   });
@@ -7369,13 +7583,14 @@ function drawSurvivalPve() {
   pveCtx.fill();
   pveCtx.restore();
   if (pveGame.reaperActive) {
-    const pulse = 0.55 + Math.sin(pveGame.reaperTicks * 0.35) * 0.15;
+    const reaper = pveGame.reaper;
+    const pulse = (reaper?.attached ? 0.5 : 0.16) + Math.sin(pveGame.reaperTicks * 0.18) * 0.06;
     pveCtx.save();
     pveCtx.fillStyle = `rgba(25, 0, 8, ${pulse})`;
     pveCtx.fillRect(0, 0, pveCanvas.width, pveCanvas.height);
-    pveCtx.translate(player.x, Math.max(90, player.y - 135));
+    pveCtx.translate(reaper?.x ?? player.x, reaper?.y ?? Math.max(90, player.y - 135));
     pveCtx.shadowColor = "#ef4444";
-    pveCtx.shadowBlur = 38;
+    pveCtx.shadowBlur = reaper?.attached ? 52 : 32;
     pveCtx.fillStyle = "#07070a";
     pveCtx.beginPath();
     pveCtx.arc(0, 0, 48, Math.PI, 0);
@@ -7388,6 +7603,18 @@ function drawSurvivalPve() {
     pveCtx.beginPath();
     pveCtx.moveTo(-36, 12);
     pveCtx.lineTo(36, 12);
+    pveCtx.stroke();
+    pveCtx.rotate(-0.45 + Math.sin(pveGame.reaperTicks * 0.08) * 0.08);
+    pveCtx.strokeStyle = "#f7f4eb";
+    pveCtx.lineWidth = 6;
+    pveCtx.beginPath();
+    pveCtx.moveTo(22, 18);
+    pveCtx.lineTo(82, 86);
+    pveCtx.stroke();
+    pveCtx.strokeStyle = "#ff426c";
+    pveCtx.lineWidth = 10;
+    pveCtx.beginPath();
+    pveCtx.arc(74, 76, 42, Math.PI * 0.76, Math.PI * 1.56);
     pveCtx.stroke();
     pveCtx.restore();
   }
@@ -7493,15 +7720,15 @@ async function finishSurvivalPve(cleared = false) {
   ui.pveResultEyebrow.textContent = cleared ? "VOID SURVIVED" : "SURVIVAL ENDED";
   ui.pveResultTitle.textContent = cleared ? "클리어!" : "생존 종료";
   ui.pveResultText.textContent = cleared
-    ? `10분 생존 성공 · LV.${pveGame.level} · ${pveGame.kills}마리 처치`
-    : `LV.${pveGame.level} · ${pveGame.kills}마리 처치`;
+    ? `15분 ${pveGame.difficulty.label} 생존 성공 · LV.${pveGame.level} · ${pveGame.kills}마리 처치`
+    : `${pveGame.difficulty.label} · LV.${pveGame.level} · ${pveGame.kills}마리 처치`;
   ui.pveResultPlayerName.textContent = currentUser.name;
   ui.pveResultCharacterName.textContent = "균열 생존자";
   ui.pveResultCharacterOrb.textContent = "M";
   ui.pveResultCharacterOrb.style.setProperty("--result-color", "#3dd6d0");
   ui.pveResultCharacterOrb.style.setProperty("--result-accent", "#67e8f9");
   ui.pveResultReward.textContent = `+${expectedReward}C`;
-  ui.pveResultRewardLabel.textContent = cleared ? "10분 클리어 보상 포함" : "생존 시간 보상 정산 중";
+  ui.pveResultRewardLabel.textContent = cleared ? "15분 클리어 보상 포함" : "생존 시간 보상 정산 중";
   ui.pveResultDamageDealt.textContent = formatResultNumber(player.damageDealt);
   ui.pveResultDamageTaken.textContent = formatResultNumber(player.damageTaken);
   ui.pveResultHealing.textContent = formatResultNumber(player.healingDone);
@@ -7533,7 +7760,7 @@ async function finishSurvivalPve(cleared = false) {
     currentUser = normalizePlayer(data.user);
     players = players.map(item => item.id === currentUser.id ? currentUser : item);
     ui.pveResultReward.textContent = `+${data.reward ?? expectedReward}C`;
-    ui.pveResultRewardLabel.textContent = cleared ? "10분 클리어 보상 포함" : "생존 시간 보상";
+    ui.pveResultRewardLabel.textContent = cleared ? "15분 클리어 보상 포함" : "생존 시간 보상";
     renderLobby();
   } catch (error) {
     ui.pveResultRewardLabel.textContent = `보상 저장 실패: ${error.message}`;
@@ -7631,6 +7858,9 @@ ui.backFromGachaButton.addEventListener("click", () => {
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
+ui.pveDifficultyButtons.forEach(button => {
+  button.addEventListener("click", () => selectSurvivalDifficulty(button.dataset.pveDifficulty));
+});
 ui.backFromPveButton.addEventListener("click", () => {
   stopPveGame();
   renderLobby();

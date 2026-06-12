@@ -906,6 +906,9 @@ h2 {
 }
 
 #pveScreen > .panel.survival-entry-panel {
+  --void-primary: #67e8f9;
+  --void-secondary: #22d3ee;
+  --void-deep: #123c58;
   display: grid;
   width: min(1240px, calc(100vw - 56px));
   max-width: none;
@@ -914,11 +917,29 @@ h2 {
   margin: 0 auto;
   padding: 0;
   overflow: hidden;
-  border-color: rgba(103, 232, 249, 0.28);
-  background: #090f18;
+  border-color: color-mix(in srgb, var(--void-primary) 34%, #203143);
+  background:
+    linear-gradient(110deg, rgba(7, 13, 22, 0.98) 0 49%, rgba(6, 13, 23, 0.9) 49%),
+    #070d16;
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.54), 0 0 46px color-mix(in srgb, var(--void-primary) 12%, transparent);
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+#pveScreen > .panel.survival-entry-panel[data-difficulty="normal"] {
+  --void-primary: #f2c14e;
+  --void-secondary: #ff7a45;
+  --void-deep: #5f2d18;
+}
+
+#pveScreen > .panel.survival-entry-panel[data-difficulty="hard"] {
+  --void-primary: #ff426c;
+  --void-secondary: #a855f7;
+  --void-deep: #4b1230;
 }
 
 .survival-entry-copy {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -926,50 +947,80 @@ h2 {
   padding: 64px;
 }
 
+.survival-entry-mark {
+  margin-bottom: 20px;
+  color: var(--void-primary);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.28em;
+}
+
 .survival-entry-copy h1 {
-  margin: 0 0 48px;
-  font-size: 4.2rem;
-  line-height: 1.08;
+  margin: 0 0 34px;
+  color: #f7f4eb;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4rem, 6vw, 6.8rem);
+  line-height: 0.78;
+  text-shadow: 0 0 34px color-mix(in srgb, var(--void-primary) 22%, transparent);
   word-break: keep-all;
 }
 
-.survival-entry-copy p {
-  max-width: 620px;
-  color: #aeb8c8;
-  font-size: 1.05rem;
-  line-height: 1.85;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-}
-
-.survival-entry-rules {
+.difficulty-selector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 34px 0;
+  gap: 9px;
+  width: min(100%, 490px);
+  margin-bottom: 34px;
 }
 
-.survival-entry-rules div {
+.difficulty-button {
+  position: relative;
+  display: grid;
   min-width: 0;
-  padding: 18px;
-  border: 1px solid rgba(103, 232, 249, 0.16);
-  background: #0c1521;
+  min-height: 86px;
+  place-content: center;
+  gap: 6px;
+  color: #8f9bad;
+  background: rgba(8, 15, 25, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
-.survival-entry-rules strong,
-.survival-entry-rules span {
-  display: block;
+.difficulty-button::before {
+  content: "";
+  position: absolute;
+  inset: auto 18% 0;
+  height: 2px;
+  background: var(--void-primary);
+  box-shadow: 0 0 16px var(--void-primary);
+  transform: scaleX(0);
+  transition: transform 180ms ease;
 }
 
-.survival-entry-rules strong {
-  color: #67e8f9;
-  font-size: 1.8rem;
+.difficulty-button:hover,
+.difficulty-button.is-selected {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--void-primary) 72%, #fff);
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 30px color-mix(in srgb, var(--void-primary) 9%, transparent), 0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
-.survival-entry-rules span {
-  margin-top: 3px;
-  color: #8f9bae;
-  font-size: 0.8rem;
+.difficulty-button.is-selected::before {
+  transform: scaleX(1);
+}
+
+.difficulty-button i {
+  color: var(--void-primary);
+  font-family: Georgia, serif;
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+.difficulty-button strong {
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
 }
 
 .survival-entry-actions {
@@ -990,43 +1041,126 @@ h2 {
   place-content: center;
   justify-items: center;
   overflow: hidden;
-  color: #67e8f9;
-  background: #07101a;
-  border-left: 1px solid rgba(103, 232, 249, 0.16);
+  color: var(--void-primary);
+  background:
+    radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--void-primary) 16%, transparent), transparent 32%),
+    linear-gradient(180deg, #070e19, #03070d);
+  border-left: 1px solid color-mix(in srgb, var(--void-primary) 20%, transparent);
+  isolation: isolate;
 }
 
 .survival-core {
   position: relative;
-  z-index: 1;
+  z-index: 5;
   display: grid;
-  width: 170px;
-  height: 170px;
+  width: 184px;
+  height: 184px;
   place-items: center;
-  background: #67e8f9;
-  border: 8px solid #153d49;
+  color: #050b13;
+  background:
+    radial-gradient(circle at 35% 28%, #fff 0 2%, transparent 8%),
+    radial-gradient(circle, #f7fbff 0 4%, var(--void-primary) 30%, var(--void-secondary) 68%, var(--void-deep));
+  border: 7px double color-mix(in srgb, var(--void-primary) 62%, #071018);
   border-radius: 50%;
-  box-shadow: 0 0 50px rgba(103, 232, 249, 0.34);
+  box-shadow:
+    0 0 30px color-mix(in srgb, var(--void-primary) 70%, transparent),
+    0 0 90px color-mix(in srgb, var(--void-primary) 32%, transparent),
+    inset 0 0 34px rgba(255, 255, 255, 0.48);
+  animation: void-core-pulse 2.8s ease-in-out infinite;
 }
 
-.survival-entry-visual > span,
-.survival-entry-visual > i {
-  position: relative;
-  z-index: 1;
-}
-
-.survival-entry-visual > span {
-  margin-top: 52px;
-  font-size: 1.5rem;
+.survival-core span {
+  font-family: Georgia, serif;
+  font-size: 4.6rem;
   font-weight: 1000;
-  letter-spacing: 0.12em;
 }
 
-.survival-entry-visual > i {
-  margin-top: 8px;
-  color: #8293a9;
-  font-size: 0.72rem;
-  font-style: normal;
-  letter-spacing: 0.16em;
+.void-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.7;
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, var(--void-primary) 75%, #fff) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(255,255,255,.45) 0 1px, transparent 1.4px);
+  background-position: 15px 18px, 70px 55px;
+  background-size: 92px 92px, 137px 137px;
+  mask-image: linear-gradient(to bottom, #000, transparent 86%);
+}
+
+.void-orbit {
+  position: absolute;
+  z-index: 3;
+  width: 330px;
+  height: 330px;
+  border: 1px solid color-mix(in srgb, var(--void-primary) 55%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--void-primary) 12%, transparent);
+  animation: void-orbit-spin 12s linear infinite;
+}
+
+.void-orbit::before,
+.void-orbit::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--void-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--void-primary);
+}
+
+.void-orbit::before { left: -6px; }
+.void-orbit::after { right: -6px; }
+
+.orbit-two {
+  width: 430px;
+  height: 230px;
+  border-style: dashed;
+  transform: rotate(-28deg);
+  animation-duration: 18s;
+  animation-direction: reverse;
+}
+
+.void-shard {
+  position: absolute;
+  z-index: 4;
+  width: 22px;
+  height: 64px;
+  background: linear-gradient(180deg, #fff, var(--void-primary) 35%, transparent);
+  clip-path: polygon(50% 0, 100% 78%, 52% 100%, 0 75%);
+  filter: drop-shadow(0 0 12px var(--void-primary));
+  animation: void-shard-float 3.8s ease-in-out infinite;
+}
+
+.shard-one { left: 22%; top: 23%; transform: rotate(-28deg); }
+.shard-two { right: 19%; top: 31%; transform: rotate(34deg) scale(.72); animation-delay: -1.2s; }
+.shard-three { left: 29%; bottom: 18%; transform: rotate(18deg) scale(.54); animation-delay: -2.3s; }
+
+.void-horizon {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 8%;
+  width: 78%;
+  height: 120px;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--void-primary) 28%, transparent), transparent 68%);
+  border-top: 1px solid color-mix(in srgb, var(--void-primary) 42%, transparent);
+  transform: translateX(-50%) perspective(180px) rotateX(64deg);
+  box-shadow: 0 -12px 34px color-mix(in srgb, var(--void-primary) 10%, transparent);
+}
+
+@keyframes void-core-pulse {
+  50% { transform: scale(1.055); filter: brightness(1.14); }
+}
+
+@keyframes void-orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes void-shard-float {
+  50% { translate: 0 -18px; filter: drop-shadow(0 0 22px var(--void-primary)); }
 }
 
 #pveBattleScreen {
@@ -1463,6 +1597,19 @@ h2 {
   margin-top: 8px;
   color: var(--augment-color);
   font-size: 0.82rem;
+}
+
+.augment-evolution {
+  display: block;
+  margin-top: 12px;
+  padding: 9px 11px;
+  color: #fff1b8;
+  background: rgba(251, 191, 36, 0.08);
+  border-left: 3px solid #fbbf24;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.45;
 }
 
 .augment-card > p {
@@ -2958,6 +3105,19 @@ h2 {
   background: #e59a50;
 }
 
+.fighter-icon.timekeeper {
+  background: linear-gradient(145deg, #f2c14e, #67e8f9);
+}
+
+.fighter-icon.riftmaker {
+  color: #f7f4eb;
+  background: linear-gradient(145deg, #7c3aed, #22d3ee);
+}
+
+.fighter-icon.summoner {
+  background: linear-gradient(145deg, #4ade80, #facc15);
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;
@@ -3742,10 +3902,14 @@ h2 {
     font-size: 3.1rem;
   }
 
-  .survival-entry-rules,
+  .difficulty-selector,
   .survival-hud,
   .augment-choice-grid {
     grid-template-columns: 1fr;
+  }
+
+  .difficulty-button {
+    min-height: 62px;
   }
 
   .survival-entry-actions {

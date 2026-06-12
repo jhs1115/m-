@@ -992,7 +992,7 @@ begin
       + floor(least(greatest(elapsed_seconds - 300, 0), 300) / 30.0)::integer * 12
       + floor(greatest(elapsed_seconds - 600, 0) / 30.0)::integer * 18
       + floor(elapsed_seconds / 300.0)::integer * 50
-      + case when elapsed_seconds >= 600 then 50 else 0 end
+      + case when elapsed_seconds >= 900 then 50 else 0 end
       + safe_bonus
   );
 
