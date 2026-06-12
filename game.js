@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260612b";
+const SIMULATION_VERSION = "20260613a";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -371,14 +371,14 @@ const characterGuide = {
     ultimate: ["야수성", "패시브", "공격하지 못한 시간 동안 이동속도가 매초 6%씩 증가합니다."]
   },
   timekeeper: {
-    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 바라보는 방향의 원뿔 범위를 휘둘러 15의 피해를 줍니다."],
+    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
     normal: ["건너뛰기", "12초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
     ultimate: ["리플레이", "40초", "0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 도착 지점에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
     attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 25의 피해를 주고 연결된 일반 균열을 소모합니다."],
     normal: ["보이드", "30초", "무작위 벽에 3회까지 버티며 모든 균열과 연결되는 공허 균열을 소환합니다."],
-    ultimate: ["게이트", "패시브", "자신의 균열에 닿으면 2초 동안 이동속도가 60% 증가합니다."]
+    ultimate: ["게이트", "6초", "가장 가까운 자신의 균열로 즉시 이동합니다. 균열은 이동에 사용해도 사라지지 않습니다."]
   },
   summoner: {
     attack: ["일어나라!", "3초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 소환수는 적의 공격을 대신 맞을 수 있습니다."],
@@ -1669,7 +1669,7 @@ function ultimateCooldown(kind) {
     vampire: 3000,
     brawler: 0,
     timekeeper: 2400,
-    riftmaker: 0,
+    riftmaker: 360,
     summoner: 3000
   }[kind] ?? Infinity;
 }
@@ -1741,7 +1741,6 @@ function makeCharacterCombatState(kind) {
     replayWindup: 0,
     replayTarget: null,
     riftWallCooldown: 0,
-    gateHasteTime: 0,
     summonTimer: kind === "summoner" ? 180 : Infinity,
     summonMode: "warrior",
     damageDealt: 0,
@@ -2047,33 +2046,53 @@ function finishReplay(fighter) {
 
 function swingClockHand(fighter) {
   const target = opponentOf(fighter);
-  const direction = fighterDirection(fighter);
   const dx = target.x - fighter.x;
   const dy = target.y - fighter.y;
   const distance = Math.hypot(dx, dy);
-  const dot = distance > 0 ? (dx / distance) * direction.x + (dy / distance) * direction.y : 1;
-  addVisualEffect({
+  const fallback = fighterDirection(fighter);
+  const direction = distance > 0
+    ? { x: dx / distance, y: dy / distance }
+    : fallback;
+  const effect = {
     type: "clock-sweep",
     fighter,
     direction,
     color: fighter.accent,
-    life: 24,
-    maxLife: 24
-  });
-  const summonTarget = enemySummonsOf(fighter).find(summon => {
-    const summonDx = summon.x - fighter.x;
-    const summonDy = summon.y - fighter.y;
-    const summonDistance = Math.hypot(summonDx, summonDy);
-    const summonDot = summonDistance > 0
-      ? (summonDx / summonDistance) * direction.x + (summonDy / summonDistance) * direction.y
-      : 1;
-    return summonDistance <= 175 + summon.radius && summonDot >= Math.cos(Math.PI / 4);
-  });
-  if (summonTarget) {
-    damageSummon(summonTarget, 15, fighter);
-  } else if (distance <= 175 + target.radius && dot >= Math.cos(Math.PI / 4)) {
-    damage(target, 15, fighter);
+    range: 215,
+    halfAngle: Math.PI / 3,
+    hitOpponent: false,
+    hitSummonIds: [],
+    life: 28,
+    maxLife: 28
+  };
+  addVisualEffect(effect);
+  resolveClockSweepHits(game.visualEffects[game.visualEffects.length - 1]);
+}
+
+function targetInsideClockSweep(effect, target) {
+  const fighter = effect.fighter;
+  const dx = target.x - fighter.x;
+  const dy = target.y - fighter.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance > effect.range + target.radius) return false;
+  const dot = distance > 0
+    ? (dx / distance) * effect.direction.x + (dy / distance) * effect.direction.y
+    : 1;
+  return dot >= Math.cos(effect.halfAngle);
+}
+
+function resolveClockSweepHits(effect) {
+  if (!effect?.fighter || effect.fighter.hp <= 0) return;
+  const target = opponentOf(effect.fighter);
+  if (!effect.hitOpponent && target?.hp > 0 && targetInsideClockSweep(effect, target)) {
+    effect.hitOpponent = true;
+    damage(target, 15, effect.fighter);
   }
+  enemySummonsOf(effect.fighter).forEach(summon => {
+    if (effect.hitSummonIds.includes(summon.id) || !targetInsideClockSweep(effect, summon)) return;
+    effect.hitSummonIds.push(summon.id);
+    damageSummon(summon, 15, effect.fighter);
+  });
 }
 
 function wallPoint(wall, ratio = 0.5, radius = 16) {
@@ -2117,6 +2136,60 @@ function createVoidRift(fighter) {
   });
 }
 
+function nearestOwnedRift(fighter) {
+  if (!game) return null;
+  let nearest = null;
+  let nearestDistance = Infinity;
+  game.rifts.forEach(rift => {
+    if (rift.owner !== fighter || rift.life <= 0 || rift.hitsRemaining <= 0) return;
+    const distance = Math.hypot(fighter.x - rift.x, fighter.y - rift.y);
+    if (distance < nearestDistance) {
+      nearest = rift;
+      nearestDistance = distance;
+    }
+  });
+  return nearest;
+}
+
+function useRiftGate(fighter) {
+  const rift = nearestOwnedRift(fighter);
+  if (!rift) return false;
+
+  const fromX = fighter.x;
+  const fromY = fighter.y;
+  fighter.x = clamp(rift.x, fighter.radius, canvas.width - fighter.radius);
+  fighter.y = clamp(rift.y, fighter.radius, canvas.height - fighter.radius);
+
+  addVisualEffect({
+    type: "time-skip",
+    x1: fromX,
+    y1: fromY,
+    x2: fighter.x,
+    y2: fighter.y,
+    color: fighter.accent,
+    life: 26,
+    maxLife: 26
+  });
+  addVisualEffect({
+    type: "void-rift",
+    x: fromX,
+    y: fromY,
+    color: fighter.accent,
+    life: 30,
+    maxLife: 30
+  });
+  addVisualEffect({
+    type: "void-rift",
+    x: fighter.x,
+    y: fighter.y,
+    color: fighter.accent,
+    life: 38,
+    maxLife: 38
+  });
+  addSkillPulse(fighter, fighter.accent);
+  return true;
+}
+
 function pointSegmentDistance(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -2151,14 +2224,6 @@ function updateRifts(dt) {
   game.rifts.forEach(rift => {
     rift.life -= dt;
     rift.hitCooldown = Math.max(0, rift.hitCooldown - dt);
-    rift.gateCooldown = Math.max(0, rift.gateCooldown - dt);
-    if (rift.owner.kind === "riftmaker"
-      && rift.gateCooldown <= 0
-      && Math.hypot(rift.owner.x - rift.x, rift.owner.y - rift.y) <= rift.owner.radius + 22) {
-      rift.owner.gateHasteTime = 120;
-      rift.gateCooldown = 45;
-      addSkillPulse(rift.owner, rift.owner.accent);
-    }
   });
 
   const owners = [...new Set(game.rifts.map(rift => rift.owner))];
@@ -2721,6 +2786,13 @@ function triggerUltimate(fighter) {
     return;
   }
 
+  if (fighter.kind === "riftmaker") {
+    if (useRiftGate(fighter)) {
+      fighter.ultimateTimer = 360;
+    }
+    return;
+  }
+
   if (fighter.kind === "summoner") {
     summonUnit(fighter, true);
     addSkillPulse(fighter, fighter.summonMode === "warrior" ? "#4ade80" : "#facc15");
@@ -2747,7 +2819,8 @@ function skillAvailable(fighter, type) {
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     return true;
   }
-  if (fighter.kind === "wild" || fighter.kind === "brawler" || fighter.kind === "riftmaker") return false;
+  if (fighter.kind === "wild" || fighter.kind === "brawler") return false;
+  if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
   return fighter.ultimateTimer <= 0;
 }
 
@@ -2836,6 +2909,7 @@ function updateSkillHud() {
   const normalCooldown = cooldownSeconds(fighter.skillTimer);
   const ultimateCooldown = cooldownSeconds(fighter.ultimateTimer);
   const normalLocked = fighter.kind === "stealth" && fighter.stealthTime <= 0 && normalCooldown === 0;
+  const ultimateLocked = fighter.kind === "riftmaker" && !nearestOwnedRift(fighter) && ultimateCooldown === 0;
 
   ui.normalSkillName.textContent = names.normal;
   ui.ultimateSkillName.textContent = names.ultimate;
@@ -2844,7 +2918,7 @@ function updateSkillHud() {
   ui.normalSkillButton.classList.toggle("is-cooling", normalCooldown > 0);
   ui.ultimateSkillButton.classList.toggle("is-cooling", ultimateCooldown > 0);
   ui.normalSkillButton.classList.toggle("is-locked", normalLocked);
-  ui.ultimateSkillButton.classList.toggle("is-locked", false);
+  ui.ultimateSkillButton.classList.toggle("is-locked", ultimateLocked);
   ui.normalSkillButton.disabled = !skillAvailable(fighter, "normal");
   ui.ultimateSkillButton.disabled = !skillAvailable(fighter, "ultimate");
 }
@@ -2930,7 +3004,6 @@ function moveFighter(fighter, dt) {
     * (fighter.unstoppableTime > 0 ? 3.525 : 1)
     * (fighter.chaseTime > 0 ? 3 : 1)
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
-    * (fighter.gateHasteTime > 0 ? 1.6 : 1)
     * wildInstinct
     * brawlerRamp;
   if (speed !== 0) {
@@ -2958,7 +3031,6 @@ function moveFighter(fighter, dt) {
   if (fighter.chaseTime > 0) fighter.chaseTime -= dt;
   if (fighter.chaseBounceTime > 0) fighter.chaseBounceTime -= dt;
   if (fighter.bloodPreludeTime > 0) fighter.bloodPreludeTime -= dt;
-  if (fighter.gateHasteTime > 0) fighter.gateHasteTime -= dt;
   if (fighter.riftWallCooldown > 0) fighter.riftWallCooldown -= dt;
   if (fighter.kind === "riftmaker" && wallHit && fighter.riftWallCooldown <= 0) {
     addRift(fighter, fighter.x, fighter.y, false, wallHit);
@@ -3713,29 +3785,159 @@ function updateDamageTexts(dt) {
 
 function updateVisualEffects(dt) {
   game.visualEffects = game.visualEffects.filter(effect => {
+    if (effect.type === "clock-sweep") resolveClockSweepHits(effect);
     effect.life -= dt;
     return effect.life > 0;
   });
 }
 
+function drawCombatBackdrop(renderCtx, width, height, tick, primary = "#22d3ee", secondary = "#8b5cf6") {
+  renderCtx.save();
+  const base = renderCtx.createLinearGradient(0, 0, width, height);
+  base.addColorStop(0, "#050b13");
+  base.addColorStop(0.48, "#07101c");
+  base.addColorStop(1, "#090812");
+  renderCtx.fillStyle = base;
+  renderCtx.fillRect(0, 0, width, height);
+
+  const glowA = renderCtx.createRadialGradient(
+    width * (0.2 + Math.sin(tick * 0.002) * 0.03),
+    height * 0.28,
+    0,
+    width * 0.22,
+    height * 0.3,
+    width * 0.62
+  );
+  glowA.addColorStop(0, "rgba(34, 211, 238, 0.13)");
+  glowA.addColorStop(0.52, "rgba(34, 211, 238, 0.035)");
+  glowA.addColorStop(1, "rgba(34, 211, 238, 0)");
+  renderCtx.fillStyle = glowA;
+  renderCtx.fillRect(0, 0, width, height);
+
+  const glowB = renderCtx.createRadialGradient(width * 0.82, height * 0.7, 0, width * 0.82, height * 0.7, width * 0.58);
+  glowB.addColorStop(0, "rgba(139, 92, 246, 0.11)");
+  glowB.addColorStop(0.5, "rgba(244, 114, 182, 0.025)");
+  glowB.addColorStop(1, "rgba(139, 92, 246, 0)");
+  renderCtx.fillStyle = glowB;
+  renderCtx.fillRect(0, 0, width, height);
+
+  renderCtx.globalCompositeOperation = "lighter";
+  const gridSize = 44;
+  const offsetX = (tick * 0.08) % gridSize;
+  const offsetY = (tick * 0.045) % gridSize;
+  renderCtx.lineWidth = 1;
+  for (let x = -gridSize + offsetX; x < width + gridSize; x += gridSize) {
+    const emphasis = Math.abs((x / gridSize) % 4) < 0.12;
+    renderCtx.strokeStyle = emphasis ? "rgba(103, 232, 249, 0.095)" : "rgba(103, 232, 249, 0.04)";
+    renderCtx.beginPath();
+    renderCtx.moveTo(x, 0);
+    renderCtx.lineTo(x, height);
+    renderCtx.stroke();
+  }
+  for (let y = -gridSize + offsetY; y < height + gridSize; y += gridSize) {
+    const emphasis = Math.abs((y / gridSize) % 4) < 0.12;
+    renderCtx.strokeStyle = emphasis ? "rgba(167, 139, 250, 0.085)" : "rgba(167, 139, 250, 0.035)";
+    renderCtx.beginPath();
+    renderCtx.moveTo(0, y);
+    renderCtx.lineTo(width, y);
+    renderCtx.stroke();
+  }
+
+  for (let index = 0; index < 30; index += 1) {
+    const seed = index * 92821 + 731;
+    const x = ((seed % 997) / 997 * width + tick * (0.025 + index % 3 * 0.008)) % width;
+    const y = (((seed * 13) % 991) / 991 * height + Math.sin(tick * 0.008 + index) * 8 + height) % height;
+    const pulse = 0.2 + (Math.sin(tick * 0.035 + index * 1.7) + 1) * 0.18;
+    renderCtx.globalAlpha = pulse;
+    renderCtx.fillStyle = index % 5 === 0 ? "#fde68a" : index % 2 === 0 ? primary : secondary;
+    renderCtx.beginPath();
+    renderCtx.arc(x, y, index % 7 === 0 ? 1.8 : 1, 0, Math.PI * 2);
+    renderCtx.fill();
+  }
+  renderCtx.globalCompositeOperation = "source-over";
+  renderCtx.globalAlpha = 1;
+
+  const vignette = renderCtx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.18, width / 2, height / 2, Math.max(width, height) * 0.72);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.55)");
+  renderCtx.fillStyle = vignette;
+  renderCtx.fillRect(0, 0, width, height);
+  renderCtx.restore();
+}
+
+function drawMotionTrail(renderCtx, x, y, vx, vy, radius, color, alpha = 0.55) {
+  const speed = Math.hypot(vx, vy);
+  if (speed < 0.1) return;
+  const nx = vx / speed;
+  const ny = vy / speed;
+  const length = Math.min(76, 16 + speed * 3.2);
+  const trail = renderCtx.createLinearGradient(x, y, x - nx * length, y - ny * length);
+  trail.addColorStop(0, color);
+  trail.addColorStop(0.3, color);
+  trail.addColorStop(1, "rgba(0,0,0,0)");
+  renderCtx.save();
+  renderCtx.globalCompositeOperation = "lighter";
+  renderCtx.globalAlpha = alpha;
+  renderCtx.strokeStyle = trail;
+  renderCtx.shadowColor = color;
+  renderCtx.shadowBlur = radius * 1.4;
+  renderCtx.lineCap = "round";
+  renderCtx.lineWidth = Math.max(2, radius * 1.15);
+  renderCtx.beginPath();
+  renderCtx.moveTo(x, y);
+  renderCtx.lineTo(x - nx * length, y - ny * length);
+  renderCtx.stroke();
+  renderCtx.restore();
+}
+
+function drawLuminousCore(renderCtx, x, y, radius, color, accent, tick, alpha = 1) {
+  const pulse = 1 + Math.sin(tick * 0.16 + x * 0.01 + y * 0.008) * 0.045;
+  renderCtx.save();
+  renderCtx.globalAlpha = alpha;
+  renderCtx.globalCompositeOperation = "lighter";
+  renderCtx.shadowColor = accent;
+  renderCtx.shadowBlur = radius * 1.35;
+  const halo = renderCtx.createRadialGradient(x, y, radius * 0.12, x, y, radius * 1.7);
+  halo.addColorStop(0, "rgba(255,255,255,0.46)");
+  halo.addColorStop(0.3, color);
+  halo.addColorStop(0.68, accent);
+  halo.addColorStop(1, "rgba(0,0,0,0)");
+  renderCtx.fillStyle = halo;
+  renderCtx.beginPath();
+  renderCtx.arc(x, y, radius * 1.7 * pulse, 0, Math.PI * 2);
+  renderCtx.fill();
+
+  renderCtx.globalCompositeOperation = "source-over";
+  const body = renderCtx.createRadialGradient(
+    x - radius * 0.3,
+    y - radius * 0.35,
+    radius * 0.08,
+    x,
+    y,
+    radius
+  );
+  body.addColorStop(0, "#ffffff");
+  body.addColorStop(0.18, accent);
+  body.addColorStop(0.58, color);
+  body.addColorStop(1, color);
+  renderCtx.fillStyle = body;
+  renderCtx.beginPath();
+  renderCtx.arc(x, y, radius, 0, Math.PI * 2);
+  renderCtx.fill();
+
+  renderCtx.globalCompositeOperation = "lighter";
+  renderCtx.strokeStyle = accent;
+  renderCtx.globalAlpha = alpha * 0.65;
+  renderCtx.lineWidth = Math.max(1.5, radius * 0.08);
+  renderCtx.beginPath();
+  renderCtx.arc(x, y, radius * (1.2 + Math.sin(tick * 0.11) * 0.05), tick * 0.025, tick * 0.025 + Math.PI * 1.35);
+  renderCtx.stroke();
+  renderCtx.restore();
+}
+
 function drawArena() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#0d1118";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "rgba(255,255,255,0.05)";
-  ctx.lineWidth = 1;
-  for (let x = 40; x < canvas.width; x += 40) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-  for (let y = 40; y < canvas.height; y += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
+  drawCombatBackdrop(ctx, canvas.width, canvas.height, game.tick);
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
@@ -3878,16 +4080,26 @@ function drawSummon(summon) {
 function drawEnergyLine(effect, width = 6) {
   const alpha = clamp(effect.life / effect.maxLife, 0, 1);
   ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = effect.color;
-  ctx.shadowColor = effect.color;
-  ctx.shadowBlur = 24;
-  ctx.lineWidth = width;
-  ctx.setLineDash([18, 8]);
-  ctx.beginPath();
-  ctx.moveTo(effect.x1, effect.y1);
-  ctx.lineTo(effect.x2, effect.y2);
-  ctx.stroke();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  [
+    { size: width * 3.2, opacity: 0.12, color: effect.color },
+    { size: width * 1.7, opacity: 0.38, color: "#8d7cff" },
+    { size: width, opacity: 0.82, color: effect.color },
+    { size: Math.max(2, width * 0.28), opacity: 1, color: "#f7fbff" }
+  ].forEach((layer, index) => {
+    ctx.globalAlpha = alpha * layer.opacity;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = layer.color;
+    ctx.shadowBlur = 16 + layer.size;
+    ctx.lineWidth = layer.size;
+    ctx.setLineDash(index === 2 ? [18, 8] : []);
+    ctx.lineDashOffset = -game.tick * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(effect.x1, effect.y1);
+    ctx.lineTo(effect.x2, effect.y2);
+    ctx.stroke();
+  });
   ctx.restore();
 }
 
@@ -3896,19 +4108,47 @@ function drawClockSweep(effect) {
   if (!fighter) return;
   const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
   const center = Math.atan2(effect.direction.y, effect.direction.x);
+  const range = effect.range || 215;
+  const halfAngle = effect.halfAngle || Math.PI / 3;
+  const handAngle = center - halfAngle + halfAngle * 2 * Math.min(1, progress * 1.35);
   ctx.save();
-  ctx.globalAlpha = 1 - progress;
-  ctx.strokeStyle = effect.color;
-  ctx.fillStyle = "rgba(103, 232, 249, 0.12)";
+  ctx.globalAlpha = Math.min(1, (1 - progress) * 1.8);
+  ctx.fillStyle = "rgba(103, 232, 249, 0.13)";
+  ctx.strokeStyle = "rgba(103, 232, 249, 0.55)";
   ctx.shadowColor = effect.color;
-  ctx.shadowBlur = 18;
-  ctx.lineWidth = 7;
+  ctx.shadowBlur = 26;
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(fighter.x, fighter.y);
-  ctx.arc(fighter.x, fighter.y, 175, center - Math.PI / 4, center + Math.PI / 4);
+  ctx.arc(fighter.x, fighter.y, range, center - halfAngle, center + halfAngle);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+
+  for (let trail = 3; trail >= 0; trail -= 1) {
+    const angle = handAngle - trail * 0.075;
+    ctx.globalAlpha = (1 - trail * 0.2) * Math.min(1, (1 - progress) * 2);
+    ctx.strokeStyle = trail === 0 ? "#f7fbff" : effect.color;
+    ctx.shadowColor = effect.color;
+    ctx.shadowBlur = trail === 0 ? 32 : 18;
+    ctx.lineWidth = trail === 0 ? 8 : 5;
+    ctx.beginPath();
+    ctx.moveTo(
+      fighter.x + Math.cos(angle) * (fighter.radius * 0.4),
+      fighter.y + Math.sin(angle) * (fighter.radius * 0.4)
+    );
+    ctx.lineTo(
+      fighter.x + Math.cos(angle) * range,
+      fighter.y + Math.sin(angle) * range
+    );
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = Math.min(1, (1 - progress) * 1.8);
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, 8, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -3916,16 +4156,38 @@ function drawPointBurst(effect) {
   const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
   const radius = 16 + progress * (effect.type === "time-explosion" ? 135 : 64);
   ctx.save();
-  ctx.globalAlpha = 1 - progress;
-  ctx.strokeStyle = effect.color;
-  ctx.fillStyle = effect.type === "time-explosion" ? "rgba(103, 232, 249, 0.14)" : "rgba(124, 58, 237, 0.14)";
-  ctx.shadowColor = effect.color;
-  ctx.shadowBlur = 28;
-  ctx.lineWidth = 5;
+  ctx.globalCompositeOperation = "lighter";
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.globalAlpha = (1 - progress) * (0.78 - ring * 0.18);
+    ctx.strokeStyle = ring === 1 ? "#8d7cff" : ring === 2 ? "#f7fbff" : effect.color;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 22 + ring * 9;
+    ctx.lineWidth = Math.max(1.5, 7 - ring * 2);
+    ctx.beginPath();
+    ctx.arc(effect.x, effect.y, radius * (1 + ring * 0.13), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = (1 - progress) * 0.3;
+  const burst = ctx.createRadialGradient(effect.x, effect.y, 0, effect.x, effect.y, radius);
+  burst.addColorStop(0, "#ffffff");
+  burst.addColorStop(0.22, effect.color);
+  burst.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = burst;
   ctx.beginPath();
   ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
+  for (let ray = 0; ray < 10; ray += 1) {
+    const angle = ray * Math.PI * 0.2 + progress * 1.7;
+    const inner = radius * 0.35;
+    const outer = radius * (0.72 + (ray % 3) * 0.12);
+    ctx.globalAlpha = (1 - progress) * 0.52;
+    ctx.strokeStyle = ray % 2 ? effect.color : "#f7fbff";
+    ctx.lineWidth = ray % 3 === 0 ? 3 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(effect.x + Math.cos(angle) * inner, effect.y + Math.sin(angle) * inner);
+    ctx.lineTo(effect.x + Math.cos(angle) * outer, effect.y + Math.sin(angle) * outer);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -3934,23 +4196,23 @@ function drawRifts() {
   owners.forEach(owner => {
     const rifts = game.rifts.filter(rift => rift.owner === owner);
     ctx.save();
-    ctx.strokeStyle = owner.accent;
-    ctx.shadowColor = owner.accent;
-    ctx.shadowBlur = 16;
-    ctx.lineWidth = 4;
     riftConnections(rifts).forEach(([a, b]) => {
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+      drawPrismaticBeam(ctx, a.x, a.y, b.x, b.y, 7, owner.accent, game.tick + a.x, 0.72);
     });
     rifts.forEach(rift => {
-      ctx.fillStyle = rift.isVoid ? "#0b0618" : owner.color;
-      ctx.lineWidth = rift.isVoid ? 6 : 3;
+      const radius = rift.isVoid ? 20 : 13;
+      drawLuminousCore(ctx, rift.x, rift.y, radius, rift.isVoid ? "#16052f" : owner.color, owner.accent, game.tick + rift.x);
+      ctx.save();
+      ctx.translate(rift.x, rift.y);
+      ctx.rotate(game.tick * (rift.isVoid ? -0.018 : 0.025));
+      ctx.strokeStyle = rift.isVoid ? "#f0abfc" : "#f7fbff";
+      ctx.globalAlpha = 0.8;
+      ctx.lineWidth = rift.isVoid ? 3 : 2;
+      ctx.setLineDash(rift.isVoid ? [7, 5] : [4, 5]);
       ctx.beginPath();
-      ctx.arc(rift.x, rift.y, rift.isVoid ? 20 : 13, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(0, 0, radius + 8, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
     });
     ctx.restore();
   });
@@ -3994,23 +4256,35 @@ function drawExpandingBurst(effect, minRadius, maxRadius, width) {
   const radius = minRadius + (maxRadius - minRadius) * progress;
   const alpha = 1 - progress;
   ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = effect.color;
-  ctx.fillStyle = effect.type === "unstoppable-burst"
-    ? "rgba(239, 71, 111, 0.16)"
-    : "rgba(239, 71, 111, 0.08)";
-  ctx.shadowColor = effect.color;
-  ctx.shadowBlur = effect.type === "unstoppable-burst" ? 36 : 18;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.arc(fighter.x, fighter.y, radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.lineWidth = Math.max(2, width - 3);
-  ctx.setLineDash([16, 10]);
-  ctx.beginPath();
-  ctx.arc(fighter.x, fighter.y, radius * 0.72, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.globalCompositeOperation = "lighter";
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.globalAlpha = alpha * (0.9 - ring * 0.2);
+    ctx.strokeStyle = ring === 1 ? "#8d7cff" : ring === 2 ? "#f7fbff" : effect.color;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = effect.type === "unstoppable-burst" ? 40 : 24;
+    ctx.lineWidth = Math.max(1.5, width - ring * 2);
+    ctx.setLineDash(ring === 1 ? [16, 10] : []);
+    ctx.lineDashOffset = -game.tick * (ring + 1);
+    ctx.beginPath();
+    ctx.arc(fighter.x, fighter.y, radius * (1 - ring * 0.1), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (let ray = 0; ray < 12; ray += 1) {
+    const angle = ray * Math.PI / 6 + progress * 0.8;
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.strokeStyle = ray % 3 === 0 ? "#f7fbff" : effect.color;
+    ctx.lineWidth = ray % 3 === 0 ? 3 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(
+      fighter.x + Math.cos(angle) * radius * 0.78,
+      fighter.y + Math.sin(angle) * radius * 0.78
+    );
+    ctx.lineTo(
+      fighter.x + Math.cos(angle) * radius * 1.18,
+      fighter.y + Math.sin(angle) * radius * 1.18
+    );
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -4033,9 +4307,29 @@ function drawStealthBurst(effect) {
 }
 
 function drawFighter(fighter) {
+  drawMotionTrail(
+    ctx,
+    fighter.x,
+    fighter.y,
+    fighter.vx,
+    fighter.vy,
+    fighter.radius,
+    fighter.rageTime > 0 ? "#ff174f" : fighter.accent,
+    fighter.stealthTime > 0 ? 0.18 : 0.28
+  );
   ctx.save();
   ctx.translate(fighter.x, fighter.y);
   drawFighterAuras(fighter);
+  drawLuminousCore(
+    ctx,
+    0,
+    0,
+    fighter.radius + 2,
+    fighter.rageTime > 0 ? "#c20b3f" : fighter.color,
+    fighter.rageTime > 0 ? "#ff6b8a" : fighter.accent,
+    game.tick,
+    fighter.stealthTime > 0 ? 0.34 : 0.56
+  );
   ctx.beginPath();
   ctx.arc(0, 0, fighter.radius + 7, 0, Math.PI * 2);
   ctx.fillStyle = fighter.hitFlash > 0
@@ -4297,6 +4591,7 @@ function drawFighterHealthBar(fighter) {
 }
 
 function drawBall(ball) {
+  drawMotionTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, ball.color, ball.star ? 0.82 : 0.58);
   if (ball.summonArrow) {
     ctx.save();
     ctx.translate(ball.x, ball.y);
@@ -4323,6 +4618,9 @@ function drawBall(ball) {
     ctx.save();
     ctx.translate(ball.x, ball.y);
     ctx.rotate(Math.atan2(ball.vy, ball.vx));
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = ball.color;
+    ctx.shadowBlur = 30;
     ctx.fillStyle = ball.color;
     ctx.beginPath();
     for (let index = 0; index < 10; index += 1) {
@@ -4355,6 +4653,7 @@ function drawBall(ball) {
     ctx.restore();
     return;
   }
+  drawLuminousCore(ctx, ball.x, ball.y, ball.radius, ball.color, "#f7fbff", game.tick + ball.x, 0.82);
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = ball.color;
@@ -4420,6 +4719,21 @@ function drawAreaAttack(attack) {
   ctx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  if (warning) {
+    ctx.globalCompositeOperation = "lighter";
+    ctx.setLineDash([4, 10]);
+    ctx.lineDashOffset = -game.tick * 1.8;
+    ctx.strokeStyle = "#f7fbff";
+    ctx.globalAlpha = 0.55 + Math.sin(game.tick * 0.25) * 0.18;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(attack.x, attack.y, attack.radius * 0.78, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = isAnnihilator ? "#ff304f" : "#67e8f9";
+    ctx.beginPath();
+    ctx.arc(attack.x, attack.y, 4 + Math.sin(game.tick * 0.3) * 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
   if (!warning && (attack.type === "laser" || isAnnihilator)) {
     drawPrismaticBeam(
       ctx,
@@ -4469,41 +4783,58 @@ function drawBeam(beam) {
 }
 
 function drawWeapon(weapon) {
+  drawMotionTrail(ctx, weapon.x, weapon.y, weapon.vx, weapon.vy, 10, weapon.color, 0.7);
   ctx.save();
   ctx.translate(weapon.x, weapon.y);
   ctx.rotate(Math.atan2(weapon.vy, weapon.vx));
   ctx.shadowColor = weapon.color;
-  ctx.shadowBlur = 18;
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowBlur = 30;
   ctx.fillStyle = weapon.color;
-  ctx.fillRect(-20, -5, 40, 10);
+  ctx.fillRect(-25, -7, 50, 14);
   ctx.fillStyle = "#f7f4eb";
-  ctx.fillRect(8, -9, 10, 18);
+  ctx.fillRect(5, -11, 14, 22);
+  ctx.strokeStyle = "#f7fbff";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-25, -7, 50, 14);
   ctx.restore();
 }
 
 function drawShockwave(wave) {
   ctx.save();
-  ctx.strokeStyle = wave.color;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-  ctx.globalAlpha = clamp(wave.life / 34, 0, 1);
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  const alpha = clamp(wave.life / 34, 0, 1);
+  ctx.globalCompositeOperation = "lighter";
+  for (let ring = 0; ring < 4; ring += 1) {
+    ctx.strokeStyle = ring === 1 ? "#8d7cff" : ring === 2 ? "#67e8f9" : ring === 3 ? "#f7fbff" : wave.color;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 20;
+    ctx.globalAlpha = alpha * (0.82 - ring * 0.14);
+    ctx.lineWidth = Math.max(1.5, 7 - ring * 1.5);
+    ctx.beginPath();
+    ctx.arc(wave.x, wave.y, wave.radius * (1 - ring * 0.055), 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
 function drawPokerShot(card) {
   if (card.delay > 0) return;
+  drawMotionTrail(ctx, card.x, card.y, card.vx, card.vy, 11, card.color || "#ef476f", 0.6);
   ctx.save();
   ctx.translate(card.x, card.y);
   ctx.rotate(Math.atan2(card.vy, card.vx));
-  ctx.fillStyle = "#f7f4eb";
-  ctx.fillRect(-12, -8, 24, 16);
-  ctx.strokeStyle = "#ef476f";
-  ctx.strokeRect(-12, -8, 24, 16);
-  ctx.fillStyle = "#101319";
+  ctx.shadowColor = card.color || "#ef476f";
+  ctx.shadowBlur = 22;
+  const cardGradient = ctx.createLinearGradient(-14, -10, 14, 10);
+  cardGradient.addColorStop(0, "#ffffff");
+  cardGradient.addColorStop(0.55, "#f7f4eb");
+  cardGradient.addColorStop(1, "#ffd6e3");
+  ctx.fillStyle = cardGradient;
+  ctx.fillRect(-14, -10, 28, 20);
+  ctx.strokeStyle = card.color || "#ef476f";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(-14, -10, 28, 20);
+  ctx.fillStyle = "#12131a";
   ctx.font = "900 10px Segoe UI, Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -4536,16 +4867,23 @@ function drawGrapple(grapple) {
   const startY = grapple.owner.y;
   const endX = startX + Math.cos(grapple.angle) * grapple.length;
   const endY = startY + Math.sin(grapple.angle) * grapple.length;
-  ctx.strokeStyle = grapple.owner.accent;
-  ctx.lineWidth = grapple.enhanced ? 9 : 5;
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  ctx.lineTo(endX, endY);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(endX, endY, grapple.enhanced ? 16 : 10, 0, Math.PI * 2);
-  ctx.fillStyle = grapple.owner.accent;
-  ctx.fill();
+  ctx.globalCompositeOperation = "lighter";
+  [
+    { width: grapple.enhanced ? 15 : 10, color: grapple.owner.accent, alpha: 0.18 },
+    { width: grapple.enhanced ? 7 : 5, color: grapple.owner.accent, alpha: 0.9 },
+    { width: 2, color: "#f7fbff", alpha: 0.95 }
+  ].forEach(layer => {
+    ctx.globalAlpha = layer.alpha;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = grapple.owner.accent;
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = layer.width;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+  });
+  drawLuminousCore(ctx, endX, endY, grapple.enhanced ? 16 : 10, grapple.owner.color, grapple.owner.accent, game.tick);
   ctx.restore();
 }
 
@@ -4895,6 +5233,7 @@ async function startPveStage(stage) {
     awakeningPaused: false,
     awakeningQueue: [],
     awakeningPlaying: false,
+    activeWeaponId: "",
     reaperActive: false,
     reaperTicks: 0,
     reaper: null,
@@ -5829,15 +6168,7 @@ function updatePveHud() {
 function drawPve() {
   if (!pveGame) return;
   pveCtx.clearRect(0, 0, pveCanvas.width, pveCanvas.height);
-  pveCtx.fillStyle = "#0d1118";
-  pveCtx.fillRect(0, 0, pveCanvas.width, pveCanvas.height);
-  pveCtx.strokeStyle = "rgba(255,255,255,0.05)";
-  for (let x = 40; x < pveCanvas.width; x += 40) {
-    pveCtx.beginPath(); pveCtx.moveTo(x, 0); pveCtx.lineTo(x, pveCanvas.height); pveCtx.stroke();
-  }
-  for (let y = 40; y < pveCanvas.height; y += 40) {
-    pveCtx.beginPath(); pveCtx.moveTo(0, y); pveCtx.lineTo(pveCanvas.width, y); pveCtx.stroke();
-  }
+  drawCombatBackdrop(pveCtx, pveCanvas.width, pveCanvas.height, pveGame.tick);
   const player = pveGame.player;
   if (player.rageTime > 0 || player.unstoppableTime > 0 || player.unstoppableWindup > 0 || player.hyperStealthActive) {
     pveCtx.save();
@@ -5854,11 +6185,18 @@ function drawPve() {
     pveCtx.stroke();
     pveCtx.restore();
   }
-  pveCtx.beginPath();
-  pveCtx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+  drawMotionTrail(pveCtx, player.x, player.y, player.vx, player.vy, player.radius, player.accent, 0.32);
+  drawLuminousCore(
+    pveCtx,
+    player.x,
+    player.y,
+    player.radius,
+    player.hitFlash > 0 ? "#ffffff" : player.rageTime > 0 ? "#ff174f" : player.color,
+    player.accent,
+    pveGame.tick,
+    player.stealthTime > 0 ? 0.38 : 0.78
+  );
   pveCtx.globalAlpha = player.stealthTime > 0 ? 0.36 : 1;
-  pveCtx.fillStyle = player.hitFlash > 0 ? "#ffffff" : player.rageTime > 0 ? "#ff174f" : player.color;
-  pveCtx.fill();
   pveCtx.beginPath();
   pveCtx.arc(player.x + 7, player.y - 7, 6, 0, Math.PI * 2);
   pveCtx.fillStyle = "#101319";
@@ -6141,6 +6479,7 @@ function spawnSurvivalProjectile(options) {
     explosionDamage: options.explosionDamage || 0,
     pullStrength: options.pullStrength || 0,
     cardEffect: options.cardEffect || "",
+    sourceWeaponId: options.sourceWeaponId || pveGame.activeWeaponId || "",
     repeatHits: Boolean(options.repeatHits),
     hitIds: new Set(),
     hitCooldown: 0
@@ -6150,6 +6489,9 @@ function spawnSurvivalProjectile(options) {
 function fireSurvivalWeapon(id) {
   const target = nearestPveEnemy();
   if (!target) return;
+  const projectileStart = pveGame.projectiles.length;
+  const areaAttackStart = pveGame.areaAttacks.length;
+  pveGame.activeWeaponId = id;
   const player = pveGame.player;
   const entry = pveGame.weapons[id];
   const stats = survivalWeaponStats(id);
@@ -6515,6 +6857,13 @@ function fireSurvivalWeapon(id) {
       });
     }
   }
+  pveGame.projectiles.slice(projectileStart).forEach(projectile => {
+    if (projectile.owner !== "enemy") projectile.sourceWeaponId = id;
+  });
+  pveGame.areaAttacks.slice(areaAttackStart).forEach(attack => {
+    attack.sourceWeaponId = id;
+  });
+  pveGame.activeWeaponId = "";
 }
 
 function spawnSurvivalEnemy() {
@@ -6845,7 +7194,7 @@ function chooseSurvivalAugment(choice) {
   if (choice.type === "weapon") {
     const weapon = pveGame.weapons[choice.id];
     if (weapon) weapon.stars = Math.min(5, weapon.stars + 1);
-    else pveGame.weapons[choice.id] = { stars: 1, awakened: false, timer: 20 };
+    else pveGame.weapons[choice.id] = { stars: 1, awakened: false, timer: 20, damageDealt: 0 };
   } else if (choice.type === "item") {
     pveGame.items[choice.id] = true;
   } else {
@@ -6890,6 +7239,7 @@ function renderSurvivalBuild() {
       <div>
         <strong>${weapon.awakened ? definition.awakenedName || definition.name : definition.name}</strong>
         <small>${weapon.awakened ? "각성" : `${weapon.stars}성`}</small>
+        <small class="build-damage-stat">누적 피해 ${formatResultNumber(weapon.damageDealt || 0)}</small>
         <small class="build-live-stat"></small>
       </div>
     </div>`;
@@ -6916,6 +7266,10 @@ function renderSurvivalBuild() {
 
 function updateSurvivalBuildStats() {
   if (!pveGame || !ui.pveBuildList) return;
+  Object.entries(pveGame.weapons).forEach(([id, weapon]) => {
+    const damage = ui.pveBuildList.querySelector(`[data-build-weapon="${id}"] .build-damage-stat`);
+    if (damage) damage.textContent = `누적 피해 ${formatResultNumber(weapon.damageDealt || 0)}`;
+  });
   const changingStats = {
     temper: () => {
       const baseDamage = Math.min(28, 7 + pveGame.tick / 900);
@@ -6947,10 +7301,14 @@ function updateSurvivalHud() {
   updateSurvivalBuildStats();
 }
 
-function damageSurvivalEnemy(enemy, amount) {
+function damageSurvivalEnemy(enemy, amount, sourceWeaponId = "") {
   const actual = Math.min(enemy.hp, amount);
   enemy.hp -= actual;
   pveGame.player.damageDealt += actual;
+  if (sourceWeaponId && pveGame.weapons[sourceWeaponId]) {
+    const weapon = pveGame.weapons[sourceWeaponId];
+    weapon.damageDealt = (weapon.damageDealt || 0) + actual;
+  }
   addPveDamage(enemy.x, enemy.y - enemy.radius, Math.round(actual * 10) / 10);
   if (pveGame.items.chalice) healPvePlayer(actual * 0.12);
   if (enemy.hp <= 0 && !enemy.dead) {
@@ -7167,7 +7525,7 @@ function stepSurvivalPve() {
         if (projectile.cardEffect === "JOKER") {
           hitDamage *= 0.5 + pveRandomIndex(151) / 100;
         }
-        damageSurvivalEnemy(enemy, hitDamage);
+        damageSurvivalEnemy(enemy, hitDamage, projectile.sourceWeaponId);
         if (projectile.cardEffect === "A") enemy.slowTime = Math.max(enemy.slowTime, 210);
         if (projectile.cardEffect === "K") pveGame.player.damageMultiplier *= 1.003;
         if (projectile.cardEffect === "Q") healPvePlayer(pveGame.player.maxHp * 0.012);
@@ -7188,6 +7546,7 @@ function stepSurvivalPve() {
             color: projectile.color,
             type: "shockwave",
             stun: 0,
+            sourceWeaponId: projectile.sourceWeaponId,
             survival: true
           });
         }
@@ -7223,7 +7582,7 @@ function stepSurvivalPve() {
             : Math.hypot(enemy.x - attack.x, enemy.y - attack.y) < enemy.radius + attack.radius;
         }
         if (hit) {
-          damageSurvivalEnemy(enemy, attack.damage);
+          damageSurvivalEnemy(enemy, attack.damage, attack.sourceWeaponId);
           if (attack.stun) enemy.stunTime = Math.max(enemy.stunTime, attack.stun);
           if (attack.slow) enemy.slowTime = Math.max(enemy.slowTime, 150);
           if (attack.pull) {
@@ -7347,38 +7706,32 @@ function stepSurvivalReaper() {
 
 function drawSurvivalPve() {
   pveCtx.clearRect(0, 0, pveCanvas.width, pveCanvas.height);
-  pveCtx.fillStyle = "#070d15";
-  pveCtx.fillRect(0, 0, pveCanvas.width, pveCanvas.height);
-  pveCtx.strokeStyle = "rgba(91, 207, 255, 0.055)";
-  for (let x = 0; x <= pveCanvas.width; x += 50) {
-    pveCtx.beginPath(); pveCtx.moveTo(x, 0); pveCtx.lineTo(x, pveCanvas.height); pveCtx.stroke();
-  }
-  for (let y = 0; y <= pveCanvas.height; y += 50) {
-    pveCtx.beginPath(); pveCtx.moveTo(0, y); pveCtx.lineTo(pveCanvas.width, y); pveCtx.stroke();
-  }
+  drawCombatBackdrop(pveCtx, pveCanvas.width, pveCanvas.height, pveGame.tick, "#38bdf8", "#a78bfa");
   const player = pveGame.player;
   pveGame.xpOrbs.forEach(orb => {
-    pveCtx.save();
-    pveCtx.shadowColor = "#7dd3fc";
-    pveCtx.shadowBlur = 14;
-    pveCtx.fillStyle = "#67e8f9";
-    pveCtx.beginPath();
-    pveCtx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-    pveCtx.fill();
-    pveCtx.restore();
+    drawLuminousCore(pveCtx, orb.x, orb.y, orb.radius, "#22d3ee", "#d9fbff", pveGame.tick + orb.x, 0.72);
   });
   pveGame.pickups.forEach(pickup => {
     pveCtx.save();
     pveCtx.translate(pickup.x, pickup.y);
+    pveCtx.rotate(pveGame.tick * 0.012);
+    pveCtx.globalCompositeOperation = "lighter";
     pveCtx.shadowColor = pickup.type === "heal" ? "#4ade80" : "#67e8f9";
-    pveCtx.shadowBlur = 22;
-    pveCtx.fillStyle = pickup.type === "heal" ? "#22c55e" : "#0f172a";
+    pveCtx.shadowBlur = 32;
+    pveCtx.fillStyle = pickup.type === "heal" ? "#16a34a" : "#071827";
     pveCtx.strokeStyle = pickup.type === "heal" ? "#bbf7d0" : "#a5f3fc";
     pveCtx.lineWidth = 3;
     pveCtx.beginPath();
     pveCtx.arc(0, 0, pickup.radius + Math.sin(pveGame.tick * 0.08) * 2, 0, Math.PI * 2);
     pveCtx.fill();
     pveCtx.stroke();
+    pveCtx.globalAlpha = 0.45;
+    pveCtx.setLineDash([5, 6]);
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, pickup.radius + 9, 0, Math.PI * 2);
+    pveCtx.stroke();
+    pveCtx.globalAlpha = 1;
+    pveCtx.setLineDash([]);
     if (pickup.type === "heal") {
       pveCtx.fillStyle = "#f0fdf4";
       pveCtx.fillRect(-4, -11, 8, 22);
@@ -7449,24 +7802,22 @@ function drawSurvivalPve() {
     pveCtx.save();
     const angle = Math.atan2(projectile.vy, projectile.vx);
     const speed = Math.hypot(projectile.vx, projectile.vy);
-    if (projectile.trail) {
-      pveCtx.globalAlpha = 0.42;
-      pveCtx.strokeStyle = projectile.trail;
-      pveCtx.lineWidth = Math.max(3, projectile.radius * 0.65);
-      pveCtx.beginPath();
-      pveCtx.moveTo(projectile.x, projectile.y);
-      pveCtx.lineTo(
-        projectile.x - Math.cos(angle) * (18 + speed * 1.4),
-        projectile.y - Math.sin(angle) * (18 + speed * 1.4)
-      );
-      pveCtx.stroke();
-      pveCtx.globalAlpha = 1;
-    }
+    drawMotionTrail(
+      pveCtx,
+      projectile.x,
+      projectile.y,
+      projectile.vx,
+      projectile.vy,
+      projectile.radius,
+      projectile.trail || projectile.color,
+      projectile.visual === "star" || projectile.visual === "lance" ? 0.78 : 0.5
+    );
     pveCtx.translate(projectile.x, projectile.y);
     pveCtx.rotate(angle);
     pveCtx.fillStyle = projectile.color;
     pveCtx.shadowColor = projectile.color;
-    pveCtx.shadowBlur = 12;
+    pveCtx.shadowBlur = 24;
+    pveCtx.globalCompositeOperation = "lighter";
     if (projectile.visual === "card") {
       pveCtx.fillStyle = "#f7f4eb";
       pveCtx.strokeStyle = projectile.color;
@@ -7523,9 +7874,16 @@ function drawSurvivalPve() {
       pveCtx.closePath();
       pveCtx.fill();
     } else {
-      pveCtx.beginPath();
-      pveCtx.arc(0, 0, projectile.radius, 0, Math.PI * 2);
-      pveCtx.fill();
+      drawLuminousCore(
+        pveCtx,
+        0,
+        0,
+        projectile.radius,
+        projectile.color,
+        projectile.trail || "#f7fbff",
+        pveGame.tick + projectile.x,
+        0.86
+      );
       if (projectile.visual === "pulse") {
         pveCtx.strokeStyle = "#d9fbff";
         pveCtx.lineWidth = 2;
@@ -7552,10 +7910,33 @@ function drawSurvivalPve() {
       pveCtx.fillText(enemy.boss ? "BOSS" : "MINI BOSS", enemy.x, enemy.y - enemy.radius - 17);
       pveCtx.restore();
     }
-    pveCtx.fillStyle = enemy.color;
+    const enemyAccent = enemy.boss ? "#ff426c" : enemy.miniBoss ? "#fde68a" : "#ff8fab";
+    drawMotionTrail(pveCtx, enemy.x, enemy.y, enemy.vx || 0, enemy.vy || 0, enemy.radius, enemyAccent, 0.16);
+    drawLuminousCore(
+      pveCtx,
+      enemy.x,
+      enemy.y,
+      enemy.radius,
+      enemy.color,
+      enemyAccent,
+      pveGame.tick + enemy.x,
+      enemy.boss ? 0.92 : enemy.miniBoss ? 0.78 : 0.48
+    );
+    pveCtx.save();
+    pveCtx.globalCompositeOperation = "lighter";
+    pveCtx.globalAlpha = enemy.boss ? 0.72 : 0.38;
+    pveCtx.strokeStyle = enemyAccent;
+    pveCtx.lineWidth = enemy.boss ? 3 : 1.5;
     pveCtx.beginPath();
-    pveCtx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    pveCtx.fill();
+    pveCtx.arc(
+      enemy.x,
+      enemy.y,
+      enemy.radius + 5 + Math.sin(pveGame.tick * 0.12 + enemy.x) * 2,
+      pveGame.tick * 0.015,
+      pveGame.tick * 0.015 + Math.PI * 1.42
+    );
+    pveCtx.stroke();
+    pveCtx.restore();
     const hpRate = clamp(enemy.hp / enemy.maxHp, 0, 1);
     pveCtx.fillStyle = "rgba(0,0,0,.65)";
     const barWidth = enemy.boss ? 130 : enemy.miniBoss ? 100 : enemy.radius * 2;
@@ -7573,10 +7954,8 @@ function drawSurvivalPve() {
     pveCtx.arc(player.x, player.y, player.radius + 12, 0, Math.PI * 2);
     pveCtx.stroke();
   }
-  pveCtx.fillStyle = "#3dd6d0";
-  pveCtx.beginPath();
-  pveCtx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-  pveCtx.fill();
+  drawMotionTrail(pveCtx, player.x, player.y, player.vx || 0, player.vy || 0, player.radius, "#67e8f9", 0.32);
+  drawLuminousCore(pveCtx, player.x, player.y, player.radius, "#22b8b5", "#67e8f9", pveGame.tick, 0.82);
   pveCtx.fillStyle = "#071018";
   pveCtx.beginPath();
   pveCtx.arc(player.x + 7, player.y - 7, 5, 0, Math.PI * 2);
