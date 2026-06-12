@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260613a";
+const SIMULATION_VERSION = "20260613b";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -373,15 +373,15 @@ const characterGuide = {
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
     normal: ["건너뛰기", "12초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
-    ultimate: ["리플레이", "40초", "0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 도착 지점에 30 피해의 시간 폭발을 일으킵니다."]
+    ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 도착 지점에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
-    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 25의 피해를 주고 연결된 일반 균열을 소모합니다."],
+    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 20의 피해를 주고 연결된 일반 균열을 소모합니다."],
     normal: ["보이드", "30초", "무작위 벽에 3회까지 버티며 모든 균열과 연결되는 공허 균열을 소환합니다."],
     ultimate: ["게이트", "6초", "가장 가까운 자신의 균열로 즉시 이동합니다. 균열은 이동에 사용해도 사라지지 않습니다."]
   },
   summoner: {
-    attack: ["일어나라!", "3초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 소환수는 적의 공격을 대신 맞을 수 있습니다."],
+    attack: ["일어나라!", "3초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
     normal: ["체제 전환", "12초", "소환 체제를 전사와 궁수 사이에서 전환합니다. 전사는 추격과 접촉 공격, 궁수는 거리 유지와 원거리 공격을 담당합니다."],
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
   }
@@ -1753,6 +1753,7 @@ function characterBaseSpeed(fighter) {
   if (fighter.stealthTime > 0) return fighter.hyperStealthActive ? 125 : 12.5;
   if (fighter.canThrow) return 5.9;
   if (fighter.canGrab) return 6.2;
+  if (fighter.kind === "riftmaker") return 5.44;
   if (fighter.kind === "tank") return 5.7;
   if (fighter.kind === "brawler") return 7.1;
   return 6.8;
@@ -2001,6 +2002,7 @@ function beginReplay(fighter) {
     y: snapshot.y,
     lostHp: Math.max(0, snapshot.hp - fighter.hp)
   };
+  fighter.clockHandTimer = 0;
   fighter.replayWindup = 30;
   addVisualEffect({
     type: "replay-charge",
@@ -2037,8 +2039,11 @@ function finishReplay(fighter) {
     life: 34,
     maxLife: 34
   });
+  const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 145);
   const targetFighter = opponentOf(fighter);
-  if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 145 + targetFighter.radius) {
+  if (summonTarget) {
+    damageSummon(summonTarget, 30, fighter);
+  } else if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 145 + targetFighter.radius) {
     damage(targetFighter, 30, fighter);
   }
   fighter.replayTarget = null;
@@ -2233,16 +2238,18 @@ function updateRifts(dt) {
     const connections = riftConnections(rifts);
     for (const [a, b] of connections) {
       if (a.hitCooldown > 0 || b.hitCooldown > 0) continue;
-      if (pointSegmentDistance(target.x, target.y, a.x, a.y, b.x, b.y) > target.radius + 8) continue;
-      damage(target, 25, owner);
+      const summonTarget = enemySummonOnLine(owner, a.x, a.y, b.x, b.y, 8);
+      if (!summonTarget && pointSegmentDistance(target.x, target.y, a.x, a.y, b.x, b.y) > target.radius + 8) continue;
+      if (summonTarget) damageSummon(summonTarget, 20, owner);
+      else damage(target, 20, owner);
       a.hitsRemaining -= 1;
       b.hitsRemaining -= 1;
       a.hitCooldown = 30;
       b.hitCooldown = 30;
       addVisualEffect({
         type: "rift-hit",
-        x: target.x,
-        y: target.y,
+        x: summonTarget?.x ?? target.x,
+        y: summonTarget?.y ?? target.y,
         color: owner.accent,
         life: 24,
         maxLife: 24
@@ -2277,8 +2284,8 @@ function summonUnit(owner, elite = false) {
     vx: 0,
     vy: 0,
     radius,
-    hp: archer ? (elite ? 20 : 5) : (elite ? 60 : 15),
-    maxHp: archer ? (elite ? 20 : 5) : (elite ? 60 : 15),
+    hp: archer ? (elite ? 20 : 5) : (elite ? 60 : 12),
+    maxHp: archer ? (elite ? 20 : 5) : (elite ? 60 : 12),
     life: archer && !elite ? 600 : Infinity,
     attackTimer: archer ? (elite ? 300 : 180) : Infinity,
     contactCooldown: 0,
@@ -2333,7 +2340,7 @@ function fireSummonArrow(summon) {
     radius: elite ? 9 : 7,
     life: elite ? 300 : 180,
     hitCooldown: 0,
-    damage: elite ? 15 : 5,
+    damage: elite ? 15 : 8,
     speed: elite ? 12 : 14,
     color: elite ? "#fde047" : "#86efac",
     homing: false,
@@ -2656,12 +2663,17 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "tank") {
     const target = opponentOf(fighter);
-    damage(target, 10, fighter);
-    const angle = Math.atan2(fighter.y - target.y, fighter.x - target.x);
-    const speed = Math.hypot(target.vx, target.vy) || 6.8;
-    target.vx = Math.cos(angle) * speed;
-    target.vy = Math.sin(angle) * speed;
-    target.silenceTime = Math.max(target.silenceTime, 120);
+    const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 220);
+    if (summonTarget) {
+      damageSummon(summonTarget, 10, fighter);
+    } else {
+      damage(target, 10, fighter);
+      const angle = Math.atan2(fighter.y - target.y, fighter.x - target.x);
+      const speed = Math.hypot(target.vx, target.vy) || 6.8;
+      target.vx = Math.cos(angle) * speed;
+      target.vy = Math.sin(angle) * speed;
+      target.silenceTime = Math.max(target.silenceTime, 120);
+    }
     addSkillPulse(fighter, fighter.accent);
     fighter.skillTimer = 720;
     return;
@@ -3021,9 +3033,17 @@ function moveFighter(fighter, dt) {
   if (fighter.unstoppableTime > 0) {
     fighter.unstoppableTime -= dt;
     const target = opponentOf(fighter);
-    if (!fighter.unstoppableHit && Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
-      damage(target, 40, fighter);
-      fighter.unstoppableHit = true;
+    if (!fighter.unstoppableHit) {
+      const summonTarget = enemySummonsOf(fighter).find(summon => (
+        Math.hypot(summon.x - fighter.x, summon.y - fighter.y) < summon.radius + fighter.radius + 52
+      ));
+      if (summonTarget) {
+        damageSummon(summonTarget, 40, fighter);
+        fighter.unstoppableHit = true;
+      } else if (Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
+        damage(target, 40, fighter);
+        fighter.unstoppableHit = true;
+      }
     }
   }
   if (fighter.slowTime > 0) fighter.slowTime -= dt;
@@ -3091,9 +3111,13 @@ function moveFighter(fighter, dt) {
   if (fighter.kind === "brawler") {
     if (fighter.punchTimer > 0) fighter.punchTimer -= dt;
     fighter.idleAttackTime += dt;
+    const summonTarget = enemySummonsOf(fighter).find(summon => (
+      Math.hypot(summon.x - fighter.x, summon.y - fighter.y) < fighter.radius + summon.radius + 52
+    ));
     const distance = Math.hypot(target.x - fighter.x, target.y - fighter.y);
-    if (distance < fighter.radius + target.radius + 52 && fighter.punchTimer <= 0) {
-      punchTarget(fighter, target);
+    if (fighter.punchTimer <= 0) {
+      if (summonTarget) punchSummon(fighter, summonTarget);
+      else if (distance < fighter.radius + target.radius + 52) punchTarget(fighter, target);
     }
   }
 
@@ -3420,6 +3444,20 @@ function punchTarget(owner, target) {
   addVisualEffect({
     type: "rage-burst",
     fighter: target,
+    life: 18,
+    maxLife: 18,
+    color: owner.accent
+  });
+}
+
+function punchSummon(owner, summon) {
+  const damageAmount = 7 + (owner.gritActive ? 8 : 0);
+  damageSummon(summon, damageAmount, owner);
+  owner.punchTimer = 60;
+  owner.idleAttackTime = 0;
+  addVisualEffect({
+    type: "rage-burst",
+    fighter: summon,
     life: 18,
     maxLife: 18,
     color: owner.accent
@@ -3937,7 +3975,22 @@ function drawLuminousCore(renderCtx, x, y, radius, color, accent, tick, alpha = 
 
 function drawArena() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawCombatBackdrop(ctx, canvas.width, canvas.height, game.tick);
+  ctx.fillStyle = "#0d1118";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 1;
+  for (let x = 40; x < canvas.width; x += 40) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 40; y < canvas.height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
@@ -4307,29 +4360,9 @@ function drawStealthBurst(effect) {
 }
 
 function drawFighter(fighter) {
-  drawMotionTrail(
-    ctx,
-    fighter.x,
-    fighter.y,
-    fighter.vx,
-    fighter.vy,
-    fighter.radius,
-    fighter.rageTime > 0 ? "#ff174f" : fighter.accent,
-    fighter.stealthTime > 0 ? 0.18 : 0.28
-  );
   ctx.save();
   ctx.translate(fighter.x, fighter.y);
   drawFighterAuras(fighter);
-  drawLuminousCore(
-    ctx,
-    0,
-    0,
-    fighter.radius + 2,
-    fighter.rageTime > 0 ? "#c20b3f" : fighter.color,
-    fighter.rageTime > 0 ? "#ff6b8a" : fighter.accent,
-    game.tick,
-    fighter.stealthTime > 0 ? 0.34 : 0.56
-  );
   ctx.beginPath();
   ctx.arc(0, 0, fighter.radius + 7, 0, Math.PI * 2);
   ctx.fillStyle = fighter.hitFlash > 0
@@ -6168,7 +6201,15 @@ function updatePveHud() {
 function drawPve() {
   if (!pveGame) return;
   pveCtx.clearRect(0, 0, pveCanvas.width, pveCanvas.height);
-  drawCombatBackdrop(pveCtx, pveCanvas.width, pveCanvas.height, pveGame.tick);
+  pveCtx.fillStyle = "#0d1118";
+  pveCtx.fillRect(0, 0, pveCanvas.width, pveCanvas.height);
+  pveCtx.strokeStyle = "rgba(255,255,255,0.05)";
+  for (let x = 40; x < pveCanvas.width; x += 40) {
+    pveCtx.beginPath(); pveCtx.moveTo(x, 0); pveCtx.lineTo(x, pveCanvas.height); pveCtx.stroke();
+  }
+  for (let y = 40; y < pveCanvas.height; y += 40) {
+    pveCtx.beginPath(); pveCtx.moveTo(0, y); pveCtx.lineTo(pveCanvas.width, y); pveCtx.stroke();
+  }
   const player = pveGame.player;
   if (player.rageTime > 0 || player.unstoppableTime > 0 || player.unstoppableWindup > 0 || player.hyperStealthActive) {
     pveCtx.save();
@@ -6185,18 +6226,11 @@ function drawPve() {
     pveCtx.stroke();
     pveCtx.restore();
   }
-  drawMotionTrail(pveCtx, player.x, player.y, player.vx, player.vy, player.radius, player.accent, 0.32);
-  drawLuminousCore(
-    pveCtx,
-    player.x,
-    player.y,
-    player.radius,
-    player.hitFlash > 0 ? "#ffffff" : player.rageTime > 0 ? "#ff174f" : player.color,
-    player.accent,
-    pveGame.tick,
-    player.stealthTime > 0 ? 0.38 : 0.78
-  );
+  pveCtx.beginPath();
+  pveCtx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   pveCtx.globalAlpha = player.stealthTime > 0 ? 0.36 : 1;
+  pveCtx.fillStyle = player.hitFlash > 0 ? "#ffffff" : player.rageTime > 0 ? "#ff174f" : player.color;
+  pveCtx.fill();
   pveCtx.beginPath();
   pveCtx.arc(player.x + 7, player.y - 7, 6, 0, Math.PI * 2);
   pveCtx.fillStyle = "#101319";
@@ -7706,7 +7740,15 @@ function stepSurvivalReaper() {
 
 function drawSurvivalPve() {
   pveCtx.clearRect(0, 0, pveCanvas.width, pveCanvas.height);
-  drawCombatBackdrop(pveCtx, pveCanvas.width, pveCanvas.height, pveGame.tick, "#38bdf8", "#a78bfa");
+  pveCtx.fillStyle = "#070d15";
+  pveCtx.fillRect(0, 0, pveCanvas.width, pveCanvas.height);
+  pveCtx.strokeStyle = "rgba(91, 207, 255, 0.055)";
+  for (let x = 0; x <= pveCanvas.width; x += 50) {
+    pveCtx.beginPath(); pveCtx.moveTo(x, 0); pveCtx.lineTo(x, pveCanvas.height); pveCtx.stroke();
+  }
+  for (let y = 0; y <= pveCanvas.height; y += 50) {
+    pveCtx.beginPath(); pveCtx.moveTo(0, y); pveCtx.lineTo(pveCanvas.width, y); pveCtx.stroke();
+  }
   const player = pveGame.player;
   pveGame.xpOrbs.forEach(orb => {
     drawLuminousCore(pveCtx, orb.x, orb.y, orb.radius, "#22d3ee", "#d9fbff", pveGame.tick + orb.x, 0.72);
@@ -7910,33 +7952,10 @@ function drawSurvivalPve() {
       pveCtx.fillText(enemy.boss ? "BOSS" : "MINI BOSS", enemy.x, enemy.y - enemy.radius - 17);
       pveCtx.restore();
     }
-    const enemyAccent = enemy.boss ? "#ff426c" : enemy.miniBoss ? "#fde68a" : "#ff8fab";
-    drawMotionTrail(pveCtx, enemy.x, enemy.y, enemy.vx || 0, enemy.vy || 0, enemy.radius, enemyAccent, 0.16);
-    drawLuminousCore(
-      pveCtx,
-      enemy.x,
-      enemy.y,
-      enemy.radius,
-      enemy.color,
-      enemyAccent,
-      pveGame.tick + enemy.x,
-      enemy.boss ? 0.92 : enemy.miniBoss ? 0.78 : 0.48
-    );
-    pveCtx.save();
-    pveCtx.globalCompositeOperation = "lighter";
-    pveCtx.globalAlpha = enemy.boss ? 0.72 : 0.38;
-    pveCtx.strokeStyle = enemyAccent;
-    pveCtx.lineWidth = enemy.boss ? 3 : 1.5;
+    pveCtx.fillStyle = enemy.color;
     pveCtx.beginPath();
-    pveCtx.arc(
-      enemy.x,
-      enemy.y,
-      enemy.radius + 5 + Math.sin(pveGame.tick * 0.12 + enemy.x) * 2,
-      pveGame.tick * 0.015,
-      pveGame.tick * 0.015 + Math.PI * 1.42
-    );
-    pveCtx.stroke();
-    pveCtx.restore();
+    pveCtx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+    pveCtx.fill();
     const hpRate = clamp(enemy.hp / enemy.maxHp, 0, 1);
     pveCtx.fillStyle = "rgba(0,0,0,.65)";
     const barWidth = enemy.boss ? 130 : enemy.miniBoss ? 100 : enemy.radius * 2;
@@ -7954,8 +7973,10 @@ function drawSurvivalPve() {
     pveCtx.arc(player.x, player.y, player.radius + 12, 0, Math.PI * 2);
     pveCtx.stroke();
   }
-  drawMotionTrail(pveCtx, player.x, player.y, player.vx || 0, player.vy || 0, player.radius, "#67e8f9", 0.32);
-  drawLuminousCore(pveCtx, player.x, player.y, player.radius, "#22b8b5", "#67e8f9", pveGame.tick, 0.82);
+  pveCtx.fillStyle = "#3dd6d0";
+  pveCtx.beginPath();
+  pveCtx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+  pveCtx.fill();
   pveCtx.fillStyle = "#071018";
   pveCtx.beginPath();
   pveCtx.arc(player.x + 7, player.y - 7, 5, 0, Math.PI * 2);
