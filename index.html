@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260607af">
+  <link rel="stylesheet" href="style.css?v=20260612b">
 </head>
 <body>
   <main class="app">
@@ -321,23 +321,14 @@
     <section id="pveScreen" class="screen">
       <div class="panel survival-entry-panel">
         <div class="survival-entry-copy">
-          <span>PVE · ENDLESS SURVIVAL</span>
-          <h1>균열 생존</h1>
-          <p>적을 처치하고 XP를 흡수해 무기와 아이템을 성장시키세요. 오래 생존할수록 적은 강해지고 코인 보상도 커집니다.</p>
-          <div class="survival-entry-rules">
-            <div><strong>4</strong><span>무기 슬롯</span></div>
-            <div><strong>5</strong><span>아이템 슬롯</span></div>
-            <div><strong>∞</strong><span>서브 증강</span></div>
-          </div>
+          <h1>VOID SURVIVER</h1>
           <div class="survival-entry-actions">
             <button id="backFromPveButton" class="ghost-button" type="button">로비로</button>
             <button id="pveStageStartButton" class="primary-button" type="button">생존 시작</button>
           </div>
         </div>
         <div class="survival-entry-visual" aria-hidden="true">
-          <div class="survival-core">M</div>
-          <span>LEVEL UP</span>
-          <i>WEAPON · ITEM · SUB</i>
+          <div class="survival-core"></div>
         </div>
       </div>
     </section>
@@ -353,7 +344,7 @@
     <section id="pveBattleScreen" class="screen game-screen">
       <div class="survival-layout">
         <aside class="survival-effects-panel">
-          <header><span>BUILD</span><strong>현재 효과</strong></header>
+          <header><strong>현재 효과</strong></header>
           <div id="pveBuildList" class="survival-build-list"></div>
         </aside>
         <div class="survival-battle-column">
@@ -364,7 +355,7 @@
               <b id="pvePlayerHealthText">200 / 200</b>
             </div>
             <div class="survival-timer">
-              <span>ELAPSED</span>
+              <span>TIME</span>
               <strong id="pveElapsedTime">00:00</strong>
             </div>
             <div class="survival-kills">
@@ -708,6 +699,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260607af"></script>
+  <script src="game.js?v=20260612b"></script>
 </body>
 </html>

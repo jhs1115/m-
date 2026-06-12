@@ -43,8 +43,12 @@ create table if not exists public.match_queue (
   user_id uuid primary key references public.app_users(id) on delete cascade,
   tier text not null,
   joined_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
   matched_room_code text references public.app_rooms(code) on delete set null
 );
+
+alter table public.match_queue
+add column if not exists last_seen_at timestamptz not null default now();
 
 create table if not exists public.pve_runs (
   id uuid primary key default gen_random_uuid(),
@@ -397,6 +401,33 @@ begin
     raise exception 'login required';
   end if;
 
+  update public.match_queue
+  set last_seen_at = now()
+  where user_id = active_user.id;
+
+  delete from public.app_rooms room
+  where coalesce((room.prep_state->>'matchmaking')::boolean, false)
+    and not coalesce((room.prep_state->>'started')::boolean, false)
+    and exists (
+      select 1
+      from unnest(room.player_ids) as participant_id
+      left join public.match_queue queue on queue.user_id = participant_id
+      where queue.user_id is null
+        or queue.last_seen_at < now() - interval '8 seconds'
+    );
+
+  delete from public.match_queue queue
+  where queue.matched_room_code is not null
+    and not exists (
+      select 1
+      from public.app_rooms room
+      where room.code = queue.matched_room_code
+    );
+
+  delete from public.match_queue
+  where matched_room_code is null
+    and last_seen_at < now() - interval '8 seconds';
+
   select matched_room_code into existing_room_code
   from public.match_queue
   where user_id = active_user.id;
@@ -412,10 +443,11 @@ begin
 
   active_tier := public.lp_tier(active_user.lp);
 
-  insert into public.match_queue (user_id, tier)
-  values (active_user.id, active_tier)
+  insert into public.match_queue (user_id, tier, last_seen_at)
+  values (active_user.id, active_tier, now())
   on conflict (user_id) do update
-  set tier = excluded.tier;
+  set tier = excluded.tier,
+      last_seen_at = now();
 
   select greatest(0, extract(epoch from now() - joined_at)::int)
   into elapsed_seconds
@@ -431,6 +463,7 @@ begin
   join public.app_users u on u.id = q.user_id
   where q.user_id <> active_user.id
     and q.matched_room_code is null
+    and q.last_seen_at >= now() - interval '5 seconds'
     and array_position(tiers, q.tier) between min_index and max_index
   order by q.joined_at
   limit 1
@@ -466,7 +499,8 @@ begin
   );
 
   update public.match_queue
-  set matched_room_code = new_code
+  set matched_room_code = new_code,
+      last_seen_at = now()
   where user_id in (active_user.id, opponent.id);
 
   return jsonb_build_object('matched', true, 'room', public.app_room_json(new_code));
@@ -835,7 +869,8 @@ begin
   select array_agg(kind) into available
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
-    'tank', 'beamer', 'wild', 'vampire', 'brawler'
+    'tank', 'beamer', 'wild', 'vampire', 'brawler',
+    'timekeeper', 'riftmaker', 'summoner'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
@@ -957,6 +992,7 @@ begin
       + floor(least(greatest(elapsed_seconds - 300, 0), 300) / 30.0)::integer * 12
       + floor(greatest(elapsed_seconds - 600, 0) / 30.0)::integer * 18
       + floor(elapsed_seconds / 300.0)::integer * 50
+      + case when elapsed_seconds >= 600 then 50 else 0 end
       + safe_bonus
   );
 
