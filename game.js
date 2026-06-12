@@ -113,6 +113,9 @@ const ui = {
   pveBuildList: document.getElementById("pveBuildList"),
   pveAugmentOverlay: document.getElementById("pveAugmentOverlay"),
   pveAugmentChoices: document.getElementById("pveAugmentChoices"),
+  pveAwakeningOverlay: document.getElementById("pveAwakeningOverlay"),
+  pveAwakeningName: document.getElementById("pveAwakeningName"),
+  pveAwakeningDescription: document.getElementById("pveAwakeningDescription"),
   pveResultOverlay: document.getElementById("pveResultOverlay"),
   pveResultTimeTop: document.getElementById("pveResultTimeTop"),
   pveResultEyebrow: document.getElementById("pveResultEyebrow"),
@@ -4688,25 +4691,30 @@ function populatePveStage(stage) {
 }
 
 const SURVIVAL_WEAPONS = {
-  pulse: { name: "공 투척기", icon: "●", color: "#67e8f9", item: "scope", baseCooldown: 105, description: "가장 가까운 적에게 크고 빠른 공을 발사합니다." },
-  star: { name: "스타 스트라이크", icon: "★", color: "#fde68a", item: "scope", baseCooldown: 480, description: "수명이 긴 별 탄환 두 개를 발사합니다." },
-  ram: { name: "몸통 박치기", icon: "B", color: "#fb7185", item: "engine", baseCooldown: 210, description: "적을 향해 짧고 굵은 돌진 탄환을 발사합니다." },
-  charge: { name: "불가항력", icon: "➤", color: "#fb7185", item: "engine", baseCooldown: 360, description: "적을 향해 강력한 돌진 파동을 발사합니다." },
-  grapple: { name: "그랩", icon: "⌁", color: "#c4b5fd", item: "reel", baseCooldown: 260, description: "적들을 관통하는 그랩 창을 발사합니다." },
-  grapplePlus: { name: "강화 그랩", icon: "≋", color: "#ddd6fe", item: "reel", baseCooldown: 390, description: "더 넓고 빠른 강화 그랩을 발사합니다." },
-  poker: { name: "와일드 카드", icon: "A", color: "#fda4af", item: "deck", baseCooldown: 270, description: "서로 다른 피해를 가진 카드 다섯 장을 펼쳐 던집니다." },
-  draw: { name: "드로우", icon: "J", color: "#fb7185", item: "deck", baseCooldown: 210, description: "특수 효과를 가진 카드 한 장을 빠르게 던집니다." },
-  shadow: { name: "암살의 잔상", icon: "✦", color: "#60a5fa", item: "cloak", baseCooldown: 420, description: "가까운 적에게 잔상을 남기는 범위 참격을 가합니다." },
-  temper: { name: "강화 타격", icon: "E", color: "#fdba74", item: "furnace", baseCooldown: 230, description: "시간에 따라 강해지는 무거운 타격을 발사합니다." },
-  forge: { name: "갓 웨폰", icon: "†", color: "#fbbf24", item: "furnace", baseCooldown: 330, description: "회전하는 무기를 적에게 발사한 뒤 되돌립니다." },
-  shock: { name: "충격파", icon: "◉", color: "#94a3b8", item: "core", baseCooldown: 390, description: "주변 적에게 피해를 주고 밀어내는 충격파를 일으킵니다." },
-  taunt: { name: "도발", icon: "!", color: "#cbd5e1", item: "core", baseCooldown: 360, description: "주변 적에게 피해를 주고 잠시 느리게 만듭니다." },
-  shield: { name: "야수의 방패", icon: "⬟", color: "#e2e8f0", item: "core", baseCooldown: 600, description: "주변에 강력한 방패 폭발을 일으킵니다." },
-  beam: { name: "천공 레이저", icon: "┃", color: "#38bdf8", item: "lens", baseCooldown: 300, description: "적의 위치를 예고한 뒤 세로 레이저로 포격합니다." },
-  slowBeam: { name: "슬로우 빔", icon: "═", color: "#7dd3fc", item: "lens", baseCooldown: 330, description: "적들을 관통하고 느리게 만드는 넓은 빔을 발사합니다." },
-  wild: { name: "야생의 발톱", icon: "W", color: "#a3e635", item: "fang", baseCooldown: 240, description: "무작위 적 주변을 세 차례 할큅니다." },
-  blood: { name: "핏빛 탄환", icon: "◆", color: "#f43f5e", item: "chalice", baseCooldown: 300, description: "체력이 낮을수록 강해지는 피의 탄환을 발사합니다." },
-  fist: { name: "맨몸 난타", icon: "F", color: "#fb923c", item: "knuckle", baseCooldown: 90, description: "가까운 적에게 빠른 범위 주먹 공격을 가합니다." }
+  pulse: { name: "공 투척기", awakenedName: "궤도 포화", icon: "●", color: "#67e8f9", item: "scope", baseCooldown: 105, description: "가장 가까운 적에게 크고 빠른 공을 발사합니다.", awakenedDescription: "유도 공 4개가 관통하며 피격 지점에 작은 폭발을 일으킵니다." },
+  star: { name: "스타 스트라이크", awakenedName: "초신성 강하", icon: "★", color: "#fde68a", item: "scope", baseCooldown: 480, description: "수명이 긴 별 탄환 두 개를 발사합니다.", awakenedDescription: "거대한 별 5개가 벽을 튕기며 적을 반복 관통합니다." },
+  ram: { name: "몸통 박치기", awakenedName: "붉은 군단", icon: "B", color: "#fb7185", item: "engine", baseCooldown: 210, description: "적을 향해 짧고 굵은 돌진 탄환을 발사합니다.", awakenedDescription: "세 방향 돌진체가 적을 관통하고 충돌 지점에서 폭발합니다." },
+  charge: { name: "불가항력", awakenedName: "절대 돌파", icon: "➤", color: "#fb7185", item: "engine", baseCooldown: 360, description: "적을 향해 강력한 돌진 파동을 발사합니다.", awakenedDescription: "초대형 파동 3개가 화면 끝까지 모든 적을 뚫고 지나갑니다." },
+  grapple: { name: "그랩", awakenedName: "천쇄", icon: "⌁", color: "#c4b5fd", item: "reel", baseCooldown: 260, description: "적들을 관통하는 그랩 창을 발사합니다.", awakenedDescription: "무한 관통 창이 적을 중심으로 끌어당기며 지나갑니다." },
+  grapplePlus: { name: "강화 그랩", awakenedName: "삼중 포획망", icon: "≋", color: "#ddd6fe", item: "reel", baseCooldown: 390, description: "더 넓고 빠른 강화 그랩을 발사합니다.", awakenedDescription: "거대한 강화 그랩 3개가 부채꼴로 전장을 가릅니다." },
+  poker: { name: "와일드 카드", awakenedName: "로열 플러시", icon: "A", color: "#fda4af", item: "deck", baseCooldown: 270, description: "서로 다른 피해를 가진 카드 다섯 장을 펼쳐 던집니다.", awakenedDescription: "카드 9장이 치명타와 상태 효과를 연속으로 발동합니다." },
+  draw: { name: "드로우", awakenedName: "데스 드로우", icon: "J", color: "#fb7185", item: "deck", baseCooldown: 210, description: "특수 효과를 가진 카드 한 장을 빠르게 던집니다.", awakenedDescription: "유도 카드 3장이 적을 관통하며 카드별 효과를 강화합니다." },
+  shadow: { name: "암살의 잔상", awakenedName: "무영참", icon: "✦", color: "#60a5fa", item: "cloak", baseCooldown: 420, description: "가까운 적에게 잔상을 남기는 범위 참격을 가합니다.", awakenedDescription: "적과 자신 위치에서 거대한 이중 참격이 발생하고 잠시 무적이 됩니다." },
+  temper: { name: "강화 타격", awakenedName: "무한 단련", icon: "E", color: "#fdba74", item: "furnace", baseCooldown: 230, description: "시간에 따라 강해지는 무거운 타격을 발사합니다.", awakenedDescription: "시간 성장 제한이 해제되고 폭발하는 강화탄을 발사합니다." },
+  forge: { name: "갓 웨폰", awakenedName: "신기 병장", icon: "†", color: "#fbbf24", item: "furnace", baseCooldown: 330, description: "회전하는 무기를 적에게 발사한 뒤 되돌립니다.", awakenedDescription: "다섯 개의 신기가 적을 추적하며 여러 번 관통합니다." },
+  shock: { name: "충격파", awakenedName: "대지 붕괴", icon: "◉", color: "#94a3b8", item: "core", baseCooldown: 390, description: "주변 적에게 피해를 주고 밀어내는 충격파를 일으킵니다.", awakenedDescription: "화면 대부분을 덮는 충격파가 높은 피해와 긴 기절을 줍니다." },
+  taunt: { name: "도발", awakenedName: "절대 도발", icon: "!", color: "#cbd5e1", item: "core", baseCooldown: 360, description: "주변 적에게 피해를 주고 잠시 느리게 만듭니다.", awakenedDescription: "전장 전체의 적을 중심으로 끌어당기고 크게 둔화시킵니다." },
+  shield: { name: "야수의 방패", awakenedName: "불멸의 성채", icon: "⬟", color: "#e2e8f0", item: "core", baseCooldown: 600, description: "주변에 강력한 방패 폭발을 일으킵니다.", awakenedDescription: "2초 무적 후 초대형 폭발로 적을 기절시킵니다." },
+  beam: { name: "천공 레이저", awakenedName: "천공 심판", icon: "┃", color: "#38bdf8", item: "lens", baseCooldown: 300, description: "적의 위치를 예고한 뒤 세로 레이저로 포격합니다.", awakenedDescription: "거대한 레이저 3개가 빠르게 연속 포격합니다." },
+  slowBeam: { name: "슬로우 빔", awakenedName: "시간 절단선", icon: "═", color: "#7dd3fc", item: "lens", baseCooldown: 330, description: "적들을 관통하고 느리게 만드는 넓은 빔을 발사합니다.", awakenedDescription: "세 갈래 초대형 빔이 적을 강하게 둔화시키며 관통합니다." },
+  wild: { name: "야생의 발톱", awakenedName: "백수의 난무", icon: "W", color: "#a3e635", item: "fang", baseCooldown: 240, description: "무작위 적 주변을 세 차례 할큅니다.", awakenedDescription: "일곱 번의 대형 할퀴기가 약한 적에게 치명적인 피해를 줍니다." },
+  blood: { name: "핏빛 탄환", awakenedName: "혈월", icon: "◆", color: "#f43f5e", item: "chalice", baseCooldown: 300, description: "체력이 낮을수록 강해지는 피의 탄환을 발사합니다.", awakenedDescription: "거대한 관통 혈탄 3개가 적을 추적하고 높은 흡혈을 제공합니다." },
+  fist: { name: "맨몸 난타", awakenedName: "투신 강림", icon: "F", color: "#fb923c", item: "knuckle", baseCooldown: 90, description: "가까운 적에게 빠른 범위 주먹 공격을 가합니다.", awakenedDescription: "초대형 연속 충격파가 짧은 주기로 전장을 쓸어냅니다." },
+  clock: { name: "초침", awakenedName: "종말의 시계", icon: "◷", color: "#67e8f9", item: "chronometer", baseCooldown: 240, description: "바라보는 방향에 넓은 시간 참격을 휘두릅니다.", awakenedDescription: "네 방향으로 거대한 시간 참격을 연속 발동합니다." },
+  replay: { name: "리플레이", awakenedName: "영겁 회귀", icon: "↶", color: "#f2c14e", item: "chronometer", baseCooldown: 540, description: "주변에 시간 폭발을 일으키고 체력을 조금 회복합니다.", awakenedDescription: "세 차례 시간 폭발과 큰 회복을 일으키며 잠시 무적이 됩니다." },
+  rift: { name: "균열 레이저", awakenedName: "차원 붕괴선", icon: "R", color: "#a78bfa", item: "voidCore", baseCooldown: 280, description: "전장을 가로지르는 균열 광선을 생성합니다.", awakenedDescription: "여러 방향의 초대형 균열선이 전장을 반복 절단합니다." },
+  void: { name: "보이드", awakenedName: "공허 특이점", icon: "◌", color: "#22d3ee", item: "voidCore", baseCooldown: 420, description: "적이 모인 위치에 공허 폭발을 일으킵니다.", awakenedDescription: "거대한 특이점이 적을 끌어당기며 연속 폭발합니다." },
+  legion: { name: "일어나라!", awakenedName: "군단 강림", icon: "N", color: "#4ade80", item: "commandSeal", baseCooldown: 250, description: "전장 가장자리에서 소환수의 탄환을 발사합니다.", awakenedDescription: "전장 사방에서 강화 소환수 군단이 화살을 쏟아냅니다." }
 };
 
 const SURVIVAL_ITEMS = {
@@ -4720,7 +4728,10 @@ const SURVIVAL_ITEMS = {
   lens: { name: "절멸 렌즈", icon: "◇", weapon: "beam", description: "천공 레이저를 두 번 포격하지만 각 포격의 피해는 감소합니다.", effect: "레이저 분할 포격" },
   fang: { name: "포식자의 송곳니", icon: "V", weapon: "wild", description: "체력이 절반 이하인 적에게 35% 추가 피해를 줍니다.", effect: "약한 적 추격" },
   chalice: { name: "핏빛 성배", icon: "♥", weapon: "blood", description: "입힌 피해의 12%를 회복합니다.", effect: "피해 흡혈 12%" },
-  knuckle: { name: "투지의 너클", icon: "F", weapon: "fist", description: "체력이 절반 이하일 때 난타의 피해와 범위가 적당히 증가합니다.", effect: "위기 시 난타 강화" }
+  knuckle: { name: "투지의 너클", icon: "F", weapon: "fist", description: "체력이 절반 이하일 때 난타의 피해와 범위가 적당히 증가합니다.", effect: "위기 시 난타 강화" },
+  chronometer: { name: "파손된 크로노미터", icon: "⌚", weapon: "clock", description: "시간 계열 공격의 범위가 커지고 발동할 때 체력을 조금 회복합니다.", effect: "시간 공격 + 회복" },
+  voidCore: { name: "공허 핵", icon: "◉", weapon: "rift", description: "균열 계열 공격이 적을 중심으로 끌어당기고 더 오래 남습니다.", effect: "균열 흡인" },
+  commandSeal: { name: "군주의 인장", icon: "♜", weapon: "legion", description: "소환 공격의 발사 수가 증가하고 적을 자동 추적합니다.", effect: "소환 군단 강화" }
 };
 
 const SURVIVAL_SUBS = [
@@ -4779,6 +4790,9 @@ async function startPveStage(stage) {
     xpOrbs: [],
     pickups: [],
     startingChoice: true,
+    awakeningPaused: false,
+    awakeningQueue: [],
+    awakeningPlaying: false,
     reaperActive: false,
     reaperTicks: 0,
     player: {
@@ -5981,10 +5995,10 @@ function survivalWeaponStats(id) {
   const definition = SURVIVAL_WEAPONS[id];
   const stars = entry.stars;
   return {
-    damageScale: (1 + (stars - 1) * 0.34) * pveGame.player.damageMultiplier * (entry.awakened ? 1.65 : 1),
-    cooldown: Math.max(18, definition.baseCooldown * (1 - (stars - 1) * 0.09)
-      * pveGame.player.cooldownMultiplier * (entry.awakened ? 0.68 : 1)),
-    sizeScale: 1 + (stars - 1) * 0.08 + (entry.awakened ? 0.35 : 0)
+    damageScale: (1 + (stars - 1) * 0.3) * pveGame.player.damageMultiplier * (entry.awakened ? 1.85 : 1),
+    cooldown: Math.max(15, definition.baseCooldown * (1 - (stars - 1) * 0.085)
+      * pveGame.player.cooldownMultiplier * (entry.awakened ? 0.58 : 1)),
+    sizeScale: 1 + (stars - 1) * 0.075 + (entry.awakened ? 0.45 : 0)
   };
 }
 
@@ -6006,6 +6020,11 @@ function spawnSurvivalProjectile(options) {
     visual: options.visual || "orb",
     label: options.label || "",
     trail: options.trail || "",
+    explosionRadius: options.explosionRadius || 0,
+    explosionDamage: options.explosionDamage || 0,
+    pullStrength: options.pullStrength || 0,
+    cardEffect: options.cardEffect || "",
+    repeatHits: Boolean(options.repeatHits),
     hitIds: new Set(),
     hitCooldown: 0
   });
@@ -6041,7 +6060,9 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 2 : 0,
         life: 150,
         visual: "pulse",
-        trail: "#67e8f9"
+        trail: "#67e8f9",
+        explosionRadius: entry.awakened ? 52 : 0,
+        explosionDamage: entry.awakened ? 6 * stats.damageScale : 0
       });
     }
   } else if (id === "star") {
@@ -6053,32 +6074,43 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 8 : 2,
         life: entry.awakened ? 720 : 480,
         visual: "star",
-        trail: "#fde68a"
+        trail: "#fde68a",
+        bounce: entry.awakened,
+        repeatHits: entry.awakened
       });
     }
   } else if (id === "ram") {
-    projectile(0, 15.5, 15, 18, {
-      color: "#fb7185",
-      pierce: entry.awakened ? 8 : 2,
-      life: 68,
-      visual: "ram",
-      trail: "#fb7185"
-    });
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.16, 15.5, 15, itemOwned ? 23 : 18, {
+        color: "#fb7185",
+        pierce: entry.awakened ? 8 : 2,
+        life: 68,
+        visual: "ram",
+        trail: "#fb7185",
+        explosionRadius: entry.awakened ? 64 : 0,
+        explosionDamage: entry.awakened ? 8 * stats.damageScale : 0
+      });
+    }
   } else if (id === "charge") {
-    projectile(0, 17.5, 22, 24, {
-      color: "#fb7185",
-      pierce: entry.awakened ? 99 : 5,
-      life: 80,
-      visual: "ram",
-      trail: "#ff304f"
-    });
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.11, 17.5, 22, itemOwned ? 33 : 24, {
+        color: "#fb7185",
+        pierce: entry.awakened ? 99 : 5,
+        life: entry.awakened ? 110 : 80,
+        visual: "ram",
+        trail: "#ff304f"
+      });
+    }
   } else if (id === "grapple") {
     projectile(0, 20, 18, itemOwned ? 16 : 12, {
       color: "#c4b5fd",
       pierce: entry.awakened ? 99 : 7,
       life: 95,
       visual: "lance",
-      trail: "#c4b5fd"
+      trail: "#c4b5fd",
+      pullStrength: entry.awakened ? 34 : 0
     });
   } else if (id === "grapplePlus") {
     const count = entry.awakened ? 3 : 1;
@@ -6088,7 +6120,8 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 99 : 12,
         life: 115,
         visual: "lance",
-        trail: "#ddd6fe"
+        trail: "#ddd6fe",
+        pullStrength: entry.awakened ? 42 : 12
       });
     }
   } else if (id === "poker") {
@@ -6103,6 +6136,7 @@ function fireSurvivalWeapon(id) {
         life: 130,
         visual: "card",
         label: rank,
+        cardEffect: rank,
         trail: critical ? "#fbbf24" : "#fda4af"
       });
     }
@@ -6110,15 +6144,19 @@ function fireSurvivalWeapon(id) {
     const ranks = ["JOKER", "A", "K", "Q", "J"];
     const rank = ranks[pveRandomIndex(ranks.length)];
     const critical = itemOwned && pveRandomIndex(100) < 28;
-    projectile(0, 17.2, 12 * (critical ? 1.75 : 1), 10, {
-      color: critical ? "#fbbf24" : "#fb7185",
-      homing: entry.awakened,
-      pierce: entry.awakened ? 5 : 0,
-      life: 150,
-      visual: "card",
-      label: rank,
-      trail: critical ? "#fbbf24" : "#fb7185"
-    });
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.12, 17.2, 12 * (critical ? 1.75 : 1), 10, {
+        color: critical ? "#fbbf24" : "#fb7185",
+        homing: entry.awakened,
+        pierce: entry.awakened ? 5 : 0,
+        life: 150,
+        visual: "card",
+        label: rank,
+        cardEffect: rank,
+        trail: critical ? "#fbbf24" : "#fb7185"
+      });
+    }
   } else if (id === "shadow") {
     const radius = 90 * stats.sizeScale;
     pveGame.areaAttacks.push({
@@ -6135,11 +6173,13 @@ function fireSurvivalWeapon(id) {
       });
     }
   } else if (id === "temper") {
-    const elapsedPower = Math.min(28, 7 + pveGame.tick / 900);
+    const elapsedPower = entry.awakened ? 9 + pveGame.tick / 720 : Math.min(28, 7 + pveGame.tick / 900);
     projectile(0, 12.5, elapsedPower, 16, {
       color: "#fdba74",
       pierce: entry.awakened ? 10 : 2,
-      life: 135
+      life: 135,
+      explosionRadius: entry.awakened ? 80 : 0,
+      explosionDamage: entry.awakened ? elapsedPower * 0.45 * stats.damageScale : 0
     });
   } else if (id === "forge") {
     const count = (itemOwned ? 2 : 1) + (entry.awakened ? 3 : 0);
@@ -6162,10 +6202,10 @@ function fireSurvivalWeapon(id) {
     });
   } else if (id === "taunt") {
     pveGame.areaAttacks.push({
-      x: player.x, y: player.y, radius: 125 * stats.sizeScale,
+      x: player.x, y: player.y, radius: (entry.awakened ? 520 : 125) * stats.sizeScale,
       damage: 10 * stats.damageScale, delay: 0, life: 28, hit: false,
       color: "#cbd5e1", type: "shockwave", stun: entry.awakened ? 45 : 0,
-      slow: true, survival: true
+      slow: true, pull: entry.awakened ? 90 : 0, survival: true
     });
   } else if (id === "shield") {
     player.invulnerableTime = Math.max(player.invulnerableTime, entry.awakened ? 120 : 55);
@@ -6175,10 +6215,10 @@ function fireSurvivalWeapon(id) {
       color: "#e2e8f0", type: "shockwave", stun: itemOwned ? 60 : 30, survival: true
     });
   } else if (id === "beam") {
-    const count = itemOwned ? 2 : 1;
+    const count = entry.awakened ? 3 : itemOwned ? 2 : 1;
     for (let index = 0; index < count; index += 1) {
       pveGame.areaAttacks.push({
-        x: target.x + (index ? 70 : 0), y: target.y,
+        x: target.x + (index - (count - 1) / 2) * 82, y: target.y,
         radius: (entry.awakened ? 100 : 62) * stats.sizeScale,
         damage: (itemOwned ? 20 : 28) * stats.damageScale, delay: 45 + index * 12, life: 72 + index * 12,
         hit: false, color: "#38bdf8", type: "laser", stun: 0, survival: true
@@ -6223,14 +6263,17 @@ function fireSurvivalWeapon(id) {
     }
   } else if (id === "blood") {
     const missing = 1 - player.hp / player.maxHp;
-    projectile(0, 13 + missing * 8, 10 + missing * 24, 11, {
-      color: "#f43f5e",
-      homing: true,
-      pierce: entry.awakened ? 8 : 3,
-      life: 230,
-      visual: "blood",
-      trail: "#f43f5e"
-    });
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.14, 13 + missing * 8, 10 + missing * 24, entry.awakened ? 16 : 11, {
+        color: "#f43f5e",
+        homing: true,
+        pierce: entry.awakened ? 8 : 3,
+        life: 230,
+        visual: "blood",
+        trail: "#f43f5e"
+      });
+    }
   } else if (id === "fist") {
     const desperate = itemOwned && player.hp <= player.maxHp * 0.5;
     pveGame.areaAttacks.push({
@@ -6246,6 +6289,114 @@ function fireSurvivalWeapon(id) {
       stun: 0,
       survival: true
     });
+  } else if (id === "clock") {
+    const count = entry.awakened ? 4 : 1;
+    const beamLength = Math.hypot(pveCanvas.width, pveCanvas.height) * 0.72;
+    for (let index = 0; index < count; index += 1) {
+      const sweepAngle = angle + index * Math.PI * 2 / count;
+      pveGame.areaAttacks.push({
+        x: player.x,
+        y: player.y,
+        x1: player.x,
+        y1: player.y,
+        x2: player.x + Math.cos(sweepAngle) * beamLength,
+        y2: player.y + Math.sin(sweepAngle) * beamLength,
+        radius: (itemOwned ? 46 : 34) * stats.sizeScale,
+        damage: 15 * stats.damageScale,
+        delay: index * 5,
+        life: 28 + index * 5,
+        hit: false,
+        color: "#67e8f9",
+        type: "lineLaser",
+        slow: true,
+        survival: true
+      });
+    }
+    if (itemOwned) healPvePlayer(player.maxHp * 0.012);
+  } else if (id === "replay") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      pveGame.areaAttacks.push({
+        x: player.x,
+        y: player.y,
+        radius: (entry.awakened ? 220 : 130) * stats.sizeScale,
+        damage: 22 * stats.damageScale,
+        delay: 12 + index * 15,
+        life: 40 + index * 15,
+        hit: false,
+        color: "#f2c14e",
+        type: "shockwave",
+        slow: true,
+        survival: true
+      });
+    }
+    healPvePlayer(player.maxHp * (entry.awakened ? 0.1 : itemOwned ? 0.045 : 0.025));
+    if (entry.awakened) player.invulnerableTime = Math.max(player.invulnerableTime, 75);
+  } else if (id === "rift") {
+    const count = entry.awakened ? 5 : 2;
+    const length = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.2;
+    for (let index = 0; index < count; index += 1) {
+      const riftAngle = pveRandomIndex(628) / 100;
+      const centerX = pveRandomIndex(pveCanvas.width);
+      const centerY = pveRandomIndex(pveCanvas.height);
+      pveGame.areaAttacks.push({
+        x: centerX,
+        y: centerY,
+        x1: centerX - Math.cos(riftAngle) * length,
+        y1: centerY - Math.sin(riftAngle) * length,
+        x2: centerX + Math.cos(riftAngle) * length,
+        y2: centerY + Math.sin(riftAngle) * length,
+        radius: (itemOwned ? 28 : 20) * stats.sizeScale,
+        damage: 17 * stats.damageScale,
+        delay: 16 + index * 7,
+        life: (itemOwned ? 52 : 38) + index * 7,
+        hit: false,
+        color: "#a78bfa",
+        type: "lineLaser",
+        pull: itemOwned ? 24 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "void") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      pveGame.areaAttacks.push({
+        x: target.x,
+        y: target.y,
+        radius: (entry.awakened ? 210 : 125) * stats.sizeScale,
+        damage: 24 * stats.damageScale,
+        delay: 24 + index * 18,
+        life: 54 + index * 18,
+        hit: false,
+        color: "#22d3ee",
+        type: "shockwave",
+        pull: itemOwned ? 80 : 38,
+        stun: entry.awakened ? 18 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "legion") {
+    const count = (itemOwned ? 5 : 3) + (entry.awakened ? 7 : 0);
+    for (let index = 0; index < count; index += 1) {
+      const edge = index % 4;
+      const x = edge === 0 ? 10 : edge === 1 ? pveCanvas.width - 10 : pveRandomIndex(pveCanvas.width);
+      const y = edge === 2 ? 10 : edge === 3 ? pveCanvas.height - 10 : pveRandomIndex(pveCanvas.height);
+      const shotAngle = Math.atan2(target.y - y, target.x - x);
+      spawnSurvivalProjectile({
+        x,
+        y,
+        vx: Math.cos(shotAngle) * (entry.awakened ? 16 : 13),
+        vy: Math.sin(shotAngle) * (entry.awakened ? 16 : 13),
+        damage: (entry.awakened ? 13 : 8) * stats.damageScale,
+        radius: entry.awakened ? 10 : 7,
+        life: 220,
+        color: index % 2 ? "#facc15" : "#4ade80",
+        homing: itemOwned || entry.awakened,
+        pierce: entry.awakened ? 3 : 0,
+        visual: "lance",
+        trail: index % 2 ? "#facc15" : "#4ade80"
+      });
+    }
   }
 }
 
@@ -6260,13 +6411,13 @@ function spawnSurvivalEnemy() {
     : seconds < 150 ? (roll < 82 ? "melee" : "dasher")
       : seconds < 240 ? (roll < 55 ? "melee" : roll < 78 ? "dasher" : roll < 92 ? "thrower" : "brute")
         : (roll < 30 ? "melee" : roll < 50 ? "dasher" : roll < 70 ? "thrower" : roll < 88 ? "brute" : "bomber");
-  const difficulty = 1 + Math.max(0, seconds - 45) / 210;
+  const difficulty = 1 + Math.max(0, seconds - 80) / 300;
   const base = {
-    melee: { hp: 20, speed: 2.1, radius: 20, damage: 7, xp: 2, color: "#ef476f" },
-    dasher: { hp: 34, speed: 3.35, radius: 19, damage: 10, xp: 3, color: "#fb923c" },
-    thrower: { hp: 28, speed: 1.95, radius: 21, damage: 6, xp: 4, color: "#a78bfa" },
-    brute: { hp: 85, speed: 1.45, radius: 30, damage: 14, xp: 7, color: "#94a3b8" },
-    bomber: { hp: 55, speed: 1.75, radius: 23, damage: 12, xp: 6, color: "#d946ef" }
+    melee: { hp: 17, speed: 1.85, radius: 20, damage: 5.5, xp: 2.2, color: "#ef476f" },
+    dasher: { hp: 30, speed: 2.9, radius: 19, damage: 8, xp: 3.5, color: "#fb923c" },
+    thrower: { hp: 25, speed: 1.7, radius: 21, damage: 5, xp: 4.5, color: "#a78bfa" },
+    brute: { hp: 72, speed: 1.25, radius: 30, damage: 11, xp: 8, color: "#94a3b8" },
+    bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({
@@ -6274,11 +6425,11 @@ function spawnSurvivalEnemy() {
     type, x, y,
     vx: Math.cos(angle) * base.speed,
     vy: Math.sin(angle) * base.speed,
-    baseSpeed: base.speed * Math.min(1.55, 1 + Math.max(0, seconds - 90) / 720),
+    baseSpeed: base.speed * Math.min(1.38, 1 + Math.max(0, seconds - 150) / 900),
     radius: base.radius,
     hp: base.hp * difficulty,
     maxHp: base.hp * difficulty,
-    contactDamage: base.damage * Math.min(2.2, 1 + seconds / 300),
+    contactDamage: base.damage * Math.min(1.85, 1 + Math.max(0, seconds - 60) / 420),
     xpValue: base.xp,
     color: base.color,
     contactCooldown: 0,
@@ -6291,7 +6442,7 @@ function spawnSurvivalEnemy() {
 function spawnSurvivalBoss() {
   pveGame.bossCount += 1;
   const count = pveGame.bossCount;
-  const hp = 780 * (1 + (count - 1) * 0.48);
+  const hp = 680 * (1 + (count - 1) * 0.42);
   pveGame.enemies.push({
     id: `boss-${count}-${pveGame.tick}`,
     type: "survivalBoss",
@@ -6304,7 +6455,7 @@ function spawnSurvivalBoss() {
     radius: 46,
     hp,
     maxHp: hp,
-    contactDamage: 18 + count * 2,
+    contactDamage: 14 + count * 2,
     xpValue: 35 + count * 5,
     color: "#f43f5e",
     contactCooldown: 0,
@@ -6319,7 +6470,7 @@ function spawnSurvivalBoss() {
 function spawnSurvivalMiniBoss() {
   pveGame.miniBossCount += 1;
   const count = pveGame.miniBossCount;
-  const hp = 260 * (1 + (count - 1) * 0.32);
+  const hp = 220 * (1 + (count - 1) * 0.28);
   pveGame.enemies.push({
     id: `mini-boss-${count}-${pveGame.tick}`,
     type: "survivalMiniBoss",
@@ -6332,7 +6483,7 @@ function spawnSurvivalMiniBoss() {
     radius: 36,
     hp,
     maxHp: hp,
-    contactDamage: 11 + count,
+    contactDamage: 9 + count,
     xpValue: 15 + count * 2,
     color: "#f59e0b",
     contactCooldown: 0,
@@ -6372,7 +6523,7 @@ function gainSurvivalXp(amount) {
   while (pveGame.xp >= pveGame.xpRequired) {
     pveGame.xp -= pveGame.xpRequired;
     pveGame.level += 1;
-    pveGame.xpRequired = Math.floor(10 + pveGame.level * 4.5 + pveGame.level ** 1.25);
+    pveGame.xpRequired = Math.floor(8 + pveGame.level * 3.7 + pveGame.level ** 1.2);
     pveGame.pendingLevels += 1;
     healPvePlayer(pveGame.player.maxHp * 0.1);
     addPveFloating("LEVEL UP · 체력 10% 회복", "#67e8f9");
@@ -6395,7 +6546,7 @@ function survivalChoicePool() {
     for (let count = 0; count < weight; count += 10) pool.push({ type: "weapon", id });
   });
   itemIds.forEach(id => {
-    for (let count = 0; count < 18; count += 1) pool.push({ type: "item", id });
+    for (let count = 0; count < 42; count += 1) pool.push({ type: "item", id });
   });
   SURVIVAL_SUBS.forEach(sub => pool.push({ type: "sub", id: sub.id }));
   return pool;
@@ -6433,7 +6584,9 @@ function describeSurvivalChoice(choice) {
       color: definition.color,
       level: `${"★".repeat(nextStar)}${"☆".repeat(5 - nextStar)}`,
       description: owned
-        ? `${nextStar}성 강화: 공격력과 공격속도, 범위가 상승합니다.`
+        ? nextStar === 5 && pveGame.items[definition.item]
+          ? `5성 완성 즉시 ${definition.awakenedName || "각성 무기"}로 진화합니다.`
+          : `${nextStar}성 강화: 피해, 공격주기, 범위가 균형 있게 상승합니다.`
         : definition.description
     };
   }
@@ -6516,9 +6669,42 @@ function checkSurvivalAwakenings() {
     const itemId = SURVIVAL_WEAPONS[id].item;
     if (weapon.stars >= 5 && pveGame.items[itemId] && !weapon.awakened) {
       weapon.awakened = true;
-      addPveFloating(`${SURVIVAL_WEAPONS[id].name} 각성!`, "#ffe28a");
+      queueSurvivalAwakening(id);
     }
   });
+}
+
+function queueSurvivalAwakening(id) {
+  if (!pveGame) return;
+  pveGame.awakeningQueue.push(id);
+  playNextSurvivalAwakening();
+}
+
+function playNextSurvivalAwakening() {
+  if (!pveGame || pveGame.awakeningPlaying || !pveGame.awakeningQueue.length) return;
+  const id = pveGame.awakeningQueue.shift();
+  const definition = SURVIVAL_WEAPONS[id];
+  pveGame.awakeningPlaying = true;
+  pveGame.awakeningPaused = true;
+  ui.pveAwakeningName.textContent = definition.awakenedName || `${definition.name} 각성`;
+  ui.pveAwakeningDescription.textContent = definition.awakenedDescription || "무기가 완전한 형태로 진화했습니다.";
+  ui.pveAwakeningOverlay.classList.remove("is-active");
+  void ui.pveAwakeningOverlay.offsetWidth;
+  ui.pveAwakeningOverlay.classList.add("is-active");
+  ui.pveAwakeningOverlay.setAttribute("aria-hidden", "false");
+  addPveFloating(`${definition.awakenedName || definition.name} 각성!`, "#ffe28a");
+  setTimeout(() => {
+    if (!pveGame) return;
+    ui.pveAwakeningOverlay.classList.remove("is-active");
+    ui.pveAwakeningOverlay.setAttribute("aria-hidden", "true");
+    pveGame.awakeningPlaying = false;
+    pveGame.awakeningPaused = false;
+    if (pveGame.awakeningQueue.length) {
+      playNextSurvivalAwakening();
+    } else if (pveGame.pendingLevels > 0 && !pveGame.pausedForAugment) {
+      openSurvivalAugments();
+    }
+  }, 2250);
 }
 
 function chooseSurvivalAugment(choice) {
@@ -6559,7 +6745,7 @@ function chooseSurvivalAugment(choice) {
   ui.pveAugmentOverlay.classList.remove("is-active");
   ui.pveAugmentOverlay.setAttribute("aria-hidden", "true");
   renderSurvivalBuild();
-  if (pveGame.pendingLevels > 0) openSurvivalAugments();
+  if (pveGame.pendingLevels > 0 && !pveGame.awakeningPlaying) openSurvivalAugments();
 }
 
 function renderSurvivalBuild() {
@@ -6569,7 +6755,7 @@ function renderSurvivalBuild() {
     return `<div class="build-effect weapon ${weapon.awakened ? "is-awakened" : ""}" data-build-weapon="${id}">
       <span style="--effect-color:${definition.color}">${definition.icon}</span>
       <div>
-        <strong>${definition.name}</strong>
+        <strong>${weapon.awakened ? definition.awakenedName || definition.name : definition.name}</strong>
         <small>${weapon.awakened ? "각성" : `${weapon.stars}성`}</small>
         <small class="build-live-stat"></small>
       </div>
@@ -6649,7 +6835,7 @@ function damageSurvivalEnemy(enemy, amount) {
 }
 
 function stepSurvivalPve() {
-  if (!pveGame || pveGame.over || pveGame.pausedForAugment) return;
+  if (!pveGame || pveGame.over || pveGame.pausedForAugment || pveGame.awakeningPaused) return;
   if (pveGame.reaperActive) {
     stepSurvivalReaper();
     return;
@@ -6680,12 +6866,12 @@ function stepSurvivalPve() {
   pveGame.spawnTimer -= 1;
   if (pveGame.spawnTimer <= 0) {
     const count = 1 + Math.floor(Math.max(0, seconds - 210) / 120);
-    const enemyCap = seconds < 90 ? 18 : seconds < 180 ? 26 : 36 + Math.floor((seconds - 180) / 60) * 4;
+    const enemyCap = seconds < 90 ? 13 : seconds < 180 ? 20 : 28 + Math.floor((seconds - 180) / 90) * 4;
     const availableSlots = Math.max(0, enemyCap - pveGame.enemies.filter(enemy => !enemy.dead).length);
     for (let index = 0; index < Math.min(4, count, availableSlots); index += 1) spawnSurvivalEnemy();
-    pveGame.spawnTimer = seconds < 90 ? 108
-      : seconds < 180 ? 88
-        : Math.max(30, 78 - (seconds - 180) * 0.075);
+    pveGame.spawnTimer = seconds < 90 ? 122
+      : seconds < 180 ? 102
+        : Math.max(42, 90 - (seconds - 180) * 0.055);
   }
 
   Object.entries(pveGame.weapons).forEach(([id, weapon]) => {
@@ -6804,7 +6990,14 @@ function stepSurvivalPve() {
     }
     projectile.x += projectile.vx;
     projectile.y += projectile.vy;
-    if (projectile.bounce) bouncePveBody(projectile);
+    if (projectile.bounce) {
+      const wallHit = projectile.x - projectile.radius < 0
+        || projectile.x + projectile.radius > pveCanvas.width
+        || projectile.y - projectile.radius < 0
+        || projectile.y + projectile.radius > pveCanvas.height;
+      bouncePveBody(projectile);
+      if (wallHit && projectile.repeatHits) projectile.hitIds.clear();
+    }
     if (projectile.owner === "enemy") {
       if (Math.hypot(player.x - projectile.x, player.y - projectile.y) < player.radius + projectile.radius) {
         if (player.invulnerableTime <= 0) damagePvePlayer(projectile.damage);
@@ -6816,7 +7009,34 @@ function stepSurvivalPve() {
         && Math.hypot(item.x - projectile.x, item.y - projectile.y) < item.radius + projectile.radius);
       if (enemy) {
         projectile.hitIds.add(enemy.id);
-        damageSurvivalEnemy(enemy, projectile.damage);
+        let hitDamage = projectile.damage;
+        if (projectile.cardEffect === "JOKER") {
+          hitDamage *= 0.5 + pveRandomIndex(151) / 100;
+        }
+        damageSurvivalEnemy(enemy, hitDamage);
+        if (projectile.cardEffect === "A") enemy.slowTime = Math.max(enemy.slowTime, 210);
+        if (projectile.cardEffect === "K") pveGame.player.damageMultiplier *= 1.003;
+        if (projectile.cardEffect === "Q") healPvePlayer(pveGame.player.maxHp * 0.012);
+        if (projectile.pullStrength) {
+          const pullAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+          enemy.x += Math.cos(pullAngle) * projectile.pullStrength;
+          enemy.y += Math.sin(pullAngle) * projectile.pullStrength;
+        }
+        if (projectile.explosionRadius > 0) {
+          pveGame.areaAttacks.push({
+            x: enemy.x,
+            y: enemy.y,
+            radius: projectile.explosionRadius,
+            damage: projectile.explosionDamage,
+            delay: 0,
+            life: 20,
+            hit: false,
+            color: projectile.color,
+            type: "shockwave",
+            stun: 0,
+            survival: true
+          });
+        }
         if (projectile.slow) enemy.slowTime = Math.max(enemy.slowTime, 150);
         if (projectile.pierce > 0) projectile.pierce -= 1;
         else return false;
@@ -6852,6 +7072,11 @@ function stepSurvivalPve() {
           damageSurvivalEnemy(enemy, attack.damage);
           if (attack.stun) enemy.stunTime = Math.max(enemy.stunTime, attack.stun);
           if (attack.slow) enemy.slowTime = Math.max(enemy.slowTime, 150);
+          if (attack.pull) {
+            const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+            enemy.x += Math.cos(angle) * attack.pull;
+            enemy.y += Math.sin(angle) * attack.pull;
+          }
         }
       });
     }
@@ -7320,6 +7545,8 @@ async function finishSurvivalPve(cleared = false) {
 function stopPveGame() {
   if (pveAnimationId) cancelAnimationFrame(pveAnimationId);
   pveAnimationId = null;
+  ui.pveAwakeningOverlay?.classList.remove("is-active");
+  ui.pveAwakeningOverlay?.setAttribute("aria-hidden", "true");
   pveGame = null;
 }
 
