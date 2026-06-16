@@ -1552,6 +1552,34 @@ h2 {
   gap: 18px;
 }
 
+.augment-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.augment-reroll {
+  min-width: 190px;
+  border-color: rgba(103, 232, 249, 0.42);
+  color: #d9fbff;
+}
+
+.augment-reroll b {
+  display: inline-grid;
+  min-width: 25px;
+  height: 25px;
+  margin-left: 8px;
+  place-items: center;
+  color: #071018;
+  background: #67e8f9;
+  border-radius: 50%;
+}
+
+.augment-reroll:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
 .augment-card {
   display: grid;
   min-height: 480px;

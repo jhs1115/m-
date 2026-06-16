@@ -4,7 +4,7 @@ const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
-const SIMULATION_VERSION = "20260613b";
+const SIMULATION_VERSION = "20260616a";
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -115,6 +115,7 @@ const ui = {
   pveBuildList: document.getElementById("pveBuildList"),
   pveAugmentOverlay: document.getElementById("pveAugmentOverlay"),
   pveAugmentChoices: document.getElementById("pveAugmentChoices"),
+  pveAugmentReroll: document.getElementById("pveAugmentReroll"),
   pveAwakeningOverlay: document.getElementById("pveAwakeningOverlay"),
   pveAwakeningName: document.getElementById("pveAwakeningName"),
   pveAwakeningDescription: document.getElementById("pveAwakeningDescription"),
@@ -371,14 +372,14 @@ const characterGuide = {
     ultimate: ["야수성", "패시브", "공격하지 못한 시간 동안 이동속도가 매초 6%씩 증가합니다."]
   },
   timekeeper: {
-    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
-    normal: ["건너뛰기", "12초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
-    ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 도착 지점에 30 피해의 시간 폭발을 일으킵니다."]
+    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 20의 피해를 줍니다."],
+    normal: ["건너뛰기", "7초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
+    ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 넓은 범위에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
-    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 20의 피해를 주고 연결된 일반 균열을 소모합니다."],
-    normal: ["보이드", "30초", "무작위 벽에 3회까지 버티며 모든 균열과 연결되는 공허 균열을 소환합니다."],
-    ultimate: ["게이트", "6초", "가장 가까운 자신의 균열로 즉시 이동합니다. 균열은 이동에 사용해도 사라지지 않습니다."]
+    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 5의 피해를 주고 연결된 일반 균열을 소모합니다."],
+    normal: ["보이드", "14초", "가장 가까운 균열에 3초 동안 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 5의 피해를 줍니다."],
+    ultimate: ["게이트", "5초", "가장 가까운 균열에서 적을 향해 튕기지 않는 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
   },
   summoner: {
     attack: ["일어나라!", "3초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
@@ -1649,8 +1650,8 @@ function normalSkillCooldown(kind) {
     wild: 1080,
     vampire: 0,
     brawler: 0,
-    timekeeper: 720,
-    riftmaker: 1800,
+    timekeeper: 420,
+    riftmaker: 840,
     summoner: 720
   }[kind] ?? Infinity;
 }
@@ -1669,7 +1670,7 @@ function ultimateCooldown(kind) {
     vampire: 3000,
     brawler: 0,
     timekeeper: 2400,
-    riftmaker: 360,
+    riftmaker: 300,
     summoner: 3000
   }[kind] ?? Infinity;
 }
@@ -2036,21 +2037,22 @@ function finishReplay(fighter) {
     x: fighter.x,
     y: fighter.y,
     color: fighter.accent,
+    radius: 185,
     life: 34,
     maxLife: 34
   });
-  const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 145);
+  const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 185);
   const targetFighter = opponentOf(fighter);
   if (summonTarget) {
     damageSummon(summonTarget, 30, fighter);
-  } else if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 145 + targetFighter.radius) {
+  } else if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 185 + targetFighter.radius) {
     damage(targetFighter, 30, fighter);
   }
   fighter.replayTarget = null;
 }
 
 function swingClockHand(fighter) {
-  const target = opponentOf(fighter);
+  const target = nearestEnemyTarget(fighter);
   const dx = target.x - fighter.x;
   const dy = target.y - fighter.y;
   const distance = Math.hypot(dx, dy);
@@ -2091,12 +2093,12 @@ function resolveClockSweepHits(effect) {
   const target = opponentOf(effect.fighter);
   if (!effect.hitOpponent && target?.hp > 0 && targetInsideClockSweep(effect, target)) {
     effect.hitOpponent = true;
-    damage(target, 15, effect.fighter);
+    damage(target, 20, effect.fighter);
   }
   enemySummonsOf(effect.fighter).forEach(summon => {
     if (effect.hitSummonIds.includes(summon.id) || !targetInsideClockSweep(effect, summon)) return;
     effect.hitSummonIds.push(summon.id);
-    damageSummon(summon, 15, effect.fighter);
+    damageSummon(summon, 20, effect.fighter);
   });
 }
 
@@ -2122,23 +2124,31 @@ function addRift(owner, x, y, isVoid = false, wall = "") {
     hitsRemaining: isVoid ? 3 : 1,
     hitCooldown: 0,
     gateCooldown: 0,
+    voidFieldTime: 0,
+    voidDamageTick: 0,
     life: isVoid ? 1800 : 900
   });
 }
 
 function createVoidRift(fighter) {
-  const walls = ["left", "right", "top", "bottom"];
-  const wall = walls[Math.floor(seededRandom() * walls.length)];
-  const point = wallPoint(wall, 0.15 + seededRandom() * 0.7, 18);
-  addRift(fighter, point.x, point.y, true, wall);
+  const rift = nearestOwnedRift(fighter);
+  if (!rift) return false;
+  rift.isVoid = true;
+  rift.hitsRemaining = Math.max(rift.hitsRemaining, 3);
+  rift.voidFieldTime = 180;
+  rift.voidDamageTick = 0;
+  rift.life = Math.max(rift.life, 360);
   addVisualEffect({
     type: "void-rift",
-    x: point.x,
-    y: point.y,
+    x: rift.x,
+    y: rift.y,
     color: fighter.accent,
-    life: 38,
-    maxLife: 38
+    radius: 118,
+    life: 42,
+    maxLife: 42
   });
+  addSkillPulse(fighter, fighter.accent);
+  return true;
 }
 
 function nearestOwnedRift(fighter) {
@@ -2159,37 +2169,33 @@ function nearestOwnedRift(fighter) {
 function useRiftGate(fighter) {
   const rift = nearestOwnedRift(fighter);
   if (!rift) return false;
-
-  const fromX = fighter.x;
-  const fromY = fighter.y;
-  fighter.x = clamp(rift.x, fighter.radius, canvas.width - fighter.radius);
-  fighter.y = clamp(rift.y, fighter.radius, canvas.height - fighter.radius);
-
-  addVisualEffect({
-    type: "time-skip",
-    x1: fromX,
-    y1: fromY,
-    x2: fighter.x,
-    y2: fighter.y,
+  const target = nearestEnemyTarget(fighter, rift.x, rift.y);
+  const angle = Math.atan2(target.y - rift.y, target.x - rift.x);
+  game.balls.push({
+    owner: fighter,
+    x: rift.x + Math.cos(angle) * 22,
+    y: rift.y + Math.sin(angle) * 22,
+    vx: Math.cos(angle) * 13.6,
+    vy: Math.sin(angle) * 13.6,
+    radius: 12,
+    life: 190,
+    hitCooldown: 0,
+    damage: 10,
+    speed: 13.6,
     color: fighter.accent,
+    homing: false,
+    star: false,
+    riftShot: true,
+    noBounce: true
+  });
+  addVisualEffect({
+    type: "void-rift",
+    x: rift.x,
+    y: rift.y,
+    color: fighter.accent,
+    radius: 72,
     life: 26,
     maxLife: 26
-  });
-  addVisualEffect({
-    type: "void-rift",
-    x: fromX,
-    y: fromY,
-    color: fighter.accent,
-    life: 30,
-    maxLife: 30
-  });
-  addVisualEffect({
-    type: "void-rift",
-    x: fighter.x,
-    y: fighter.y,
-    color: fighter.accent,
-    life: 38,
-    maxLife: 38
   });
   addSkillPulse(fighter, fighter.accent);
   return true;
@@ -2229,6 +2235,32 @@ function updateRifts(dt) {
   game.rifts.forEach(rift => {
     rift.life -= dt;
     rift.hitCooldown = Math.max(0, rift.hitCooldown - dt);
+    if (rift.voidFieldTime > 0) {
+      rift.voidFieldTime -= dt;
+      rift.voidDamageTick -= dt;
+      const radius = 150;
+      const targets = [opponentOf(rift.owner), ...enemySummonsOf(rift.owner)].filter(target => target && target.hp > 0);
+      targets.forEach(target => {
+        const dx = rift.x - target.x;
+        const dy = rift.y - target.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        if (distance > radius + target.radius) return;
+        const pull = target.owner ? 1.8 : 1.15;
+        target.x += dx / distance * pull * dt;
+        target.y += dy / distance * pull * dt;
+        if (!target.owner) {
+          target.vx = target.vx * 0.94 + dx / distance * 0.28;
+          target.vy = target.vy * 0.94 + dy / distance * 0.28;
+        }
+      });
+      if (rift.voidDamageTick <= 0) {
+        rift.voidDamageTick = 60;
+        targets.forEach(target => {
+          if (Math.hypot(target.x - rift.x, target.y - rift.y) > radius + target.radius) return;
+          damageCombatTarget(target, 5, rift.owner);
+        });
+      }
+    }
   });
 
   const owners = [...new Set(game.rifts.map(rift => rift.owner))];
@@ -2237,11 +2269,12 @@ function updateRifts(dt) {
     const target = opponentOf(owner);
     const connections = riftConnections(rifts);
     for (const [a, b] of connections) {
+      if (a.voidFieldTime > 0 || b.voidFieldTime > 0) continue;
       if (a.hitCooldown > 0 || b.hitCooldown > 0) continue;
       const summonTarget = enemySummonOnLine(owner, a.x, a.y, b.x, b.y, 8);
       if (!summonTarget && pointSegmentDistance(target.x, target.y, a.x, a.y, b.x, b.y) > target.radius + 8) continue;
-      if (summonTarget) damageSummon(summonTarget, 20, owner);
-      else damage(target, 20, owner);
+      if (summonTarget) damageSummon(summonTarget, 5, owner);
+      else damage(target, 5, owner);
       a.hitsRemaining -= 1;
       b.hitsRemaining -= 1;
       a.hitCooldown = 30;
@@ -2327,7 +2360,7 @@ function enemySummonOnLine(owner, x1, y1, x2, y2, width) {
 }
 
 function fireSummonArrow(summon) {
-  const target = opponentOf(summon.owner);
+  const target = nearestEnemyTarget(summon.owner, summon.x, summon.y);
   const angle = Math.atan2(target.y - summon.y, target.x - summon.x);
   const elite = summon.elite;
   game.balls.push({
@@ -2356,7 +2389,8 @@ function updateSummons(dt) {
     summon.life -= dt;
     summon.contactCooldown = Math.max(0, summon.contactCooldown - dt);
     summon.hitFlash = Math.max(0, summon.hitFlash - dt);
-    const target = opponentOf(summon.owner);
+    const target = nearestEnemyTarget(summon.owner, summon.x, summon.y);
+    const enemyFighter = opponentOf(summon.owner);
     const ownerSpeed = Math.max(0.1, Math.hypot(summon.owner.vx, summon.owner.vy) || characterBaseSpeed(summon.owner));
     const dx = target.x - summon.x;
     const dy = target.y - summon.y;
@@ -2371,14 +2405,14 @@ function updateSummons(dt) {
       bounceOnWalls(summon);
       if (distance < summon.radius + target.radius && summon.contactCooldown <= 0) {
         if (summon.elite) {
-          damage(target, 15, summon.owner);
-          damageSummon(summon, 15, target);
+          damageCombatTarget(target, 15, summon.owner);
+          damageSummon(summon, 15, target.owner || target);
           summon.contactCooldown = 30;
           const angle = Math.atan2(summon.y - target.y, summon.x - target.x);
           summon.x += Math.cos(angle) * 22;
           summon.y += Math.sin(angle) * 22;
         } else {
-          damage(target, summon.hp, summon.owner);
+          damageCombatTarget(target, summon.hp, summon.owner);
           summon.hp = 0;
         }
       }
@@ -2402,10 +2436,10 @@ function updateSummons(dt) {
       }
     }
 
-    if (summon.hp > 0 && Math.hypot(target.x - summon.x, target.y - summon.y) < target.radius + summon.radius) {
-      const contactDamage = target.kind === "enhancer" ? target.attackPower : target.contactDamage;
+    if (summon.hp > 0 && Math.hypot(enemyFighter.x - summon.x, enemyFighter.y - summon.y) < enemyFighter.radius + summon.radius) {
+      const contactDamage = enemyFighter.kind === "enhancer" ? enemyFighter.attackPower : enemyFighter.contactDamage;
       if (contactDamage > 0 && summon.contactCooldown <= 0) {
-        damageSummon(summon, contactDamage, target);
+        damageSummon(summon, contactDamage, enemyFighter);
         summon.contactCooldown = 24;
       }
     }
@@ -2575,6 +2609,22 @@ function opponentOf(fighter) {
   return fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0];
 }
 
+function nearestEnemyTarget(owner, x = owner.x, y = owner.y) {
+  const fighter = opponentOf(owner);
+  return [fighter, ...enemySummonsOf(owner)].reduce((nearest, target) => {
+    if (!target || target.hp <= 0) return nearest;
+    if (!nearest) return target;
+    return Math.hypot(target.x - x, target.y - y) < Math.hypot(nearest.x - x, nearest.y - y)
+      ? target
+      : nearest;
+  }, null) || fighter;
+}
+
+function damageCombatTarget(target, amount, attacker) {
+  if (target?.owner) damageSummon(target, amount, attacker);
+  else damage(target, amount, attacker);
+}
+
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
   fighter.stealthTime = hyper ? 240 : 180;
@@ -2604,7 +2654,7 @@ function heal(fighter, amount) {
 
 function triggerNormalSkill(fighter) {
   if (fighter.kind === "thrower") {
-    const target = opponentOf(fighter);
+    const target = nearestEnemyTarget(fighter);
     let count = 0;
     game.balls.forEach(ball => {
       if (ball.owner === fighter) {
@@ -2662,12 +2712,9 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "tank") {
-    const target = opponentOf(fighter);
-    const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 220);
-    if (summonTarget) {
-      damageSummon(summonTarget, 10, fighter);
-    } else {
-      damage(target, 10, fighter);
+    const target = nearestEnemyTarget(fighter);
+    damageCombatTarget(target, 10, fighter);
+    if (!target.owner) {
       const angle = Math.atan2(fighter.y - target.y, fighter.x - target.x);
       const speed = Math.hypot(target.vx, target.vy) || 6.8;
       target.vx = Math.cos(angle) * speed;
@@ -2695,13 +2742,14 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "timekeeper") {
     skipTime(fighter);
-    fighter.skillTimer = 720;
+    fighter.skillTimer = 420;
     return;
   }
 
   if (fighter.kind === "riftmaker") {
-    createVoidRift(fighter);
-    fighter.skillTimer = 1800;
+    if (createVoidRift(fighter)) {
+      fighter.skillTimer = 840;
+    }
     return;
   }
 
@@ -2800,7 +2848,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "riftmaker") {
     if (useRiftGate(fighter)) {
-      fighter.ultimateTimer = 360;
+      fighter.ultimateTimer = 300;
     }
     return;
   }
@@ -2829,6 +2877,7 @@ function skillAvailable(fighter, type) {
     if (fighter.kind === "vampire" || fighter.kind === "brawler") return false;
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
+    if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
     return true;
   }
   if (fighter.kind === "wild" || fighter.kind === "brawler") return false;
@@ -2920,7 +2969,8 @@ function updateSkillHud() {
   const names = skillNames[fighter.kind] || { normal: "일반스킬", ultimate: "궁극기" };
   const normalCooldown = cooldownSeconds(fighter.skillTimer);
   const ultimateCooldown = cooldownSeconds(fighter.ultimateTimer);
-  const normalLocked = fighter.kind === "stealth" && fighter.stealthTime <= 0 && normalCooldown === 0;
+  const normalLocked = (fighter.kind === "stealth" && fighter.stealthTime <= 0 && normalCooldown === 0)
+    || (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter) && normalCooldown === 0);
   const ultimateLocked = fighter.kind === "riftmaker" && !nearestOwnedRift(fighter) && ultimateCooldown === 0;
 
   ui.normalSkillName.textContent = names.normal;
@@ -3001,7 +3051,7 @@ function moveFighter(fighter, dt) {
   }
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = characterBaseSpeed(fighter);
-  const target = opponentOf(fighter);
+  const target = nearestEnemyTarget(fighter);
   if (fighter.chaseTime > 0 && fighter.chaseBounceTime <= 0) {
     const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
     fighter.vx = Math.cos(angle) * Math.max(baseSpeed * 3, speed);
@@ -3032,16 +3082,10 @@ function moveFighter(fighter, dt) {
   if (fighter.rageTime > 0) fighter.rageTime -= dt;
   if (fighter.unstoppableTime > 0) {
     fighter.unstoppableTime -= dt;
-    const target = opponentOf(fighter);
+    const target = nearestEnemyTarget(fighter);
     if (!fighter.unstoppableHit) {
-      const summonTarget = enemySummonsOf(fighter).find(summon => (
-        Math.hypot(summon.x - fighter.x, summon.y - fighter.y) < summon.radius + fighter.radius + 52
-      ));
-      if (summonTarget) {
-        damageSummon(summonTarget, 40, fighter);
-        fighter.unstoppableHit = true;
-      } else if (Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
-        damage(target, 40, fighter);
+      if (Math.hypot(target.x - fighter.x, target.y - fighter.y) < target.radius + fighter.radius + 52) {
+        damageCombatTarget(target, 40, fighter);
         fighter.unstoppableHit = true;
       }
     }
@@ -3238,7 +3282,7 @@ function handleFighterCollision() {
 
 function throwBall(owner) {
   if (!owner.canThrow || game.over) return;
-  const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.balls.push({
     owner,
@@ -3259,7 +3303,7 @@ function throwBall(owner) {
 
 function fireStarStrike(owner) {
   if (!owner.canThrow || game.over) return;
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const baseAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
   [-0.18, 0.18].forEach(spread => {
     const angle = baseAngle + spread;
@@ -3284,7 +3328,7 @@ function fireStarStrike(owner) {
 
 function throwGrapple(owner, enhanced = false) {
   if (!owner.canGrab || game.over) return;
-  const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.grapples.push({
     owner,
@@ -3299,7 +3343,7 @@ function throwGrapple(owner, enhanced = false) {
 }
 
 function createShockwave(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const range = 192;
   game.shockwaves.push({
     owner,
@@ -3310,19 +3354,18 @@ function createShockwave(owner) {
     life: 34,
     color: owner.accent
   });
-  const summonTarget = enemySummonInArea(owner, owner.x, owner.y, range);
-  if (summonTarget) {
-    damageSummon(summonTarget, 30, owner);
-  } else if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damage(target, 30, owner);
-    target.stunTime = Math.max(target.stunTime, 60);
-    target.vx *= 0.25;
-    target.vy *= 0.25;
+  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
+    damageCombatTarget(target, 30, owner);
+    if (!target.owner) {
+      target.stunTime = Math.max(target.stunTime, 60);
+      target.vx *= 0.25;
+      target.vy *= 0.25;
+    }
   }
 }
 
 function fireSlowBeam(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.beams.push({
     type: "slow",
@@ -3340,7 +3383,7 @@ function fireSlowBeam(owner) {
 }
 
 function createSkyLaser(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   game.areaAttacks.push({
     type: "laser",
     owner,
@@ -3374,7 +3417,7 @@ function createWildSlashes(owner, x = null, y = null) {
 }
 
 function fireBloodBullet(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const hpMissing = 1 - owner.hp / owner.maxHp;
   const damageAmount = 10 + hpMissing * 25;
   const speed = 12.5 + hpMissing * 9.5;
@@ -3398,7 +3441,7 @@ function fireBloodBullet(owner) {
 }
 
 function launchGodWeapon(owner, power) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.weapons.push({
     owner,
@@ -3416,7 +3459,7 @@ function launchGodWeapon(owner, power) {
 }
 
 function createTankBlast(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const range = 261;
   game.shockwaves.push({
     owner,
@@ -3427,12 +3470,9 @@ function createTankBlast(owner) {
     life: 42,
     color: "#d5dde8"
   });
-  const summonTarget = enemySummonInArea(owner, owner.x, owner.y, range);
-  if (summonTarget) {
-    damageSummon(summonTarget, 50, owner);
-  } else if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damage(target, 50, owner);
-    target.stunTime = Math.max(target.stunTime, 180);
+  if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
+    damageCombatTarget(target, 50, owner);
+    if (!target.owner) target.stunTime = Math.max(target.stunTime, 180);
   }
 }
 
@@ -3465,7 +3505,7 @@ function punchSummon(owner, summon) {
 }
 
 function throwDrawCard(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const cards = ["JOKER", "A", "K", "Q", "J"];
   const type = cards[Math.floor(seededRandom() * cards.length)];
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
@@ -3496,7 +3536,7 @@ function throwDrawCard(owner) {
 }
 
 function assassinate(owner) {
-  const target = opponentOf(owner);
+  const target = nearestEnemyTarget(owner);
   const startX = owner.x;
   const startY = owner.y;
   const targetSpeed = Math.hypot(target.vx, target.vy);
@@ -3558,7 +3598,7 @@ function dealPokerAttack(owner) {
   owner.pokerReveal = 95;
   owner.pokerLabel = `${label}! 데미지 x${multiplier}`;
 
-  const target = owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  const target = nearestEnemyTarget(owner);
   hand.forEach((rank, index) => {
     game.pokerShots.push({
       owner,
@@ -3590,6 +3630,7 @@ function updateBalls(dt) {
       }
     }
     if (ball.homing && ball.homeTarget && !game.over) {
+      if (ball.homeTarget.hp <= 0) ball.homeTarget = nearestEnemyTarget(ball.owner, ball.x, ball.y);
       const angle = Math.atan2(ball.homeTarget.y - ball.y, ball.homeTarget.x - ball.x);
       const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
       ball.vx = ball.vx * 0.88 + Math.cos(angle) * speed * 0.12;
@@ -3607,7 +3648,7 @@ function updateBalls(dt) {
     const summonTarget = collidingEnemySummon(ball.owner, ball.x, ball.y, ball.radius);
     if (summonTarget && ball.hitCooldown <= 0) {
       damageSummon(summonTarget, ball.damage, ball.owner);
-      if (ball.blood || ball.summonArrow || (ball.owner.canThrow && !ball.star)) {
+      if (ball.blood || ball.riftShot || ball.summonArrow || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
       }
       const angle = Math.atan2(summonTarget.y - ball.y, summonTarget.x - ball.x);
@@ -3624,7 +3665,7 @@ function updateBalls(dt) {
         if (target !== ball.owner) {
           damage(target, ball.damage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.blood || ball.riftShot || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -3715,7 +3756,7 @@ function applyPokerCardHit(card) {
     addSkillPulse(card.owner, card.owner.accent);
     return;
   }
-  damage(card.target, card.damage, card.owner);
+  damageCombatTarget(card.target, card.damage, card.owner);
   if (card.effect === "A") {
     card.target.slowTime = Math.max(card.target.slowTime, 180);
   }
@@ -3802,7 +3843,7 @@ function updateWeapons(dt) {
       weapon.returning = true;
     }
     if (!weapon.returning && Math.hypot(weapon.target.x - weapon.x, weapon.target.y - weapon.y) < weapon.target.radius + 18) {
-      if (!weapon.hit) damage(weapon.target, weapon.damage, weapon.owner);
+      if (!weapon.hit) damageCombatTarget(weapon.target, weapon.damage, weapon.owner);
       weapon.hit = true;
       weapon.returning = true;
     }
@@ -3924,6 +3965,22 @@ function drawMotionTrail(renderCtx, x, y, vx, vy, radius, color, alpha = 0.55) {
   renderCtx.beginPath();
   renderCtx.moveTo(x, y);
   renderCtx.lineTo(x - nx * length, y - ny * length);
+  renderCtx.stroke();
+  renderCtx.restore();
+}
+
+function drawCheapTrail(renderCtx, x, y, vx, vy, radius, color, alpha = 0.45) {
+  const speed = Math.hypot(vx, vy);
+  if (speed < 0.1) return;
+  const length = Math.min(42, radius * 2.4 + speed * 1.4);
+  renderCtx.save();
+  renderCtx.globalAlpha = alpha;
+  renderCtx.strokeStyle = color;
+  renderCtx.lineWidth = Math.max(2, radius * 0.72);
+  renderCtx.lineCap = "round";
+  renderCtx.beginPath();
+  renderCtx.moveTo(x, y);
+  renderCtx.lineTo(x - vx / speed * length, y - vy / speed * length);
   renderCtx.stroke();
   renderCtx.restore();
 }
@@ -4207,7 +4264,7 @@ function drawClockSweep(effect) {
 
 function drawPointBurst(effect) {
   const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
-  const radius = 16 + progress * (effect.type === "time-explosion" ? 135 : 64);
+  const radius = 16 + progress * (effect.radius || (effect.type === "time-explosion" ? 135 : 64));
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   for (let ring = 0; ring < 3; ring += 1) {
@@ -4253,6 +4310,23 @@ function drawRifts() {
       drawPrismaticBeam(ctx, a.x, a.y, b.x, b.y, 7, owner.accent, game.tick + a.x, 0.72);
     });
     rifts.forEach(rift => {
+      if (rift.voidFieldTime > 0) {
+        const fieldRate = clamp(rift.voidFieldTime / 180, 0, 1);
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = 0.12 + fieldRate * 0.14;
+        ctx.fillStyle = owner.accent;
+        ctx.beginPath();
+        ctx.arc(rift.x, rift.y, 150, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#f0abfc";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 8]);
+        ctx.beginPath();
+        ctx.arc(rift.x, rift.y, 150 - (game.tick % 36), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
       const radius = rift.isVoid ? 20 : 13;
       drawLuminousCore(ctx, rift.x, rift.y, radius, rift.isVoid ? "#16052f" : owner.color, owner.accent, game.tick + rift.x);
       ctx.save();
@@ -4624,7 +4698,7 @@ function drawFighterHealthBar(fighter) {
 }
 
 function drawBall(ball) {
-  drawMotionTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, ball.color, ball.star ? 0.82 : 0.58);
+  drawCheapTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, ball.color, ball.star ? 0.78 : 0.46);
   if (ball.summonArrow) {
     ctx.save();
     ctx.translate(ball.x, ball.y);
@@ -4686,7 +4760,8 @@ function drawBall(ball) {
     ctx.restore();
     return;
   }
-  drawLuminousCore(ctx, ball.x, ball.y, ball.radius, ball.color, "#f7fbff", game.tick + ball.x, 0.82);
+  ctx.shadowColor = ball.color;
+  ctx.shadowBlur = 10;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
   ctx.fillStyle = ball.color;
@@ -5246,6 +5321,8 @@ async function startPveStage(stage) {
     accumulator: 0,
     over: false,
     pausedForAugment: false,
+    augmentRerolls: 2,
+    currentAugmentChoices: [],
     pendingLevels: 0,
     level: 1,
     xp: 0,
@@ -6909,7 +6986,9 @@ function spawnSurvivalEnemy() {
   const x = edge === 0 ? margin : edge === 1 ? pveCanvas.width - margin : 50 + pveRandomIndex(pveCanvas.width - 100);
   const y = edge === 2 ? margin : edge === 3 ? pveCanvas.height - margin : 50 + pveRandomIndex(pveCanvas.height - 100);
   const roll = pveRandomIndex(100);
-  const type = seconds < 90 ? "melee"
+  const type = seconds >= 600
+    ? (roll < 28 ? "voidKnight" : roll < 52 ? "arcSniper" : roll < 78 ? "colossus" : "nightmare")
+    : seconds < 90 ? "melee"
     : seconds < 150 ? (roll < 82 ? "melee" : "dasher")
       : seconds < 240 ? (roll < 55 ? "melee" : roll < 78 ? "dasher" : roll < 92 ? "thrower" : "brute")
         : seconds < 420
@@ -6921,7 +7000,11 @@ function spawnSurvivalEnemy() {
     dasher: { hp: 30, speed: 2.9, radius: 19, damage: 8, xp: 3.5, color: "#fb923c" },
     thrower: { hp: 25, speed: 1.7, radius: 21, damage: 5, xp: 4.5, color: "#a78bfa" },
     brute: { hp: 72, speed: 1.25, radius: 30, damage: 11, xp: 8, color: "#94a3b8" },
-    bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" }
+    bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" },
+    voidKnight: { hp: 110, speed: 2.05, radius: 27, damage: 14, xp: 11, color: "#6366f1" },
+    arcSniper: { hp: 68, speed: 1.45, radius: 22, damage: 12, xp: 10, color: "#22d3ee" },
+    colossus: { hp: 185, speed: 1.05, radius: 36, damage: 18, xp: 15, color: "#b45309" },
+    nightmare: { hp: 92, speed: 3.05, radius: 24, damage: 15, xp: 13, color: "#e11d48" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({
@@ -6939,7 +7022,11 @@ function spawnSurvivalEnemy() {
     xpValue: base.xp * mode.enemyXp,
     color: base.color,
     contactCooldown: 0,
-    attackTimer: type === "thrower" ? 150 : type === "bomber" ? 210 : Infinity,
+    attackTimer: type === "thrower" ? 150
+      : type === "bomber" ? 210
+        : type === "arcSniper" ? 105
+          : type === "nightmare" ? 165
+            : Infinity,
     stunTime: 0,
     slowTime: 0
   });
@@ -7122,7 +7209,16 @@ function describeSurvivalChoice(choice) {
 function openSurvivalAugments() {
   if (!pveGame || pveGame.over) return;
   pveGame.pausedForAugment = true;
-  const choices = makeSurvivalChoices();
+  pveGame.currentAugmentChoices = makeSurvivalChoices();
+  renderSurvivalAugmentChoices();
+  ui.pveAugmentReroll.classList.remove("is-hidden");
+  updateAugmentRerollButton();
+  ui.pveAugmentOverlay.classList.add("is-active");
+  ui.pveAugmentOverlay.setAttribute("aria-hidden", "false");
+}
+
+function renderSurvivalAugmentChoices() {
+  const choices = pveGame.currentAugmentChoices;
   ui.pveAugmentChoices.innerHTML = choices.map((choice, index) => {
     const view = describeSurvivalChoice(choice);
     return `
@@ -7137,11 +7233,23 @@ function openSurvivalAugments() {
       </button>
     `;
   }).join("");
-  ui.pveAugmentOverlay.classList.add("is-active");
-  ui.pveAugmentOverlay.setAttribute("aria-hidden", "false");
   ui.pveAugmentChoices.querySelectorAll("[data-augment-index]").forEach(button => {
     button.addEventListener("click", () => chooseSurvivalAugment(choices[Number(button.dataset.augmentIndex)]));
   });
+}
+
+function updateAugmentRerollButton() {
+  if (!ui.pveAugmentReroll || !pveGame) return;
+  ui.pveAugmentReroll.disabled = pveGame.augmentRerolls <= 0 || pveGame.startingChoice;
+  ui.pveAugmentReroll.querySelector("b").textContent = String(pveGame.augmentRerolls);
+}
+
+function rerollSurvivalAugments() {
+  if (!pveGame?.pausedForAugment || pveGame.startingChoice || pveGame.augmentRerolls <= 0) return;
+  pveGame.augmentRerolls -= 1;
+  pveGame.currentAugmentChoices = makeSurvivalChoices();
+  renderSurvivalAugmentChoices();
+  updateAugmentRerollButton();
 }
 
 function openStartingWeaponChoices() {
@@ -7173,6 +7281,7 @@ function openStartingWeaponChoices() {
       </button>
     `;
   }).join("");
+  ui.pveAugmentReroll.classList.add("is-hidden");
   ui.pveAugmentOverlay.classList.add("is-active");
   ui.pveAugmentOverlay.setAttribute("aria-hidden", "false");
   ui.pveAugmentChoices.querySelectorAll("[data-augment-index]").forEach(button => {
@@ -7406,8 +7515,9 @@ function stepSurvivalPve() {
     const baseEnemyCap = seconds < 90 ? 13
       : seconds < 180 ? 20
         : seconds < 420 ? 32 + Math.floor((seconds - 180) / 90) * 5
-          : 76 + Math.floor((seconds - 420) / 60) * 10;
-    const enemyCap = Math.floor(baseEnemyCap * mode.enemyCap);
+          : seconds < 600 ? 76 + Math.floor((seconds - 420) / 60) * 8
+            : Math.min(108, 94 + Math.floor((seconds - 600) / 60) * 4);
+    const enemyCap = Math.min(140, Math.floor(baseEnemyCap * mode.enemyCap));
     const availableSlots = Math.max(0, enemyCap - pveGame.enemies.filter(enemy => !enemy.dead).length);
     const waveLimit = Math.ceil((lateRush ? 9 : 4) * mode.spawnCount);
     for (let index = 0; index < Math.min(waveLimit, count, availableSlots); index += 1) spawnSurvivalEnemy();
@@ -7486,19 +7596,35 @@ function stepSurvivalPve() {
             pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
           }
           enemy.attackTimer = pveGame.difficultyId === "hard" ? 140 : pveGame.difficultyId === "normal" ? 160 : 180;
+        } else if (enemy.type === "nightmare") {
+          const centerAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+          [-0.18, 0, 0.18].forEach(offset => {
+            const shotAngle = centerAngle + offset;
+            spawnSurvivalProjectile({
+              x: enemy.x, y: enemy.y,
+              vx: Math.cos(shotAngle) * 8.5,
+              vy: Math.sin(shotAngle) * 8.5,
+              damage: enemy.contactDamage * 0.55,
+              radius: 8,
+              color: enemy.color,
+              life: 170
+            });
+            pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
+          });
+          enemy.attackTimer = 165;
         } else {
           const shotAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
           spawnSurvivalProjectile({
             x: enemy.x, y: enemy.y,
-            vx: Math.cos(shotAngle) * 7.5,
-            vy: Math.sin(shotAngle) * 7.5,
+            vx: Math.cos(shotAngle) * (enemy.type === "arcSniper" ? 10.5 : 7.5),
+            vy: Math.sin(shotAngle) * (enemy.type === "arcSniper" ? 10.5 : 7.5),
             damage: enemy.contactDamage * 0.75,
-            radius: enemy.type === "bomber" ? 12 : 8,
+            radius: enemy.type === "bomber" ? 12 : enemy.type === "arcSniper" ? 6 : 8,
             color: enemy.color,
             life: 180
           });
           pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
-          enemy.attackTimer = enemy.type === "bomber" ? 200 : 150;
+          enemy.attackTimer = enemy.type === "bomber" ? 200 : enemy.type === "arcSniper" ? 105 : 150;
         }
       }
     }
@@ -7751,7 +7877,14 @@ function drawSurvivalPve() {
   }
   const player = pveGame.player;
   pveGame.xpOrbs.forEach(orb => {
-    drawLuminousCore(pveCtx, orb.x, orb.y, orb.radius, "#22d3ee", "#d9fbff", pveGame.tick + orb.x, 0.72);
+    pveCtx.save();
+    pveCtx.fillStyle = "#22d3ee";
+    pveCtx.shadowColor = "#67e8f9";
+    pveCtx.shadowBlur = 8;
+    pveCtx.beginPath();
+    pveCtx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.restore();
   });
   pveGame.pickups.forEach(pickup => {
     pveCtx.save();
@@ -7844,7 +7977,7 @@ function drawSurvivalPve() {
     pveCtx.save();
     const angle = Math.atan2(projectile.vy, projectile.vx);
     const speed = Math.hypot(projectile.vx, projectile.vy);
-    drawMotionTrail(
+    drawCheapTrail(
       pveCtx,
       projectile.x,
       projectile.y,
@@ -7916,16 +8049,9 @@ function drawSurvivalPve() {
       pveCtx.closePath();
       pveCtx.fill();
     } else {
-      drawLuminousCore(
-        pveCtx,
-        0,
-        0,
-        projectile.radius,
-        projectile.color,
-        projectile.trail || "#f7fbff",
-        pveGame.tick + projectile.x,
-        0.86
-      );
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, projectile.radius, 0, Math.PI * 2);
+      pveCtx.fill();
       if (projectile.visual === "pulse") {
         pveCtx.strokeStyle = "#d9fbff";
         pveCtx.lineWidth = 2;
@@ -8297,6 +8423,7 @@ ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
 ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
 ui.pveNormalSkillButton.addEventListener("click", () => usePveSkill("normal"));
 ui.pveUltimateSkillButton.addEventListener("click", () => usePveSkill("ultimate"));
+ui.pveAugmentReroll.addEventListener("click", rerollSurvivalAugments);
 document.addEventListener("keydown", event => {
   if (screens.pveBattle.classList.contains("is-active") && pveGame) {
     if (pveGame.mode === "survival") return;
