@@ -686,6 +686,25 @@ function tierForLp(lp, rankPosition = null) {
   return "구리";
 }
 
+function competitiveTierIndex(lp) {
+  if (lp >= 2700) return 7;
+  if (lp >= 2200) return 6;
+  if (lp >= 1800) return 5;
+  if (lp >= 1500) return 4;
+  if (lp >= 1200) return 3;
+  if (lp >= 1000) return 2;
+  if (lp >= 500) return 1;
+  return 0;
+}
+
+function previewRankedLpChange(winnerLp, loserLp) {
+  const tierDifference = competitiveTierIndex(loserLp) - competitiveTierIndex(winnerLp);
+  return {
+    gain: clamp(15 + tierDifference * 2, 10, 20),
+    loss: clamp(7 + tierDifference, 5, 10)
+  };
+}
+
 function tierClassForLp(lp, rankPosition = null) {
   return {
     "챌린저": "tier-challenger",
@@ -2841,7 +2860,7 @@ function setResultCharacter(orb, fighter) {
   orb.style.setProperty("--result-accent", fighter.accent);
 }
 
-function renderPvpResultSummary(fighter, outcome) {
+function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
   const elapsed = formatBattleTime(game?.tick);
   const player = getPlayer(fighter.ownerId);
   setResultCharacter(ui.resultCharacterOrb, fighter);
@@ -2869,18 +2888,30 @@ function renderPvpResultSummary(fighter, outcome) {
     ui.resultEyebrow.textContent = "MATCH DEFEAT";
     ui.resultTitle.textContent = "패배";
     ui.resultText.textContent = `${fighter.name} 패배 · 다음 경기를 준비하세요`;
-    ui.resultLpGain.textContent = "정산 중";
-    ui.resultReward.textContent = "-5~10 LP";
-    ui.resultRewardLabel.textContent = "패배";
+    if (lpPreview?.casual) {
+      ui.resultLpGain.textContent = "+0 LP";
+      ui.resultReward.textContent = "LP 변화 없음";
+      ui.resultRewardLabel.textContent = "일반게임";
+    } else {
+      ui.resultLpGain.textContent = Number.isFinite(lpPreview?.loss) ? `-${lpPreview.loss} LP` : "정산 중";
+      ui.resultReward.textContent = Number.isFinite(lpPreview?.loss) ? `-${lpPreview.loss} LP` : "정산 중";
+      ui.resultRewardLabel.textContent = "랭크 패배";
+    }
     return;
   }
 
   ui.resultEyebrow.textContent = "MATCH VICTORY";
   ui.resultTitle.textContent = "승리!";
   ui.resultText.textContent = `${fighter.ownerName} · ${fighter.name} 승리`;
-  ui.resultLpGain.textContent = "정산 중";
-  ui.resultReward.textContent = "+10~20 LP";
-  ui.resultRewardLabel.textContent = "랭크 승리 보상";
+  if (lpPreview?.casual) {
+    ui.resultLpGain.textContent = "+0 LP";
+    ui.resultReward.textContent = "LP 변화 없음";
+    ui.resultRewardLabel.textContent = "일반게임";
+  } else {
+    ui.resultLpGain.textContent = Number.isFinite(lpPreview?.gain) ? `+${lpPreview.gain} LP` : "정산 중";
+    ui.resultReward.textContent = Number.isFinite(lpPreview?.gain) ? `+${lpPreview.gain} LP` : "정산 중";
+    ui.resultRewardLabel.textContent = "랭크 승리 보상";
+  }
 }
 
 function presentGameWinner(winner) {
@@ -2888,7 +2919,9 @@ function presentGameWinner(winner) {
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
   const localFighter = myFighter() || winner;
-  renderPvpResultSummary(localFighter, localFighter === winner ? "win" : "lose");
+  const casualMatch = Boolean(currentRoom?.prepState?.casual || currentRoom?.prep_state?.casual);
+  const lpPreview = casualMatch ? { casual: true, gain: 0, loss: 0 } : previewRankedLpChange(winnerPlayer.lp, loserPlayer.lp);
+  renderPvpResultSummary(localFighter, localFighter === winner ? "win" : "lose", lpPreview);
   ui.resultBox.classList.remove("is-promotion");
   ui.resultBox.classList.toggle("is-defeat", localFighter !== winner);
   ui.resultOverlay.classList.add("is-active");
