@@ -2716,9 +2716,7 @@ h2 {
 
 .gacha-stage {
   position: relative;
-  width: min(1360px, 100%);
-  min-height: min(820px, calc(100vh - 38px));
-  padding: 28px 34px 34px;
+  min-height: min(860px, calc(100vh - 34px));
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 88%, rgba(242, 193, 78, 0.34), transparent 22%),
@@ -2734,7 +2732,8 @@ h2 {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 8px;
+  min-height: 94px;
+  margin-bottom: 10px;
   text-align: left;
 }
 
@@ -2748,8 +2747,10 @@ h2 {
 .gacha-header .screen-title {
   margin: 0;
   color: #f8d891;
-  font-size: clamp(2rem, 4vw, 4.4rem);
+  font-size: clamp(2.2rem, 4.2vw, 5rem);
+  line-height: 0.95;
   text-shadow: 0 0 28px rgba(242, 193, 78, 0.28);
+  white-space: nowrap;
 }
 
 .gacha-back-button {
@@ -2776,7 +2777,8 @@ h2 {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: min(680px, calc(100vh - 180px));
+  min-height: min(710px, calc(100vh - 170px));
+  padding-bottom: 112px;
   overflow: hidden;
   background:
     radial-gradient(ellipse at 50% 88%, rgba(242, 193, 78, 0.38), transparent 28%),
@@ -2803,7 +2805,7 @@ h2 {
 
 .summon-beam {
   position: absolute;
-  bottom: 64px;
+  bottom: 124px;
   z-index: 1;
   width: min(520px, 44%);
   height: 80%;
@@ -2815,9 +2817,9 @@ h2 {
 
 .summon-platform {
   position: absolute;
-  bottom: 82px;
+  bottom: 146px;
   z-index: 2;
-  width: min(640px, 62%);
+  width: min(760px, 68%);
   height: 92px;
   border: 1px solid rgba(242, 193, 78, 0.72);
   border-radius: 50%;
@@ -2854,7 +2856,7 @@ h2 {
 .summon-ring {
   position: absolute;
   z-index: 1;
-  width: min(660px, 74%);
+  width: min(780px, 76%);
   aspect-ratio: 1;
   border: 1px solid rgba(242, 193, 78, 0.38);
   border-radius: 50%;
@@ -2865,7 +2867,7 @@ h2 {
 }
 
 .summon-ring-two {
-  width: min(820px, 88%);
+  width: min(1020px, 92%);
   border-color: rgba(242, 193, 78, 0.18);
   transform: rotate(16deg) scaleY(0.52);
   animation-duration: 28s;
@@ -2893,8 +2895,8 @@ h2 {
   place-items: center;
   align-content: center;
   gap: 18px;
-  width: min(330px, 42vw);
-  height: min(460px, 58vw);
+  width: min(380px, 32vw);
+  height: min(510px, 43vw);
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 10% 90%, rgba(255, 255, 255, 0.12)),
     radial-gradient(circle at 50% 28%, rgba(247, 244, 235, 0.1), transparent 22%),
@@ -2912,12 +2914,12 @@ h2 {
 .gacha-reveal span {
   display: grid;
   place-items: center;
-  width: 112px;
-  height: 112px;
+  width: 128px;
+  height: 128px;
   color: #0d1118;
   background: radial-gradient(circle, #fff8d6, var(--gold) 62%, #9a640f);
   border-radius: 50%;
-  font-size: 4rem;
+  font-size: 4.4rem;
   font-weight: 900;
   box-shadow:
     0 0 30px rgba(242, 193, 78, 0.48),
@@ -2927,7 +2929,8 @@ h2 {
 .gacha-reveal strong {
   min-height: 34px;
   color: var(--text);
-  font-size: 1.45rem;
+  font-size: clamp(1.25rem, 1.6vw, 1.75rem);
+  line-height: 1.25;
   text-align: center;
   text-shadow: 0 0 16px rgba(242, 193, 78, 0.32);
 }
@@ -3039,7 +3042,7 @@ h2 {
 .gacha-message {
   position: absolute;
   z-index: 5;
-  bottom: 112px;
+  bottom: 104px;
   left: 50%;
   width: min(460px, 90%);
   min-height: 28px;
@@ -3054,8 +3057,11 @@ h2 {
   z-index: 6;
   bottom: 26px;
   left: 50%;
-  min-width: 300px;
-  min-height: 72px;
+  display: grid;
+  place-items: center;
+  min-width: min(420px, 72vw);
+  min-height: 78px;
+  padding: 0 42px;
   color: #1a1203;
   background:
     linear-gradient(180deg, #fff1a8, #f2c14e 52%, #b7791f);
@@ -3064,6 +3070,9 @@ h2 {
     0 0 24px rgba(242, 193, 78, 0.44),
     inset 0 0 0 1px rgba(255, 255, 255, 0.34);
   transform: translateX(-50%);
+  font-size: 1.22rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .gacha-summon-button:hover {
@@ -3672,6 +3681,12 @@ h2 {
   width: 100%;
   max-width: none;
   padding: 24px;
+}
+
+.panel.gacha-stage {
+  width: min(1520px, calc(100vw - 48px));
+  max-width: none;
+  padding: 24px 36px 34px;
 }
 
 .wallet-row {
