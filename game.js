@@ -56,6 +56,17 @@ const ui = {
   toggleSignupPassword: document.getElementById("toggleSignupPassword"),
   authMessage: document.getElementById("authMessage"),
   logoutButton: document.getElementById("logoutButton"),
+  accountSettingsButton: document.getElementById("accountSettingsButton"),
+  accountModal: document.getElementById("accountModal"),
+  accountModalCloseButton: document.getElementById("accountModalCloseButton"),
+  accountCancelButton: document.getElementById("accountCancelButton"),
+  accountSaveButton: document.getElementById("accountSaveButton"),
+  accountCurrentUsername: document.getElementById("accountCurrentUsername"),
+  accountCurrentPassword: document.getElementById("accountCurrentPassword"),
+  accountNewUsername: document.getElementById("accountNewUsername"),
+  accountNewPassword: document.getElementById("accountNewPassword"),
+  accountNewPasswordConfirm: document.getElementById("accountNewPasswordConfirm"),
+  accountMessage: document.getElementById("accountMessage"),
   currentUserName: document.getElementById("currentUserName"),
   currentUserTier: document.getElementById("currentUserTier"),
   currentUserCoins: document.getElementById("currentUserCoins"),
@@ -663,8 +674,8 @@ function normalizePlayer(user) {
 }
 
 function tierForLp(lp, rankPosition = null) {
-  if (rankPosition === 1) return "챌린저";
-  if (rankPosition === 2 || rankPosition === 3) return "그마";
+  if (lp >= 2700 && rankPosition === 1) return "챌린저";
+  if (lp >= 2700 && (rankPosition === 2 || rankPosition === 3)) return "그마";
   if (lp >= 2700 && rankPosition !== null && rankPosition >= 4 && rankPosition <= 7) return "마스터";
   if (lp >= 2200) return "다이아";
   if (lp >= 1800) return "플레";
@@ -1641,6 +1652,64 @@ function togglePassword(input, button) {
   button.textContent = visible ? "보기" : "숨기기";
 }
 
+function setAccountModalOpen(open) {
+  ui.accountModal.classList.toggle("is-active", open);
+  ui.accountModal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open) {
+    ui.accountCurrentUsername.value = currentUser?.name || "";
+    ui.accountCurrentPassword.value = "";
+    ui.accountNewUsername.value = currentUser?.name || "";
+    ui.accountNewPassword.value = "";
+    ui.accountNewPasswordConfirm.value = "";
+    ui.accountMessage.textContent = "";
+    setTimeout(() => ui.accountCurrentPassword.focus(), 0);
+  }
+}
+
+async function saveAccountChanges() {
+  if (!currentUser) return;
+  const currentUsername = ui.accountCurrentUsername.value.trim();
+  const currentPassword = ui.accountCurrentPassword.value;
+  const newUsername = ui.accountNewUsername.value.trim();
+  const newPassword = ui.accountNewPassword.value;
+  const newPasswordConfirm = ui.accountNewPasswordConfirm.value;
+
+  if (!currentUsername || !currentPassword) {
+    ui.accountMessage.textContent = "현재 아이디와 비밀번호를 입력하세요.";
+    return;
+  }
+  if (newPassword !== newPasswordConfirm) {
+    ui.accountMessage.textContent = "새 비밀번호 확인이 맞지 않습니다.";
+    return;
+  }
+  if (!newUsername && !newPassword) {
+    ui.accountMessage.textContent = "새 닉네임이나 새 비밀번호를 입력하세요.";
+    return;
+  }
+
+  ui.accountSaveButton.disabled = true;
+  ui.accountMessage.textContent = "변경 중...";
+  try {
+    const data = await rpc("update_account", {
+      session_token: appSessionToken,
+      current_user_name: currentUsername,
+      current_password: currentPassword,
+      new_user_name: newUsername,
+      new_password: newPassword,
+      new_password_confirm: newPasswordConfirm
+    });
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    renderLobby();
+    ui.accountMessage.textContent = "변경 완료!";
+    setTimeout(() => setAccountModalOpen(false), 450);
+  } catch (error) {
+    ui.accountMessage.textContent = error.message;
+  } finally {
+    ui.accountSaveButton.disabled = false;
+  }
+}
+
 function openGachaScreen() {
   if (!currentUser) return;
   ui.gachaPlayer.innerHTML = "";
@@ -2058,7 +2127,7 @@ function resetGame() {
   appliedSkillEvents = new Set();
   pendingSkillUse = false;
 
-  ui.currentBet.textContent = "+14 LP";
+  ui.currentBet.textContent = "+10~20 LP";
   ui.hudP1Label.textContent = p1.name;
   ui.hudP2Label.textContent = p2.name;
   ui.playerOneName.textContent = game.fighters[0].name;
@@ -2800,8 +2869,8 @@ function renderPvpResultSummary(fighter, outcome) {
     ui.resultEyebrow.textContent = "MATCH DEFEAT";
     ui.resultTitle.textContent = "패배";
     ui.resultText.textContent = `${fighter.name} 패배 · 다음 경기를 준비하세요`;
-    ui.resultLpGain.textContent = "+0 LP";
-    ui.resultReward.textContent = "보상 없음";
+    ui.resultLpGain.textContent = "정산 중";
+    ui.resultReward.textContent = "-5~10 LP";
     ui.resultRewardLabel.textContent = "패배";
     return;
   }
@@ -2810,7 +2879,7 @@ function renderPvpResultSummary(fighter, outcome) {
   ui.resultTitle.textContent = "승리!";
   ui.resultText.textContent = `${fighter.ownerName} · ${fighter.name} 승리`;
   ui.resultLpGain.textContent = "정산 중";
-  ui.resultReward.textContent = "+14 LP";
+  ui.resultReward.textContent = "+10~20 LP";
   ui.resultRewardLabel.textContent = "랭크 승리 보상";
 }
 
@@ -2853,38 +2922,49 @@ async function settleMatch(winnerPlayer, loserPlayer) {
     if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
     const localWon = currentUser?.id === updatedWinner.id;
     const casualMatch = Boolean(data.casual);
+    const lpGain = Number(data.lpGain ?? 14);
+    const lpLoss = Number(data.lpLoss ?? 7);
     if (casualMatch && localWon) {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.remove("is-defeat");
       ui.resultText.textContent = `${updatedWinner.name} 승리 · 일반게임 종료`;
       ui.resultReward.textContent = "LP 변화 없음";
       ui.resultRewardLabel.textContent = "일반게임";
+    } else if (casualMatch) {
+      ui.resultBox.classList.remove("is-promotion");
+      ui.resultBox.classList.add("is-defeat");
+      ui.resultTitle.textContent = "패배";
+      ui.resultText.textContent = `${updatedLoser.name} 패배 · 일반게임 종료`;
+      ui.resultReward.textContent = "LP 변화 없음";
+      ui.resultRewardLabel.textContent = "일반게임";
+      ui.resultCurrentLp.textContent = `${updatedLoser.lp} LP`;
+      ui.resultLpGain.textContent = "+0 LP";
     } else if (data.promoted && localWon) {
       ui.resultBox.classList.remove("is-defeat");
       ui.resultBox.classList.add("is-promotion");
       ui.resultTitle.textContent = `${data.newTier} 승급!`;
       ui.resultText.textContent = `${updatedWinner.name} 승리 · ${data.newTier} 승급`;
-      ui.resultReward.textContent = `+${data.lpGain ?? 14} LP · +${data.promotionReward ?? 200}C`;
+      ui.resultReward.textContent = `+${lpGain} LP · +${data.promotionReward ?? 200}C`;
       ui.resultRewardLabel.textContent = `${data.newTier} 승급 보상`;
     } else if (localWon) {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.remove("is-defeat");
       ui.resultText.textContent = `${updatedWinner.name} 승리 · 랭크 정산 완료`;
-      ui.resultReward.textContent = `+${data.lpGain ?? 14} LP`;
+      ui.resultReward.textContent = `+${lpGain} LP`;
       ui.resultRewardLabel.textContent = "랭크 승리 보상";
     } else {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.add("is-defeat");
       ui.resultTitle.textContent = "패배";
       ui.resultText.textContent = `${updatedLoser.name} 패배 · ${updatedWinner.name} 승리`;
-      ui.resultReward.textContent = "보상 없음";
-      ui.resultRewardLabel.textContent = "패배";
+      ui.resultReward.textContent = `-${lpLoss} LP`;
+      ui.resultRewardLabel.textContent = "랭크 패배";
       ui.resultCurrentLp.textContent = `${updatedLoser.lp} LP`;
-      ui.resultLpGain.textContent = "+0 LP";
+      ui.resultLpGain.textContent = `-${lpLoss} LP`;
     }
     if (localWon) {
       ui.resultCurrentLp.textContent = `${updatedWinner.lp} LP`;
-      ui.resultLpGain.textContent = casualMatch ? "+0 LP" : `+${data.lpGain ?? 14} LP`;
+      ui.resultLpGain.textContent = casualMatch ? "+0 LP" : `+${lpGain} LP`;
     }
   } catch (error) {
     ui.resultText.textContent = `정산 실패: ${error.message}`;
@@ -10237,12 +10317,17 @@ async function logout() {
   setRoomPolling(false);
   ui.authPassword.value = "";
   ui.authMessage.textContent = "";
+  setAccountModalOpen(false);
   showScreen("auth");
 }
 
 ui.loginButton.addEventListener("click", () => authenticate("login"));
 window.addEventListener("pagehide", abandonMatchPresence);
 ui.logoutButton.addEventListener("click", logout);
+ui.accountSettingsButton.addEventListener("click", () => setAccountModalOpen(true));
+ui.accountModalCloseButton.addEventListener("click", () => setAccountModalOpen(false));
+ui.accountCancelButton.addEventListener("click", () => setAccountModalOpen(false));
+ui.accountSaveButton.addEventListener("click", saveAccountChanges);
 ui.patchNoteButton.addEventListener("click", () => setPatchNotesOpen(true));
 ui.patchNoteCloseButton.addEventListener("click", () => setPatchNotesOpen(false));
 ui.patchNoteModal.addEventListener("click", event => {
@@ -10258,6 +10343,11 @@ ui.authPassword.addEventListener("keydown", event => {
 });
 ui.signupPassword.addEventListener("keydown", event => {
   if (event.key === "Enter") authenticate("signup");
+});
+[ui.accountCurrentUsername, ui.accountCurrentPassword, ui.accountNewUsername, ui.accountNewPassword, ui.accountNewPasswordConfirm].forEach(input => {
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") saveAccountChanges();
+  });
 });
 ui.lobbyPlayerOne.addEventListener("change", () => {
   setMatchPlayer("p1", ui.lobbyPlayerOne.value);

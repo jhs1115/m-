@@ -92,6 +92,7 @@
 
     <section id="lobbyScreen" class="screen">
       <button id="logoutButton" class="logout-button">로그아웃</button>
+      <button id="accountSettingsButton" class="account-settings-button" type="button">계정변경</button>
       <div class="top-copy">
         <h1>Mzzang</h1>
         <div class="title-rule"></div>
@@ -265,6 +266,31 @@
         </button>
       </nav>
     </section>
+
+    <div id="accountModal" class="account-modal" aria-hidden="true">
+      <div class="account-modal-box">
+        <button id="accountModalCloseButton" class="patch-note-close" type="button">닫기</button>
+        <div class="account-modal-heading">
+          <span>ACCOUNT</span>
+          <h2>계정 변경</h2>
+        </div>
+        <label class="bet-label" for="accountCurrentUsername">현재 아이디</label>
+        <input id="accountCurrentUsername" class="text-input" type="text" maxlength="20" autocomplete="username">
+        <label class="bet-label" for="accountCurrentPassword">현재 비밀번호</label>
+        <input id="accountCurrentPassword" class="text-input" type="password" autocomplete="current-password">
+        <label class="bet-label" for="accountNewUsername">새 닉네임</label>
+        <input id="accountNewUsername" class="text-input" type="text" maxlength="20" autocomplete="username">
+        <label class="bet-label" for="accountNewPassword">새 비밀번호</label>
+        <input id="accountNewPassword" class="text-input" type="password" autocomplete="new-password">
+        <label class="bet-label" for="accountNewPasswordConfirm">새 비밀번호 확인</label>
+        <input id="accountNewPasswordConfirm" class="text-input" type="password" autocomplete="new-password">
+        <p id="accountMessage" class="status-message"></p>
+        <div class="bet-actions">
+          <button id="accountCancelButton" class="ghost-button" type="button">취소</button>
+          <button id="accountSaveButton" class="primary-button" type="button">변경</button>
+        </div>
+      </div>
+    </div>
 
     <section id="gachaScreen" class="screen">
       <div class="panel gacha-stage">
@@ -517,7 +543,7 @@
             <h2>LP 매치</h2>
             <div class="wallet-row">
               <span>승리 보상</span>
-              <strong>+14 LP</strong>
+              <strong>+10~20 LP</strong>
             </div>
           </div>
         </div>
@@ -732,7 +758,7 @@
         <div class="center-hud">
           <div class="round-info">
             <span>LP MATCH</span>
-            <strong><span id="currentBet">+14</span></strong>
+            <strong><span id="currentBet">+10~20</span></strong>
           </div>
         </div>
 
@@ -783,14 +809,14 @@
               <div class="result-lp-row">
                 <span>현재 LP</span>
                 <strong id="resultCurrentLp">1000 LP</strong>
-                <em id="resultLpGain">+14 LP</em>
+                <em id="resultLpGain">+10~20 LP</em>
               </div>
             </section>
             <div class="result-side-column">
               <section class="result-reward-panel">
                 <span>보상</span>
                 <div class="result-reward-icon">LP</div>
-                <strong id="resultReward">+14 LP</strong>
+                <strong id="resultReward">+10~20 LP</strong>
                 <small id="resultRewardLabel">랭크 승리 보상</small>
               </section>
               <section class="result-stats-panel">

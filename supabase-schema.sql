@@ -291,6 +291,76 @@ begin
 end;
 $$;
 
+create or replace function public.update_account(
+  session_token text,
+  current_user_name text,
+  current_password text,
+  new_user_name text,
+  new_password text,
+  new_password_confirm text
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public, extensions
+as $$
+declare
+  active_user public.app_users;
+  clean_current_name text := trim(current_user_name);
+  clean_new_name text := trim(coalesce(new_user_name, ''));
+  next_password text := coalesce(new_password, '');
+  confirm_password text := coalesce(new_password_confirm, '');
+  next_salt text;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if clean_current_name = '' or coalesce(current_password, '') = '' then
+    raise exception 'current username and password required';
+  end if;
+
+  if clean_current_name <> active_user.username
+    or active_user.password_hash <> public.app_hash_password(current_password, active_user.password_salt) then
+    raise exception 'invalid current username or password';
+  end if;
+
+  if clean_new_name = '' then
+    clean_new_name := active_user.username;
+  end if;
+
+  if next_password <> confirm_password then
+    raise exception 'new password confirmation does not match';
+  end if;
+
+  if next_password <> '' and length(next_password) < 6 then
+    raise exception 'password must be at least 6 characters';
+  end if;
+
+  if next_password = '' then
+    update public.app_users
+    set username = clean_new_name
+    where id = active_user.id
+    returning * into active_user;
+  else
+    next_salt := encode(extensions.gen_random_bytes(16), 'hex');
+    update public.app_users
+    set username = clean_new_name,
+        password_salt = next_salt,
+        password_hash = public.app_hash_password(next_password, next_salt)
+    where id = active_user.id
+    returning * into active_user;
+  end if;
+
+  return jsonb_build_object('user', public.app_user_json(active_user));
+exception
+  when unique_violation then
+    raise exception 'username already exists';
+end;
+$$;
+
 create or replace function public.get_me(session_token text)
 returns jsonb
 language plpgsql
@@ -1177,6 +1247,7 @@ begin
         'lp', ranked.lp,
         'coins', ranked.coins,
         'tier', case
+          when ranked.lp < 2700 then public.lp_tier(ranked.lp)
           when ranked.rank_position = 1 then '챌린저'
           when ranked.rank_position in (2, 3) then '그마'
           when ranked.lp >= 2700 and ranked.rank_position between 4 and 7 then '마스터'
@@ -1334,6 +1405,11 @@ declare
   old_lp integer;
   old_tier text;
   new_tier text;
+  winner_tier_index integer;
+  loser_tier_index integer;
+  tier_difference integer;
+  lp_gain integer := 14;
+  lp_loss integer := 7;
   promoted boolean := false;
   promotion_reward integer := 0;
 begin
@@ -1381,6 +1457,7 @@ begin
       'winner', public.app_user_json(winner_user),
       'loser', public.app_user_json(loser_user),
       'lpGain', case when coalesce((room_state->>'casual')::boolean, false) then 0 else coalesce((room_state->>'lpGain')::integer, 14) end,
+      'lpLoss', case when coalesce((room_state->>'casual')::boolean, false) then 0 else coalesce((room_state->>'lpLoss')::integer, 7) end,
       'casual', coalesce((room_state->>'casual')::boolean, false),
       'promoted', coalesce((room_state->>'promoted')::boolean, false),
       'oldTier', room_state->>'oldTier',
@@ -1398,6 +1475,7 @@ begin
       'settled', true,
       'winnerId', winner_id,
       'lpGain', 0,
+      'lpLoss', 0,
       'casual', true,
       'promoted', false,
       'oldTier', public.lp_tier(winner_user.lp),
@@ -1413,6 +1491,7 @@ begin
       'winner', public.app_user_json(winner_user),
       'loser', public.app_user_json(loser_user),
       'lpGain', 0,
+      'lpLoss', 0,
       'casual', true,
       'promoted', false,
       'oldTier', public.lp_tier(winner_user.lp),
@@ -1422,6 +1501,29 @@ begin
   end if;
 
   old_lp := winner_user.lp;
+  winner_tier_index := case
+    when winner_user.lp >= 2700 then 7
+    when winner_user.lp >= 2200 then 6
+    when winner_user.lp >= 1800 then 5
+    when winner_user.lp >= 1500 then 4
+    when winner_user.lp >= 1200 then 3
+    when winner_user.lp >= 1000 then 2
+    when winner_user.lp >= 500 then 1
+    else 0
+  end;
+  loser_tier_index := case
+    when loser_user.lp >= 2700 then 7
+    when loser_user.lp >= 2200 then 6
+    when loser_user.lp >= 1800 then 5
+    when loser_user.lp >= 1500 then 4
+    when loser_user.lp >= 1200 then 3
+    when loser_user.lp >= 1000 then 2
+    when loser_user.lp >= 500 then 1
+    else 0
+  end;
+  tier_difference := loser_tier_index - winner_tier_index;
+  lp_gain := greatest(10, least(20, 15 + tier_difference * 2));
+  lp_loss := greatest(5, least(10, 7 + tier_difference));
   old_tier := case
     when old_lp >= 2200 then '다이아'
     when old_lp >= 1800 then '플레'
@@ -1440,22 +1542,28 @@ begin
     when old_lp + 14 >= 500 then '아이언'
     else '구리'
   end;
+  old_tier := public.lp_tier(old_lp);
+  new_tier := public.lp_tier(old_lp + lp_gain);
   promoted := old_tier <> new_tier;
   promotion_reward := case when promoted then 200 else 0 end;
 
   update public.app_users
-  set lp = lp + 14,
+  set lp = lp + lp_gain,
       coins = coins + promotion_reward
   where id = winner_id
   returning * into winner_user;
 
-  select * into loser_user from public.app_users where id = loser_id;
+  update public.app_users
+  set lp = greatest(0, lp - lp_loss)
+  where id = loser_id
+  returning * into loser_user;
 
   update public.app_rooms
   set prep_state = room_state || jsonb_build_object(
     'settled', true,
     'winnerId', winner_id,
-    'lpGain', 14,
+    'lpGain', lp_gain,
+    'lpLoss', lp_loss,
     'casual', false,
     'promoted', promoted,
     'oldTier', old_tier,
@@ -1470,7 +1578,8 @@ begin
   return jsonb_build_object(
     'winner', public.app_user_json(winner_user),
     'loser', public.app_user_json(loser_user),
-    'lpGain', 14,
+    'lpGain', lp_gain,
+    'lpLoss', lp_loss,
     'casual', false,
     'promoted', promoted,
     'oldTier', old_tier,
@@ -1483,6 +1592,7 @@ $$;
 grant execute on function public.signup_user(text, text) to anon, authenticated;
 grant execute on function public.login_user(text, text) to anon, authenticated;
 grant execute on function public.logout_user(text) to anon, authenticated;
+grant execute on function public.update_account(text, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.get_me(text) to anon, authenticated;
 grant execute on function public.get_server_time(text) to anon, authenticated;
 revoke execute on function public.create_room(text) from anon, authenticated;

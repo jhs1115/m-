@@ -74,6 +74,26 @@ button:disabled {
   font-weight: 900;
 }
 
+.account-settings-button {
+  position: fixed;
+  top: 18px;
+  left: 108px;
+  z-index: 10;
+  min-height: 40px;
+  padding: 0 14px;
+  color: var(--text);
+  background: rgba(28, 32, 41, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.account-settings-button:hover,
+.logout-button:hover {
+  border-color: rgba(242, 193, 78, 0.72);
+  box-shadow: 0 0 18px rgba(242, 193, 78, 0.16);
+}
+
 .coin-badge {
   position: fixed;
   top: 18px;
@@ -125,6 +145,55 @@ button:disabled {
 
 body:not(.is-authenticated) .coin-badge {
   display: none;
+}
+
+.account-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 6, 12, 0.78);
+  backdrop-filter: blur(9px);
+}
+
+.account-modal.is-active {
+  display: grid;
+}
+
+.account-modal-box {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 36px);
+  padding: 30px;
+  overflow-y: auto;
+  background: rgba(16, 19, 26, 0.96);
+  border: 1px solid rgba(242, 193, 78, 0.28);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.account-modal-heading {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.account-modal-heading span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.account-modal-heading h2 {
+  margin: 6px 0 0;
+  color: #f8d891;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.account-modal .text-input {
+  margin-bottom: 14px;
 }
 
 .patch-note-modal {
@@ -527,15 +596,28 @@ h2 {
 }
 
 .tier-master {
-  color: #c084fc;
+  color: #a855f7;
+  text-shadow: 0 0 14px rgba(168, 85, 247, 0.48);
 }
 
 .tier-grandmaster {
-  color: #fb7185;
+  color: #ff304f;
+  text-shadow: 0 0 14px rgba(255, 48, 79, 0.48);
 }
 
 .tier-challenger {
-  color: #facc15;
+  color: #ffe66d;
+  background: linear-gradient(90deg, #fff7ad, #facc15, #fff4d0, #f59e0b, #fff7ad);
+  background-size: 220% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(250, 204, 21, 0.5);
+  animation: challenger-shine 2.8s linear infinite;
+}
+
+@keyframes challenger-shine {
+  to { background-position: 220% center; }
 }
 
 .player-panel::after,
