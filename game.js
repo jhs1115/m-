@@ -402,14 +402,14 @@ const characterGuide = {
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
   },
   swordsman: {
-    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않고 체력은 125입니다."],
-    normal: ["제 1식", "30초", "3초간 사라졌다가 나타납니다. 나타날 때 적을 1초간 멈추게 하고, 멈춘 동안 0.1초마다 2의 피해를 줍니다."],
+    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않고 체력은 110입니다."],
+    normal: ["제 1식", "30초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 2의 피해를 받습니다."],
     ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
   },
   demon: {
-    attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 10 추가 피해와 2초 둔화를 줍니다."],
-    normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 15의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 10% 회복합니다."],
-    ultimate: ["로스트 엔젤", "35초", "적을 관통해 15의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
+    attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 2초 둔화를 줍니다."],
+    normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 10의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 10% 회복합니다."],
+    ultimate: ["로스트 엔젤", "30초", "적을 관통해 25의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
   }
 };
 
@@ -1700,13 +1700,13 @@ function ultimateCooldown(kind) {
     riftmaker: 300,
     summoner: 3000,
     swordsman: 3600,
-    demon: 2100
+    demon: 1800
   }[kind] ?? Infinity;
 }
 
 function makeCharacterCombatState(kind) {
   const character = characters[kind];
-  const maxHp = kind === "swordsman" ? 125 : 200;
+  const maxHp = kind === "swordsman" ? 110 : 200;
   return {
     kind,
     name: character.name,
@@ -1780,6 +1780,8 @@ function makeCharacterCombatState(kind) {
     swordDanceTime: 0,
     swordDanceTimer: 0,
     swordDanceHits: 0,
+    swordReturnX: 0,
+    swordReturnY: 0,
     swordUltimateHits: 0,
     swordUltimateTimer: 0,
     demonSwordTimer: kind === "demon" ? 210 : Infinity,
@@ -2712,6 +2714,10 @@ function opponentOf(fighter) {
   return fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0];
 }
 
+function swordEnemyTarget(owner) {
+  return opponentOf(owner);
+}
+
 function nearestEnemyTarget(owner, x = owner.x, y = owner.y) {
   const fighter = opponentOf(owner);
   return [fighter, ...enemySummonsOf(owner)].reduce((nearest, target) => {
@@ -2980,7 +2986,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "demon") {
     fireDemonLine(fighter, {
-      damage: 15,
+      damage: 25,
       addMark: 2,
       markDuration: 480,
       consumeAll: true,
@@ -2988,7 +2994,7 @@ function triggerUltimate(fighter) {
       width: 30,
       ultimate: true
     });
-    fighter.ultimateTimer = 2100;
+    fighter.ultimateTimer = 1800;
   }
 }
 
@@ -3147,41 +3153,68 @@ function moveFighter(fighter, dt) {
     fighter.vy = 0;
     updateSkills(fighter, dt);
     if (wasVanished && fighter.swordDanceTime <= 0) {
-      const target = nearestEnemyTarget(fighter);
-      fighter.x = clamp(target.x, fighter.radius, canvas.width - fighter.radius);
-      fighter.y = clamp(target.y, fighter.radius, canvas.height - fighter.radius);
+      const target = swordEnemyTarget(fighter);
       if (!target.owner) target.stunTime = Math.max(target.stunTime || 0, 60);
       fighter.swordDanceTimer = 0;
+      fighter.phaseTime = Math.max(fighter.phaseTime, 60);
       addVisualEffect({
         type: "sword-ring",
-        x: fighter.x,
-        y: fighter.y,
-        radius: 108,
+        x: target.x,
+        y: target.y,
+        radius: 168,
         color: fighter.accent,
-        life: 44,
-        maxLife: 44
+        life: 64,
+        maxLife: 64
+      });
+      addVisualEffect({
+        type: "sword-ultimate-trail",
+        x1: target.x - 150,
+        y1: target.y - 84,
+        x2: target.x + 150,
+        y2: target.y + 84,
+        color: fighter.accent,
+        life: 72,
+        maxLife: 72,
+        index: 0,
+        total: 3
+      });
+      addVisualEffect({
+        type: "sword-ultimate-trail",
+        x1: target.x + 128,
+        y1: target.y - 104,
+        x2: target.x - 128,
+        y2: target.y + 104,
+        color: "#f7fbff",
+        life: 72,
+        maxLife: 72,
+        index: 1,
+        total: 3
       });
     }
     while (fighter.swordDanceTime <= 0 && fighter.swordDanceHits > 0 && fighter.swordDanceTimer <= 0) {
-      const target = nearestEnemyTarget(fighter);
+      const target = swordEnemyTarget(fighter);
       damageCombatTarget(target, 2, fighter);
       if (!target.owner) target.stunTime = Math.max(target.stunTime || 0, 6);
       fighter.swordDanceHits -= 1;
       fighter.swordDanceTimer += 6;
+      fighter.phaseTime = Math.max(fighter.phaseTime, 6);
       addVisualEffect({
         type: "sword-dash-trail",
-        x1: target.x - 54 + fighter.swordDanceHits * 3,
-        y1: target.y - 22,
-        x2: target.x + 54 - fighter.swordDanceHits * 3,
-        y2: target.y + 22,
-        color: fighter.accent,
-        life: 18,
-        maxLife: 18,
+        x1: target.x - 108 + fighter.swordDanceHits * 6,
+        y1: target.y - 48,
+        x2: target.x + 108 - fighter.swordDanceHits * 6,
+        y2: target.y + 48,
+        color: fighter.swordDanceHits % 2 ? fighter.accent : "#f7fbff",
+        life: 28,
+        maxLife: 28,
         index: 10 - fighter.swordDanceHits,
         total: 10
       });
       if (fighter.swordDanceHits <= 0) {
         fighter.swordDanceTimer = 0;
+        fighter.x = clamp(fighter.swordReturnX || fighter.x, fighter.radius, canvas.width - fighter.radius);
+        fighter.y = clamp(fighter.swordReturnY || fighter.y, fighter.radius, canvas.height - fighter.radius);
+        fighter.phaseTime = 0;
       }
     }
     return;
@@ -3415,7 +3448,6 @@ function moveFighter(fighter, dt) {
         damage: 5,
         addMark: 1,
         markDuration: 300,
-        bonusDamagePerMark: 10,
         slowTime: 120,
         width: 26
       });
@@ -3568,7 +3600,7 @@ function applySwordCircle(owner, damageAmount = 5, radius = 82) {
 }
 
 function useSwordBasic(owner) {
-  const target = nearestEnemyTarget(owner);
+  const target = swordEnemyTarget(owner);
   const fromX = owner.x;
   const fromY = owner.y;
   owner.x = clamp(target.x, owner.radius, canvas.width - owner.radius);
@@ -3589,7 +3621,7 @@ function useSwordBasic(owner) {
 }
 
 function performSwordDash(owner, damageAmount, orbitIndex = 0, total = 1, ultimate = false) {
-  const target = nearestEnemyTarget(owner);
+  const target = swordEnemyTarget(owner);
   const angle = ultimate
     ? Math.atan2(target.y - owner.y, target.x - owner.x)
     : Math.atan2(target.y - owner.y, target.x - owner.x) + Math.PI / 2 + orbitIndex * Math.PI / 3;
@@ -3629,6 +3661,8 @@ function performSwordDash(owner, damageAmount, orbitIndex = 0, total = 1, ultima
 }
 
 function beginSwordDance(owner) {
+  owner.swordReturnX = owner.x;
+  owner.swordReturnY = owner.y;
   owner.phaseTime = 180;
   owner.swordDanceTime = 180;
   owner.swordDanceTimer = 180;
@@ -3727,7 +3761,7 @@ function launchDemonMissile(owner) {
     radius: 13,
     life: 260,
     hitCooldown: 0,
-    damage: 15,
+    damage: 10,
     speed: 8.8,
     color: "#38bdf8",
     homing: true,
