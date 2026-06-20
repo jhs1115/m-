@@ -2,6 +2,7 @@
 const DEFAULT_CHARACTER = "thrower";
 const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
+const SOUND_SETTINGS_KEY = "matchzzang-sound-settings";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
@@ -26,6 +27,7 @@ const screens = {
   pve: document.getElementById("pveScreen"),
   pveCharacter: document.getElementById("pveCharacterScreen"),
   pveBattle: document.getElementById("pveBattleScreen"),
+  pvpQueue: document.getElementById("pvpQueueScreen"),
   pvp: document.getElementById("pvpScreen"),
   select: document.getElementById("selectScreen"),
   game: document.getElementById("gameScreen")
@@ -75,6 +77,7 @@ const ui = {
   codexSkillList: document.getElementById("codexSkillList"),
   rankingPodium: document.getElementById("rankingPodium"),
   rankingList: document.getElementById("rankingList"),
+  rankingModeButtons: document.querySelectorAll("[data-ranking-mode]"),
   lobbyPlayerOne: document.getElementById("lobbyPlayerOne"),
   lobbyPlayerTwo: document.getElementById("lobbyPlayerTwo"),
   lobbyP1Name: document.getElementById("lobbyP1Name"),
@@ -144,6 +147,12 @@ const ui = {
   pveUltimateSkillCooldown: document.getElementById("pveUltimateSkillCooldown"),
   pveSpeedButtons: document.querySelectorAll("[data-pve-speed]"),
   backFromPvpButton: document.getElementById("backFromPvpButton"),
+  backFromPvpQueueButton: document.getElementById("backFromPvpQueueButton"),
+  rankedMatchButton: document.getElementById("rankedMatchButton"),
+  casualMatchButton: document.getElementById("casualMatchButton"),
+  matchSoundVolume: document.getElementById("matchSoundVolume"),
+  matchSoundVolumeText: document.getElementById("matchSoundVolumeText"),
+  testMatchSoundButton: document.getElementById("testMatchSoundButton"),
   modeMessage: document.getElementById("modeMessage"),
   openGachaButton: document.getElementById("openGachaButton"),
   gachaPlayer: document.getElementById("gachaPlayer"),
@@ -319,10 +328,16 @@ const characters = {
     color: "#fef3c7",
     accent: "#fb7185",
     contactDamage: 0
+  },
+  archmage: {
+    name: "대마법 쓰는 색히",
+    color: "#312e81",
+    accent: "#facc15",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -342,7 +357,8 @@ const skillNames = {
   swordsman: { normal: "제 1식", ultimate: "제 2식" },
   demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" },
   artist: { normal: "드로잉", ultimate: "예술의 혼" },
-  believer: { normal: "주례", ultimate: "신앙" }
+  believer: { normal: "주신을 위해", ultimate: "커져가는신앙" },
+  archmage: { normal: "작열", ultimate: "창해" }
 };
 
 const characterGuide = {
@@ -432,9 +448,14 @@ const characterGuide = {
     ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
   },
   believer: {
-    attack: ["기도", "7.5초", "자신의 체력을 10 회복합니다."],
-    normal: ["주례", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 10, 적은 초당 8의 회복을 받습니다."],
-    ultimate: ["신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
+    attack: ["기도", "10초", "자신의 체력을 10 회복합니다."],
+    normal: ["주신을 위해", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 10, 적은 초당 8의 회복을 받습니다."],
+    ultimate: ["커져가는신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
+  },
+  archmage: {
+    attack: ["벼락", "5초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해와 감전 원소를 부착합니다."],
+    normal: ["작열", "8초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 10의 피해와 2초 동안 초당 2의 화상 피해를 주며 화상 원소를 부착합니다."],
+    ultimate: ["창해", "10초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 5의 피해를 주고 습기 원소를 부착합니다."]
   }
 };
 
@@ -539,6 +560,7 @@ let selectedCharacterReady = false;
 let selectCountdownId = null;
 let selectDeadline = 0;
 let matchmakingActive = false;
+let matchmakingType = "ranked";
 let matchmakingGeneration = 0;
 let matchmakingRequestPending = false;
 let matchTransitionRoomCode = "";
@@ -548,6 +570,8 @@ let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
 let pendingSkillUse = false;
+let soundSettings = loadSoundSettings();
+let audioContext = null;
 let resimulatingGame = false;
 let settlementRequestedWinnerId = "";
 let settlementTimeoutId = null;
@@ -562,6 +586,7 @@ let selectedPveMapStage = "1-1";
 let selectedPveDifficulty = "easy";
 let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
 let codexType = "character";
+let rankingMode = "pvp";
 
 const PVE_STAGES = {
   "1-1": {
@@ -632,26 +657,37 @@ function normalizePlayer(user) {
     name: user.username ?? user.name,
     coins: user.coins,
     lp: user.lp ?? 1000,
+    pveDamageTotal: Number(user.pveDamageTotal ?? user.pve_damage_total ?? 0),
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
 }
 
-function tierForLp(lp) {
-  if (lp >= 1800) return "다이아";
-  if (lp >= 1600) return "플레";
-  if (lp >= 1400) return "골드";
+function tierForLp(lp, rankPosition = null) {
+  if (rankPosition === 1) return "챌린저";
+  if (rankPosition === 2 || rankPosition === 3) return "그마";
+  if (lp >= 2700 && rankPosition !== null && rankPosition >= 4 && rankPosition <= 7) return "마스터";
+  if (lp >= 2200) return "다이아";
+  if (lp >= 1800) return "플레";
+  if (lp >= 1500) return "골드";
   if (lp >= 1200) return "실버";
-  return "브론즈";
+  if (lp >= 1000) return "브론즈";
+  if (lp >= 500) return "아이언";
+  return "구리";
 }
 
-function tierClassForLp(lp) {
+function tierClassForLp(lp, rankPosition = null) {
   return {
+    "챌린저": "tier-challenger",
+    "그마": "tier-grandmaster",
+    "마스터": "tier-master",
     "다이아": "tier-diamond",
     "플레": "tier-platinum",
     "골드": "tier-gold",
     "실버": "tier-silver",
-    "브론즈": "tier-bronze"
-  }[tierForLp(lp)];
+    "브론즈": "tier-bronze",
+    "아이언": "tier-iron",
+    "구리": "tier-copper"
+  }[tierForLp(lp, rankPosition)];
 }
 
 function requireSupabase() {
@@ -717,6 +753,67 @@ function savePlayers() {
 
 function getPlayer(id) {
   return players.find(player => player.id === id);
+}
+
+function loadSoundSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SOUND_SETTINGS_KEY) || "{}");
+    const volume = Number(saved.matchVolume);
+    return {
+      matchVolume: Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0.7
+    };
+  } catch {
+    return { matchVolume: 0.7 };
+  }
+}
+
+function saveSoundSettings() {
+  localStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify(soundSettings));
+}
+
+function updateSoundSettingsUi() {
+  const percent = Math.round(soundSettings.matchVolume * 100);
+  if (ui.matchSoundVolume) ui.matchSoundVolume.value = String(percent);
+  if (ui.matchSoundVolumeText) ui.matchSoundVolumeText.textContent = `${percent}%`;
+}
+
+function getAudioContext() {
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    audioContext = new AudioContextClass();
+  }
+  return audioContext;
+}
+
+function playMatchFoundSound() {
+  const volume = soundSettings.matchVolume;
+  if (volume <= 0) return;
+  const context = getAudioContext();
+  if (!context) return;
+  if (context.state === "suspended") context.resume().catch(() => {});
+
+  const now = context.currentTime + 0.01;
+  const master = context.createGain();
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.24 * volume, now + 0.03);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
+  master.connect(context.destination);
+
+  [523.25, 659.25, 783.99].forEach((frequency, index) => {
+    const start = now + index * 0.12;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.55, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.24);
+    oscillator.connect(gain);
+    gain.connect(master);
+    oscillator.start(start);
+    oscillator.stop(start + 0.28);
+  });
 }
 
 function showScreen(name) {
@@ -831,6 +928,7 @@ function resetLocalMatchState() {
     matchStartTimeoutId = null;
   }
   currentRoom = null;
+  matchmakingType = "ranked";
   selectedCharacterReady = false;
   stopSelectTimer();
   setRoomRealtime(null);
@@ -918,7 +1016,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z"
   })[kind] || "?";
 }
 
@@ -1005,6 +1103,7 @@ function renderCodexDetail(kind) {
   const character = characters[kind] || characters[DEFAULT_CHARACTER];
   const guide = characterGuide[kind] || characterGuide[DEFAULT_CHARACTER];
   const unlocked = currentUser?.ownedCharacters?.includes(kind);
+  const maxHp = characterMaxHp(kind);
   ui.codexDetail.style.setProperty("--char-color", character.color);
   ui.codexDetail.style.setProperty("--char-accent", character.accent);
   ui.codexPreview.style.setProperty("--char-color", character.color);
@@ -1019,7 +1118,12 @@ function renderCodexDetail(kind) {
     ["일반 스킬", guide.normal],
     ["궁극기", guide.ultimate]
   ];
-  ui.codexSkillList.innerHTML = skillTypes.map(([type, skill]) => `
+  ui.codexSkillList.innerHTML = `
+    <section class="codex-stat-card">
+      <span>체력</span>
+      <strong>${maxHp}</strong>
+    </section>
+  ` + skillTypes.map(([type, skill]) => `
     <section class="codex-skill">
       <span>${type}</span>
       <h4>${skill[0]}</h4>
@@ -1059,17 +1163,23 @@ async function loadRankings() {
   if (!ui.rankingList || !currentUser) return;
   if (ui.rankingPodium) ui.rankingPodium.innerHTML = `<div class="ranking-podium-empty">TOP 3 집계 중...</div>`;
   ui.rankingList.innerHTML = `<div class="ranking-empty">랭킹을 불러오는 중...</div>`;
+  ui.rankingModeButtons?.forEach(button => {
+    const selected = button.dataset.rankingMode === rankingMode;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
 
   try {
-    const rankings = await rpc("get_rankings", { session_token: appSessionToken });
-    renderRankings(Array.isArray(rankings) ? rankings : []);
+    const rpcName = rankingMode === "pve" ? "get_pve_rankings" : "get_rankings";
+    const rankings = await rpc(rpcName, { session_token: appSessionToken });
+    renderRankings(Array.isArray(rankings) ? rankings : [], rankingMode);
   } catch (error) {
     if (ui.rankingPodium) ui.rankingPodium.innerHTML = "";
     ui.rankingList.innerHTML = `<div class="ranking-empty">${escapeHtml(error.message)}</div>`;
   }
 }
 
-function renderRankings(rankings) {
+function renderRankings(rankings, mode = "pvp") {
   if (!ui.rankingList) return;
   if (!rankings.length) {
     if (ui.rankingPodium) ui.rankingPodium.innerHTML = `<div class="ranking-podium-empty">아직 TOP 3가 없습니다.</div>`;
@@ -1077,11 +1187,22 @@ function renderRankings(rankings) {
     return;
   }
 
-  renderRankingPodium(rankings.slice(0, 3));
+  renderRankingPodium(rankings.slice(0, 3), mode);
+  const myRankIndex = currentUser ? rankings.findIndex(player => player.id === currentUser.id) : -1;
+  if (mode === "pvp" && myRankIndex >= 0) {
+    const myTier = tierForLp(currentUser.lp, myRankIndex + 1);
+    const myTierClass = tierClassForLp(currentUser.lp, myRankIndex + 1);
+    ui.currentUserTier.textContent = myTier;
+    ui.currentUserName.className = `rank-name ${myTierClass}`;
+    ui.currentUserTier.className = `tier-label ${myTierClass}`;
+  }
   ui.rankingList.innerHTML = rankings.map((player, index) => {
     const lp = Number(player.lp ?? 1000);
-    const tier = player.tier || tierForLp(lp);
-    const tierClass = tierClassForLp(lp);
+    const pveDamage = Number(player.pveDamageTotal ?? player.pve_damage_total ?? 0);
+    const rankPosition = index + 1;
+    const tier = mode === "pvp" ? tierForLp(lp, rankPosition) : "PVE";
+    const tierClass = mode === "pvp" ? tierClassForLp(lp, rankPosition) : "tier-gold";
+    const scoreText = mode === "pvp" ? `${lp} LP` : `${formatResultNumber(pveDamage)} 피해`;
     const isMe = currentUser && player.id === currentUser.id;
     const podiumClass = index === 0 ? "is-first" : index === 1 ? "is-second" : index === 2 ? "is-third" : "";
     const rankMark = index === 0 ? "♛ 1" : index === 1 ? "◆ 2" : index === 2 ? "◆ 3" : index + 1;
@@ -1092,13 +1213,13 @@ function renderRankings(rankings) {
           <strong class="${tierClass}">${escapeHtml(player.name || player.username || "unknown")}</strong>
           <span class="${tierClass}">${tier}</span>
         </div>
-        <em>${lp} LP</em>
+        <em>${scoreText}</em>
       </article>
     `;
   }).join("");
 }
 
-function renderRankingPodium(topPlayers) {
+function renderRankingPodium(topPlayers, mode = "pvp") {
   if (!ui.rankingPodium) return;
   const podiumOrder = [
     { rank: 2, player: topPlayers[1], className: "second" },
@@ -1114,14 +1235,16 @@ function renderRankingPodium(topPlayers) {
           return `<article class="podium-slot ${slot.className} is-empty"><div class="podium-player">-</div><div class="podium-block"><b>${slot.rank}</b></div></article>`;
         }
         const lp = Number(slot.player.lp ?? 1000);
-        const tier = slot.player.tier || tierForLp(lp);
-        const tierClass = tierClassForLp(lp);
+        const pveDamage = Number(slot.player.pveDamageTotal ?? slot.player.pve_damage_total ?? 0);
+        const tier = mode === "pvp" ? tierForLp(lp, slot.rank) : "PVE";
+        const tierClass = mode === "pvp" ? tierClassForLp(lp, slot.rank) : "tier-gold";
+        const scoreText = mode === "pvp" ? `${lp} LP` : `${formatResultNumber(pveDamage)} 피해`;
         return `
           <article class="podium-slot ${slot.className}">
             <div class="podium-player">
               <span>${slot.rank === 1 ? "♛" : "◆"}</span>
               <strong class="${tierClass}">${escapeHtml(slot.player.name || slot.player.username || "unknown")}</strong>
-              <em>${lp} LP</em>
+              <em>${scoreText}</em>
             </div>
             <div class="podium-block">
               <b>${slot.rank}</b>
@@ -1196,22 +1319,30 @@ function updateLobbyPreview() {
 }
 
 function openPvpSetup() {
-  startMatchmaking();
+  if (!currentUser) return;
+  if (matchmakingActive) return;
+  selectedMode = "pvp";
+  ui.pvpModeButton.classList.add("is-selected");
+  ui.pveModeButton.classList.remove("is-selected");
+  ui.modeMessage.textContent = "";
+  showScreen("pvpQueue");
 }
 
-async function startMatchmaking() {
+async function startMatchmaking(type = "ranked") {
   if (!currentUser) return;
   if (matchmakingActive) return;
   selectedMode = "pvp";
   resetLocalMatchState();
+  matchmakingType = type === "casual" ? "casual" : "ranked";
   const generation = matchmakingGeneration;
   renderLobby();
   matchmakingActive = true;
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
   ui.cancelMatchButton.classList.remove("is-hidden");
-  ui.modeMessage.textContent = "매칭중...";
+  ui.modeMessage.textContent = matchmakingType === "casual" ? "일반게임 매칭중..." : "랭크게임 매칭중...";
   ui.pvpModeButton.disabled = true;
+  showScreen("lobby");
   await checkMatchmaking(generation);
   if (matchmakingActive && generation === matchmakingGeneration) setMatchmakingPolling(true);
 }
@@ -1220,10 +1351,14 @@ async function checkMatchmaking(expectedGeneration = matchmakingGeneration) {
   if (!matchmakingActive || matchmakingRequestPending || expectedGeneration !== matchmakingGeneration) return;
   matchmakingRequestPending = true;
   try {
-    const data = await rpc("find_pvp_match", { session_token: appSessionToken });
+    const data = await rpc("find_pvp_match", {
+      session_token: appSessionToken,
+      casual: matchmakingType === "casual"
+    });
     if (!matchmakingActive || expectedGeneration !== matchmakingGeneration) return;
     if (!data.matched) {
-      ui.modeMessage.textContent = `매칭중... ${data.elapsed ?? 0}초`;
+      const label = matchmakingType === "casual" ? "일반게임 매칭중" : "랭크게임 매칭중";
+      ui.modeMessage.textContent = `${label}... ${data.elapsed ?? 0}초`;
       return;
     }
     resetMatchmakingUi("");
@@ -1421,6 +1556,7 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
   if (matchTransitionTimeoutId) clearTimeout(matchTransitionTimeoutId);
   resetMatchmakingUi("");
   ui.pvpModeButton.disabled = true;
+  playMatchFoundSound();
   showMatchOverlay("게임이 시작됩니다", true);
 
   matchTransitionTimeoutId = setTimeout(async () => {
@@ -1700,13 +1836,14 @@ function normalSkillCooldown(kind) {
     wild: 1080,
     vampire: 0,
     brawler: 0,
-    timekeeper: 240,
+    timekeeper: 540,
     riftmaker: 600,
     summoner: 720,
     swordsman: 1800,
     demon: 540,
     artist: 180,
-    believer: 1200
+    believer: 1200,
+    archmage: 480
   }[kind] ?? Infinity;
 }
 
@@ -1729,13 +1866,24 @@ function ultimateCooldown(kind) {
     swordsman: 3600,
     demon: 1800,
     artist: 1200,
-    believer: 900
+    believer: 900,
+    archmage: 600
   }[kind] ?? Infinity;
+}
+
+function characterMaxHp(kind) {
+  return {
+    swordsman: 125,
+    archmage: 150,
+    believer: 175,
+    charger: 250,
+    tank: 250
+  }[kind] ?? 200;
 }
 
 function makeCharacterCombatState(kind) {
   const character = characters[kind];
-  const maxHp = kind === "swordsman" ? 125 : 200;
+  const maxHp = characterMaxHp(kind);
   return {
     kind,
     name: character.name,
@@ -1818,11 +1966,18 @@ function makeCharacterCombatState(kind) {
     demonMarkCount: 0,
     demonMarkTime: 0,
     artSoulTime: 0,
-    prayerTimer: kind === "believer" ? 450 : Infinity,
+    prayerTimer: kind === "believer" ? 600 : Infinity,
     ceremonyTime: 0,
     ceremonyTick: 0,
     faithStacks: 0,
     faithBurnTick: 60,
+    mageLightningTimer: kind === "archmage" ? 300 : Infinity,
+    mageFireDelay: 0,
+    mageSeaTime: 0,
+    mageSeaTick: 60,
+    mageElements: { wet: 0, fire: 0, electro: 0 },
+    mageDots: {},
+    mageReaction: null,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -2697,7 +2852,14 @@ async function settleMatch(winnerPlayer, loserPlayer) {
     if (currentUser?.id === updatedWinner.id) currentUser = updatedWinner;
     if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
     const localWon = currentUser?.id === updatedWinner.id;
-    if (data.promoted && localWon) {
+    const casualMatch = Boolean(data.casual);
+    if (casualMatch && localWon) {
+      ui.resultBox.classList.remove("is-promotion");
+      ui.resultBox.classList.remove("is-defeat");
+      ui.resultText.textContent = `${updatedWinner.name} 승리 · 일반게임 종료`;
+      ui.resultReward.textContent = "LP 변화 없음";
+      ui.resultRewardLabel.textContent = "일반게임";
+    } else if (data.promoted && localWon) {
       ui.resultBox.classList.remove("is-defeat");
       ui.resultBox.classList.add("is-promotion");
       ui.resultTitle.textContent = `${data.newTier} 승급!`;
@@ -2722,7 +2884,7 @@ async function settleMatch(winnerPlayer, loserPlayer) {
     }
     if (localWon) {
       ui.resultCurrentLp.textContent = `${updatedWinner.lp} LP`;
-      ui.resultLpGain.textContent = `+${data.lpGain ?? 14} LP`;
+      ui.resultLpGain.textContent = casualMatch ? "+0 LP" : `+${data.lpGain ?? 14} LP`;
     }
   } catch (error) {
     ui.resultText.textContent = `정산 실패: ${error.message}`;
@@ -2798,6 +2960,139 @@ function heal(fighter, amount) {
   if (shownAmount <= 0) return;
   addFloatingText(fighter.x, fighter.y - fighter.radius - 28, `+${shownAmount}`, "#7bd88f");
   updateHud();
+}
+
+const mageElementLabels = {
+  wet: "습기",
+  fire: "화상",
+  electro: "감전"
+};
+
+const mageElementColors = {
+  wet: "#38bdf8",
+  fire: "#fb923c",
+  electro: "#facc15"
+};
+
+function clearMageElements(target) {
+  target.mageElements = { wet: 0, fire: 0, electro: 0 };
+}
+
+function mageReactionFor(existingElement, nextElement) {
+  const pair = new Set([existingElement, nextElement]);
+  if (pair.has("wet") && pair.has("fire")) return { name: "증발", color: "#fb923c", dotDamage: 20 };
+  if (pair.has("wet") && pair.has("electro")) return { name: "감전", color: "#38bdf8", dotDamage: 10 };
+  if (pair.has("electro") && pair.has("fire")) return { name: "과부하", color: "#f97316", instantDamage: 20 };
+  return null;
+}
+
+function applyMageElement(owner, target, element) {
+  if (!target || target.hp <= 0 || target.owner) return;
+  const elements = target.mageElements || { wet: 0, fire: 0, electro: 0 };
+  const existing = Object.entries(elements).find(([key, ticks]) => key !== element && ticks > 0);
+  if (existing) {
+    const reaction = mageReactionFor(existing[0], element);
+    clearMageElements(target);
+    if (reaction) {
+      addFloatingText(target.x, target.y - target.radius - 40, reaction.name, reaction.color);
+      addVisualEffect({
+        type: "mage-reaction",
+        x: target.x,
+        y: target.y,
+        color: reaction.color,
+        life: 42,
+        maxLife: 42
+      });
+      if (reaction.instantDamage) damage(target, reaction.instantDamage, owner);
+      if (reaction.dotDamage) {
+        target.mageReaction = {
+          owner,
+          name: reaction.name,
+          color: reaction.color,
+          damage: reaction.dotDamage,
+          time: 120,
+          tick: 60
+        };
+      }
+    }
+    return;
+  }
+  target.mageElements = {
+    ...elements,
+    [element]: 300
+  };
+  addFloatingText(target.x, target.y - target.radius - 36, mageElementLabels[element], mageElementColors[element]);
+}
+
+function applyMageDot(owner, target, id, damagePerSecond, durationTicks) {
+  if (!target || target.hp <= 0 || target.owner) return;
+  target.mageDots = target.mageDots || {};
+  target.mageDots[id] = {
+    owner,
+    damage: damagePerSecond,
+    time: durationTicks,
+    tick: 60,
+    color: mageElementColors[id] || "#f7f4eb"
+  };
+}
+
+function updateMageAilments(target, dt) {
+  if (!target || target.hp <= 0 || game.over) return;
+  if (target.mageElements) {
+    Object.keys(target.mageElements).forEach(key => {
+      if (target.mageElements[key] > 0) target.mageElements[key] = Math.max(0, target.mageElements[key] - dt);
+    });
+  }
+  Object.keys(target.mageDots || {}).forEach(key => {
+    const dot = target.mageDots[key];
+    dot.time -= dt;
+    dot.tick -= dt;
+    while (dot.time > 0 && dot.tick <= 0 && !game.over) {
+      damage(target, dot.damage, dot.owner);
+      dot.tick += 60;
+    }
+    if (dot.time <= 0) delete target.mageDots[key];
+  });
+  if (target.mageReaction) {
+    const reaction = target.mageReaction;
+    reaction.time -= dt;
+    reaction.tick -= dt;
+    while (reaction.time > 0 && reaction.tick <= 0 && !game.over) {
+      damage(target, reaction.damage, reaction.owner);
+      reaction.tick += 60;
+    }
+    if (reaction.time <= 0) target.mageReaction = null;
+  }
+}
+
+function castMageLightning(owner) {
+  const target = opponentOf(owner);
+  damage(target, 3, owner);
+  applyMageDot(owner, target, "electro", 1, 120);
+  applyMageElement(owner, target, "electro");
+  addVisualEffect({
+    type: "mage-lightning",
+    x: target.x,
+    y: target.y,
+    color: "#facc15",
+    life: 34,
+    maxLife: 34
+  });
+}
+
+function detonateMageFire(owner) {
+  const target = opponentOf(owner);
+  damage(target, 10, owner);
+  applyMageDot(owner, target, "fire", 2, 120);
+  applyMageElement(owner, target, "fire");
+  addVisualEffect({
+    type: "mage-fireball",
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    color: "#fb923c",
+    life: 56,
+    maxLife: 56
+  });
 }
 
 function triggerNormalSkill(fighter) {
@@ -2890,7 +3185,7 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "timekeeper") {
     skipTime(fighter);
-    fighter.skillTimer = 240;
+    fighter.skillTimer = 540;
     return;
   }
 
@@ -2935,6 +3230,14 @@ function triggerNormalSkill(fighter) {
       life: 300,
       maxLife: 300
     });
+    return;
+  }
+
+  if (fighter.kind === "archmage") {
+    fighter.mageFireDelay = 180;
+    fighter.skillTimer = 480;
+    addSkillPulse(fighter, "#fb923c");
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 46, "작열 준비", "#fb923c");
     return;
   }
 }
@@ -3071,6 +3374,21 @@ function triggerUltimate(fighter) {
     fighter.ultimateTimer = 900;
     addSkillPulse(fighter, "#fb7185");
     addFloatingText(fighter.x, fighter.y - fighter.radius - 46, `신앙 ${fighter.faithStacks}중첩`, fighter.accent);
+    return;
+  }
+
+  if (fighter.kind === "archmage") {
+    fighter.mageSeaTime = 300;
+    fighter.mageSeaTick = 0;
+    fighter.ultimateTimer = 600;
+    addSkillPulse(fighter, "#38bdf8");
+    addVisualEffect({
+      type: "mage-sea",
+      fighter,
+      color: "#38bdf8",
+      life: 300,
+      maxLife: 300
+    });
   }
 }
 
@@ -3210,6 +3528,8 @@ function updateSkills(fighter, dt) {
 }
 
 function moveFighter(fighter, dt) {
+  updateMageAilments(fighter, dt);
+  if (game.over) return;
   fighter.timeHistory.push({ x: fighter.x, y: fighter.y, hp: fighter.hp });
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
   if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
@@ -3225,7 +3545,7 @@ function moveFighter(fighter, dt) {
     fighter.prayerTimer -= dt;
     if (fighter.prayerTimer <= 0) {
       heal(fighter, 10);
-      fighter.prayerTimer = 450;
+      fighter.prayerTimer = 600;
       addVisualEffect({
         type: "prayer-heal",
         fighter,
@@ -3249,6 +3569,33 @@ function moveFighter(fighter, dt) {
         const faithDamage = 2 ** (fighter.faithStacks - 1);
         damage(opponentOf(fighter), faithDamage, fighter);
         fighter.faithBurnTick += 60;
+      }
+    }
+  }
+  if (fighter.kind === "archmage") {
+    fighter.mageLightningTimer -= dt;
+    if (fighter.mageLightningTimer <= 0) {
+      castMageLightning(fighter);
+      fighter.mageLightningTimer += 300;
+      if (game.over) return;
+    }
+    if (fighter.mageFireDelay > 0) {
+      fighter.mageFireDelay -= dt;
+      if (fighter.mageFireDelay <= 0) {
+        detonateMageFire(fighter);
+        if (game.over) return;
+      }
+    }
+    if (fighter.mageSeaTime > 0) {
+      fighter.mageSeaTime -= dt;
+      fighter.mageSeaTick -= dt;
+      if (fighter.mageSeaTick <= 0) {
+        const target = opponentOf(fighter);
+        target.slowTime = Math.max(target.slowTime, 75);
+        damage(target, 5, fighter);
+        applyMageElement(fighter, target, "wet");
+        fighter.mageSeaTick += 60;
+        if (game.over) return;
       }
     }
   }
@@ -4844,6 +5191,18 @@ function drawVisualEffect(effect) {
     drawFaithPulse(effect);
     return;
   }
+  if (effect.type === "mage-lightning") {
+    drawMageLightning(effect);
+    return;
+  }
+  if (effect.type === "mage-fireball" || effect.type === "mage-reaction") {
+    drawPointBurst(effect);
+    return;
+  }
+  if (effect.type === "mage-sea") {
+    drawMageSea(effect);
+    return;
+  }
   if (effect.type === "assassinate-slash") {
     drawAssassinateSlash(effect);
     return;
@@ -4941,6 +5300,56 @@ function drawEnergyLine(effect, width = 6) {
     ctx.lineTo(effect.x2, effect.y2);
     ctx.stroke();
   });
+  ctx.restore();
+}
+
+function drawMageLightning(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = effect.color;
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = 28;
+  ctx.lineCap = "round";
+  for (let bolt = 0; bolt < 3; bolt += 1) {
+    ctx.globalAlpha = alpha * (0.9 - bolt * 0.22);
+    ctx.lineWidth = 8 - bolt * 2;
+    ctx.beginPath();
+    const startX = effect.x + (bolt - 1) * 16;
+    ctx.moveTo(startX, 0);
+    for (let step = 1; step <= 7; step += 1) {
+      const t = step / 7;
+      const jitter = Math.sin((game.tick + step * 19 + bolt * 31) * 0.9) * 18;
+      ctx.lineTo(effect.x + jitter, effect.y * t);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = alpha * 0.35;
+  ctx.fillStyle = effect.color;
+  ctx.beginPath();
+  ctx.arc(effect.x, effect.y, 64 * (1 - alpha * 0.35), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMageSea(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = Math.min(0.24, alpha * 0.24);
+  ctx.fillStyle = effect.color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(125, 211, 252, 0.42)";
+  ctx.lineWidth = 2;
+  for (let y = 24; y < canvas.height; y += 34) {
+    ctx.beginPath();
+    for (let x = 0; x <= canvas.width; x += 28) {
+      const wave = Math.sin((x + game.tick * 3) * 0.035 + y * 0.02) * 5;
+      if (x === 0) ctx.moveTo(x, y + wave);
+      else ctx.lineTo(x, y + wave);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -6396,7 +6805,14 @@ const SURVIVAL_WEAPONS = {
   replay: { name: "리플레이", awakenedName: "영겁 회귀", icon: "↶", color: "#f2c14e", item: "chronometer", baseCooldown: 540, description: "주변에 시간 폭발을 일으키고 체력을 조금 회복합니다.", awakenedDescription: "세 차례 시간 폭발과 큰 회복을 일으키며 잠시 무적이 됩니다." },
   rift: { name: "균열 레이저", awakenedName: "차원 붕괴선", icon: "R", color: "#a78bfa", item: "voidCore", baseCooldown: 280, description: "전장을 가로지르는 균열 광선을 생성합니다.", awakenedDescription: "여러 방향의 초대형 균열선이 전장을 반복 절단합니다." },
   void: { name: "보이드", awakenedName: "공허 특이점", icon: "◌", color: "#22d3ee", item: "voidCore", baseCooldown: 420, description: "적이 모인 위치에 공허 폭발을 일으킵니다.", awakenedDescription: "거대한 특이점이 적을 끌어당기며 연속 폭발합니다." },
-  legion: { name: "일어나라!", awakenedName: "군단 강림", icon: "N", color: "#4ade80", item: "commandSeal", baseCooldown: 250, description: "전장 가장자리에서 소환수의 탄환을 발사합니다.", awakenedDescription: "전장 사방에서 강화 소환수 군단이 화살을 쏟아냅니다." }
+  legion: { name: "일어나라!", awakenedName: "군단 강림", icon: "N", color: "#4ade80", item: "commandSeal", baseCooldown: 250, description: "전장 가장자리에서 소환수의 탄환을 발사합니다.", awakenedDescription: "전장 사방에서 강화 소환수 군단이 화살을 쏟아냅니다." },
+  swordDance: { name: "원형검무", awakenedName: "절공검무", icon: "K", color: "#bae6fd", item: "swordScroll", baseCooldown: 270, description: "가까운 적 위치에 원형 베기를 남겨 범위 피해를 줍니다.", awakenedDescription: "맵을 가르는 검흔 5개가 연속으로 전장을 절단합니다." },
+  deathSword: { name: "데스 소드", awakenedName: "로스트 엔젤", icon: "M", color: "#38bdf8", item: "demonSigil", baseCooldown: 300, description: "적을 관통하는 검푸른 암흑 검기를 발사합니다.", awakenedDescription: "세 갈래 암흑 검기가 적을 관통하고 입힌 피해 일부를 회복합니다." },
+  artOrbit: { name: "예술의 궤도", awakenedName: "예술의 혼", icon: "A", color: "#f9a8d4", item: "prismInk", baseCooldown: 360, description: "벽에 튕기는 예술 구체가 긴 궤적을 남기며 적을 관통합니다.", awakenedDescription: "고속 예술 구체 4개가 긴 시간 맵을 가로지릅니다." },
+  growingFaith: { name: "커져가는 신앙", awakenedName: "황금 십자가", icon: "H", color: "#facc15", item: "holyRelic", baseCooldown: 450, description: "맵 중앙의 십자가 빛이 적을 태우고 자신을 조금 회복합니다.", awakenedDescription: "커다란 황금 십자가가 여러 번 빛나며 전장을 정화합니다." },
+  mageLightning: { name: "벼락", awakenedName: "천벌 기록", icon: "Z", color: "#facc15", item: "akashicTome", baseCooldown: 300, description: "가까운 적에게 낙뢰를 떨어뜨려 피해를 줍니다.", awakenedDescription: "연속 낙뢰가 여러 적을 강타하고 작은 폭발을 남깁니다." },
+  mageFire: { name: "작열", awakenedName: "멸화 운석", icon: "火", color: "#fb923c", item: "akashicTome", baseCooldown: 480, description: "잠시 후 적 위치에 커다란 파이어 볼을 떨어뜨립니다.", awakenedDescription: "거대한 운석 3개가 넓은 범위를 불태웁니다." },
+  mageSea: { name: "창해", awakenedName: "심해 성역", icon: "海", color: "#38bdf8", item: "akashicTome", baseCooldown: 600, description: "전장에 심해의 물결을 일으켜 적을 느리게 만들고 피해를 줍니다.", awakenedDescription: "맵 전체에 강한 심해 파동이 반복적으로 밀려옵니다." }
 };
 
 const SURVIVAL_ITEMS = {
@@ -6413,7 +6829,12 @@ const SURVIVAL_ITEMS = {
   knuckle: { name: "투지의 너클", icon: "F", weapon: "fist", description: "체력이 절반 이하일 때 난타의 피해와 범위가 적당히 증가합니다.", effect: "위기 시 난타 강화" },
   chronometer: { name: "파손된 크로노미터", icon: "⌚", weapon: "clock", description: "시간 계열 공격의 범위가 커지고 발동할 때 체력을 조금 회복합니다.", effect: "시간 공격 + 회복" },
   voidCore: { name: "공허 핵", icon: "◉", weapon: "rift", description: "균열 계열 공격이 적을 중심으로 끌어당기고 더 오래 남습니다.", effect: "균열 흡인" },
-  commandSeal: { name: "군주의 인장", icon: "♜", weapon: "legion", description: "소환 공격의 발사 수가 증가하고 적을 자동 추적합니다.", effect: "소환 군단 강화" }
+  commandSeal: { name: "군주의 인장", icon: "♜", weapon: "legion", description: "소환 공격의 발사 수가 증가하고 적을 자동 추적합니다.", effect: "소환 군단 강화" },
+  swordScroll: { name: "검무 비급", icon: "卷", weapon: "swordDance", description: "검무 계열 공격의 연속 베기 수가 증가합니다.", effect: "검무 연속 베기" },
+  demonSigil: { name: "악마의 표식", icon: "M", weapon: "deathSword", description: "악마 계열 공격이 적을 둔화시키고 입힌 피해 일부를 회복합니다.", effect: "검기 둔화 + 흡혈" },
+  prismInk: { name: "프리즘 물감", icon: "A", weapon: "artOrbit", description: "예술 구체의 수와 유지 시간이 증가합니다.", effect: "궤도 구체 강화" },
+  holyRelic: { name: "성스러운 유물", icon: "H", weapon: "growingFaith", description: "신앙 계열 공격이 발동할 때 회복량과 빛의 횟수가 증가합니다.", effect: "신앙 회복 강화" },
+  akashicTome: { name: "아카식 기록서", icon: "Z", weapon: "mageLightning", description: "대마법 계열 무기의 범위와 타격 횟수가 증가합니다.", effect: "원소 마법 강화" }
 };
 
 const SURVIVAL_SUBS = [
@@ -6429,36 +6850,36 @@ const SURVIVAL_SUBS = [
 const SURVIVAL_DIFFICULTIES = {
   easy: {
     label: "EASY",
-    enemyHp: 1,
-    enemyDamage: 1,
-    enemySpeed: 1,
-    enemyXp: 1,
-    spawnCount: 1,
-    enemyCap: 1,
-    spawnInterval: 1,
-    bossPower: 1
+    enemyHp: 0.82,
+    enemyDamage: 0.74,
+    enemySpeed: 0.92,
+    enemyXp: 0.92,
+    spawnCount: 0.82,
+    enemyCap: 0.82,
+    spawnInterval: 1.2,
+    bossPower: 0.78
   },
   normal: {
     label: "NORMAL",
-    enemyHp: 1.32,
-    enemyDamage: 1.25,
-    enemySpeed: 1.08,
+    enemyHp: 1.42,
+    enemyDamage: 1.34,
+    enemySpeed: 1.1,
     enemyXp: 1.15,
-    spawnCount: 1.25,
-    enemyCap: 1.2,
-    spawnInterval: 0.84,
-    bossPower: 1.3
+    spawnCount: 1.28,
+    enemyCap: 1.22,
+    spawnInterval: 0.82,
+    bossPower: 1.38
   },
   hard: {
     label: "HARD",
-    enemyHp: 1.72,
-    enemyDamage: 1.55,
-    enemySpeed: 1.15,
-    enemyXp: 1.3,
-    spawnCount: 1.6,
-    enemyCap: 1.42,
-    spawnInterval: 0.68,
-    bossPower: 1.65
+    enemyHp: 2.35,
+    enemyDamage: 2.08,
+    enemySpeed: 1.28,
+    enemyXp: 1.35,
+    spawnCount: 1.9,
+    enemyCap: 1.68,
+    spawnInterval: 0.55,
+    bossPower: 2.3
   }
 };
 
@@ -8141,6 +8562,187 @@ function fireSurvivalWeapon(id) {
         survival: true
       });
     }
+  } else if (id === "swordDance") {
+    const cuts = entry.awakened ? 5 : itemOwned ? 3 : 1;
+    for (let index = 0; index < cuts; index += 1) {
+      const cutAngle = angle + (index - (cuts - 1) / 2) * 0.38;
+      const cutX = entry.awakened
+        ? target.x + Math.cos(cutAngle) * (index - 2) * 62
+        : target.x;
+      const cutY = entry.awakened
+        ? target.y + Math.sin(cutAngle) * (index - 2) * 62
+        : target.y;
+      pveGame.areaAttacks.push({
+        x: cutX,
+        y: cutY,
+        radius: (entry.awakened ? 118 : itemOwned ? 92 : 74) * stats.sizeScale,
+        damage: (entry.awakened ? 20 : 13) * stats.damageScale,
+        delay: 6 + index * (entry.awakened ? 6 : 9),
+        life: 34 + index * 6,
+        hit: false,
+        color: "#bae6fd",
+        type: "slash",
+        stun: entry.awakened ? 10 : 0,
+        survival: true
+      });
+      if (entry.awakened) {
+        const length = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.2;
+        pveGame.areaAttacks.push({
+          x: cutX,
+          y: cutY,
+          x1: cutX - Math.cos(cutAngle) * length,
+          y1: cutY - Math.sin(cutAngle) * length,
+          x2: cutX + Math.cos(cutAngle) * length,
+          y2: cutY + Math.sin(cutAngle) * length,
+          radius: 18 * stats.sizeScale,
+          damage: 12 * stats.damageScale,
+          delay: 10 + index * 6,
+          life: 34 + index * 6,
+          hit: false,
+          color: "#e0f2fe",
+          type: "lineLaser",
+          survival: true
+        });
+      }
+    }
+  } else if (id === "deathSword") {
+    const count = entry.awakened ? 3 : 1;
+    const length = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.25;
+    for (let index = 0; index < count; index += 1) {
+      const bladeAngle = angle + (index - (count - 1) / 2) * 0.16;
+      pveGame.areaAttacks.push({
+        x: player.x,
+        y: player.y,
+        x1: player.x,
+        y1: player.y,
+        x2: player.x + Math.cos(bladeAngle) * length,
+        y2: player.y + Math.sin(bladeAngle) * length,
+        radius: (entry.awakened ? 34 : itemOwned ? 26 : 20) * stats.sizeScale,
+        damage: (entry.awakened ? 24 : 15) * stats.damageScale,
+        delay: 4 + index * 7,
+        life: 34 + index * 7,
+        hit: false,
+        color: index % 2 ? "#7c2d12" : "#38bdf8",
+        type: "lineLaser",
+        slow: itemOwned || entry.awakened,
+        survival: true
+      });
+    }
+  } else if (id === "artOrbit") {
+    const count = entry.awakened ? 4 : itemOwned ? 2 : 1;
+    for (let index = 0; index < count; index += 1) {
+      const orbitAngle = angle + index * Math.PI * 2 / count + pveRandomIndex(70) / 100;
+      spawnSurvivalProjectile({
+        x: player.x + Math.cos(orbitAngle) * 34,
+        y: player.y + Math.sin(orbitAngle) * 34,
+        vx: Math.cos(orbitAngle) * (entry.awakened ? 10.8 : 7.4),
+        vy: Math.sin(orbitAngle) * (entry.awakened ? 10.8 : 7.4),
+        damage: (entry.awakened ? 12 : 8) * stats.damageScale,
+        radius: (entry.awakened ? 16 : 12) * stats.sizeScale,
+        life: entry.awakened ? 780 : itemOwned ? 560 : 360,
+        color: "#f9a8d4",
+        bounce: true,
+        pierce: 99,
+        repeatHits: true,
+        visual: "orb",
+        trail: "#f9a8d4"
+      });
+    }
+  } else if (id === "growingFaith") {
+    const pulses = entry.awakened ? 5 : itemOwned ? 3 : 1;
+    const centerX = pveCanvas.width / 2;
+    const centerY = pveCanvas.height / 2;
+    for (let index = 0; index < pulses; index += 1) {
+      const damage = (entry.awakened ? 14 : 8 + (entry.stars - 1) * 1.5) * stats.damageScale;
+      pveGame.areaAttacks.push({
+        x: centerX,
+        y: centerY,
+        x1: centerX,
+        y1: 0,
+        x2: centerX,
+        y2: pveCanvas.height,
+        radius: (entry.awakened ? 42 : 28) * stats.sizeScale,
+        damage,
+        delay: 8 + index * 16,
+        life: 38 + index * 16,
+        hit: false,
+        color: "#facc15",
+        type: "lineLaser",
+        survival: true
+      });
+      pveGame.areaAttacks.push({
+        x: centerX,
+        y: centerY,
+        x1: 0,
+        y1: centerY,
+        x2: pveCanvas.width,
+        y2: centerY,
+        radius: (entry.awakened ? 42 : 28) * stats.sizeScale,
+        damage,
+        delay: 8 + index * 16,
+        life: 38 + index * 16,
+        hit: false,
+        color: "#fde68a",
+        type: "lineLaser",
+        survival: true
+      });
+    }
+    healPvePlayer(player.maxHp * (entry.awakened ? 0.08 : itemOwned ? 0.045 : 0.02));
+  } else if (id === "mageLightning") {
+    const targets = pveGame.enemies.filter(enemy => !enemy.dead);
+    const count = entry.awakened ? 6 : itemOwned ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      const victim = targets[pveRandomIndex(targets.length)] || target;
+      pveGame.areaAttacks.push({
+        x: victim.x,
+        y: victim.y,
+        radius: (entry.awakened ? 82 : 56) * stats.sizeScale,
+        damage: (entry.awakened ? 15 : 9) * stats.damageScale,
+        delay: 8 + index * 7,
+        life: 34 + index * 7,
+        hit: false,
+        color: "#facc15",
+        type: "laser",
+        stun: itemOwned || entry.awakened ? 8 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "mageFire") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      const offsetX = entry.awakened ? (index - 1) * 120 : 0;
+      pveGame.areaAttacks.push({
+        x: clamp(target.x + offsetX, 70, pveCanvas.width - 70),
+        y: target.y,
+        radius: (entry.awakened ? 135 : itemOwned ? 104 : 86) * stats.sizeScale,
+        damage: (entry.awakened ? 26 : 18) * stats.damageScale,
+        delay: 70 + index * 12,
+        life: 104 + index * 12,
+        hit: false,
+        color: "#fb923c",
+        type: "shockwave",
+        stun: 0,
+        survival: true
+      });
+    }
+  } else if (id === "mageSea") {
+    const pulses = entry.awakened ? 5 : itemOwned ? 3 : 2;
+    for (let index = 0; index < pulses; index += 1) {
+      pveGame.areaAttacks.push({
+        x: pveCanvas.width / 2,
+        y: pveCanvas.height / 2,
+        radius: (entry.awakened ? 620 : 430) * stats.sizeScale,
+        damage: (entry.awakened ? 11 : 7) * stats.damageScale,
+        delay: 12 + index * 18,
+        life: 42 + index * 18,
+        hit: false,
+        color: "#38bdf8",
+        type: "shockwave",
+        slow: true,
+        pull: itemOwned || entry.awakened ? 32 : 0,
+        survival: true
+      });
+    }
   } else if (id === "legion") {
     const count = (itemOwned ? 5 : 3) + (entry.awakened ? 7 : 0);
     for (let index = 0; index < count; index += 1) {
@@ -8666,6 +9268,7 @@ function damageSurvivalEnemy(enemy, amount, sourceWeaponId = "") {
   }
   addPveDamage(enemy.x, enemy.y - enemy.radius, Math.round(actual * 10) / 10);
   if (pveGame.items.chalice) healPvePlayer(actual * 0.12);
+  if (sourceWeaponId === "deathSword" && pveGame.items.demonSigil) healPvePlayer(actual * 0.1);
   if (enemy.hp <= 0 && !enemy.dead) {
     enemy.dead = true;
     pveGame.kills += 1;
@@ -9561,7 +10164,8 @@ async function finishSurvivalPve(cleared = false) {
         session_token: appSessionToken,
         run_id: pveGame.runId,
         client_seconds: elapsedSeconds,
-        bonus_coins: pveGame.bonusCoins
+        bonus_coins: pveGame.bonusCoins,
+        damage_dealt: Math.floor(player.damageDealt || 0)
       });
     } catch {
       data = await rpc("complete_pve_run", {
@@ -9668,6 +10272,19 @@ ui.backFromGachaButton.addEventListener("click", () => {
   showScreen("lobby");
 });
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
+ui.rankedMatchButton?.addEventListener("click", () => startMatchmaking("ranked"));
+ui.casualMatchButton?.addEventListener("click", () => startMatchmaking("casual"));
+ui.backFromPvpQueueButton?.addEventListener("click", () => {
+  ui.pvpModeButton.classList.remove("is-selected");
+  renderLobby();
+  showScreen("lobby");
+});
+ui.matchSoundVolume?.addEventListener("input", () => {
+  soundSettings.matchVolume = Math.max(0, Math.min(1, Number(ui.matchSoundVolume.value) / 100));
+  saveSoundSettings();
+  updateSoundSettingsUi();
+});
+ui.testMatchSoundButton?.addEventListener("click", playMatchFoundSound);
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
 ui.pveDifficultyButtons.forEach(button => {
@@ -9713,6 +10330,12 @@ ui.pveAugmentReroll.addEventListener("click", rerollSurvivalAugments);
 ui.pveSpeedButtons?.forEach(button => {
   button.addEventListener("click", () => setPveSpeed(Number(button.dataset.pveSpeed)));
 });
+ui.rankingModeButtons?.forEach(button => {
+  button.addEventListener("click", () => {
+    rankingMode = button.dataset.rankingMode === "pve" ? "pve" : "pvp";
+    loadRankings();
+  });
+});
 document.addEventListener("keydown", event => {
   if (screens.pveBattle.classList.contains("is-active") && pveGame) {
     if (pveGame.mode === "survival") return;
@@ -9757,6 +10380,8 @@ ui.lobbyStartButton.addEventListener("click", prepareCharacterSelect);
 ui.backFromPvpButton.addEventListener("click", () => showScreen("lobby"));
 ui.toBetButton.addEventListener("click", submitCharacterReady);
 ui.againButton.addEventListener("click", returnToLobby);
+
+updateSoundSettingsUi();
 
 async function boot() {
   if (!supabaseClient) {

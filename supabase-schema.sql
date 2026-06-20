@@ -7,12 +7,16 @@ create table if not exists public.app_users (
   password_hash text not null,
   coins integer not null default 0 check (coins >= 0),
   lp integer not null default 1000 check (lp >= 0),
+  pve_damage_total numeric not null default 0 check (pve_damage_total >= 0),
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
 
 alter table public.app_users
 add column if not exists lp integer not null default 1000 check (lp >= 0);
+
+alter table public.app_users
+add column if not exists pve_damage_total numeric not null default 0 check (pve_damage_total >= 0);
 
 alter table public.app_users
 alter column coins set default 0;
@@ -49,6 +53,9 @@ create table if not exists public.match_queue (
 
 alter table public.match_queue
 add column if not exists last_seen_at timestamptz not null default now();
+
+alter table public.match_queue
+add column if not exists casual boolean not null default false;
 
 create table if not exists public.pve_runs (
   id uuid primary key default gen_random_uuid(),
@@ -132,6 +139,7 @@ as $$
     'username', target_user.username,
     'coins', target_user.coins,
     'lp', target_user.lp,
+    'pveDamageTotal', target_user.pve_damage_total,
     'ownedCharacters', target_user.owned_characters
   );
 $$;
@@ -144,11 +152,13 @@ security definer
 set search_path = public
 as $$
   select case
-    when score >= 1800 then '다이아'
-    when score >= 1600 then '플레'
-    when score >= 1400 then '골드'
+    when score >= 2200 then '다이아'
+    when score >= 1800 then '플레'
+    when score >= 1500 then '골드'
     when score >= 1200 then '실버'
-    else '브론즈'
+    when score >= 1000 then '브론즈'
+    when score >= 500 then '아이언'
+    else '구리'
   end;
 $$;
 
@@ -377,7 +387,9 @@ begin
 end;
 $$;
 
-create or replace function public.find_pvp_match(session_token text)
+drop function if exists public.find_pvp_match(text);
+
+create or replace function public.find_pvp_match(session_token text, casual boolean default false)
 returns jsonb
 language plpgsql
 volatile
@@ -388,13 +400,14 @@ declare
   active_user public.app_users;
   opponent public.app_users;
   active_tier text;
+  is_casual boolean := coalesce(casual, false);
   elapsed_seconds integer;
   existing_room_code text;
   tier_index integer;
   min_index integer;
   max_index integer;
   new_code text;
-  tiers text[] := array['브론즈', '실버', '골드', '플레', '다이아'];
+  tiers text[] := array['구리', '아이언', '브론즈', '실버', '골드', '플레', '다이아'];
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -441,12 +454,13 @@ begin
     where user_id = active_user.id;
   end if;
 
-  active_tier := public.lp_tier(active_user.lp);
+  active_tier := case when is_casual then '일반' else public.lp_tier(active_user.lp) end;
 
-  insert into public.match_queue (user_id, tier, last_seen_at)
-  values (active_user.id, active_tier, now())
+  insert into public.match_queue (user_id, tier, casual, last_seen_at)
+  values (active_user.id, active_tier, is_casual, now())
   on conflict (user_id) do update
   set tier = excluded.tier,
+      casual = excluded.casual,
       last_seen_at = now();
 
   select greatest(0, extract(epoch from now() - joined_at)::int)
@@ -454,17 +468,23 @@ begin
   from public.match_queue
   where user_id = active_user.id;
 
-  tier_index := array_position(tiers, active_tier);
-  min_index := greatest(1, tier_index - floor(elapsed_seconds / 30)::int);
-  max_index := least(array_length(tiers, 1), tier_index + floor(elapsed_seconds / 30)::int);
+  if is_casual then
+    min_index := 1;
+    max_index := array_length(tiers, 1);
+  else
+    tier_index := array_position(tiers, active_tier);
+    min_index := greatest(1, tier_index - floor(elapsed_seconds / 30)::int);
+    max_index := least(array_length(tiers, 1), tier_index + floor(elapsed_seconds / 30)::int);
+  end if;
 
   select u.* into opponent
   from public.match_queue q
   join public.app_users u on u.id = q.user_id
   where q.user_id <> active_user.id
     and q.matched_room_code is null
+    and q.casual = is_casual
     and q.last_seen_at >= now() - interval '5 seconds'
-    and array_position(tiers, q.tier) between min_index and max_index
+    and (is_casual or array_position(tiers, q.tier) between min_index and max_index)
   order by q.joined_at
   limit 1
   for update skip locked;
@@ -473,6 +493,7 @@ begin
     return jsonb_build_object(
       'matched', false,
       'tier', active_tier,
+      'casual', is_casual,
       'range', jsonb_build_object('min', tiers[min_index], 'max', tiers[max_index]),
       'elapsed', elapsed_seconds
     );
@@ -490,6 +511,8 @@ begin
     array[active_user.id, opponent.id]::uuid[],
     jsonb_build_object(
       'matchmaking', true,
+      'casual', is_casual,
+      'lpGain', case when is_casual then 0 else 14 end,
       'matchPlayers', jsonb_build_object('p1', active_user.id, 'p2', opponent.id),
       'characterSelections', '{}'::jsonb,
       'ready', '{}'::jsonb,
@@ -870,7 +893,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
@@ -943,11 +966,14 @@ begin
 end;
 $$;
 
+drop function if exists public.complete_survival_run(text, uuid, integer, integer);
+
 create or replace function public.complete_survival_run(
   session_token text,
   run_id uuid,
   client_seconds integer default 0,
-  bonus_coins integer default 0
+  bonus_coins integer default 0,
+  damage_dealt numeric default 0
 )
 returns jsonb
 language plpgsql
@@ -962,6 +988,7 @@ declare
   elapsed_seconds integer;
   survival_reward integer;
   safe_bonus integer;
+  safe_damage numeric;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -986,6 +1013,7 @@ begin
   elapsed_seconds := greatest(0, extract(epoch from now() - active_run.started_at)::integer);
   elapsed_seconds := least(elapsed_seconds, greatest(0, client_seconds) + 5);
   safe_bonus := least(25, greatest(0, bonus_coins));
+  safe_damage := least(1000000000, greatest(0, coalesce(damage_dealt, 0)));
   survival_reward := least(
     1000,
     floor(least(elapsed_seconds, 300) / 30.0)::integer * 5
@@ -1001,7 +1029,8 @@ begin
   where id = active_run.id;
 
   update public.app_users
-  set coins = coins + survival_reward
+  set coins = coins + survival_reward,
+      pve_damage_total = pve_damage_total + safe_damage
   where id = active_user.id
   returning * into updated_user;
 
@@ -1147,15 +1176,62 @@ begin
         'name', ranked.username,
         'lp', ranked.lp,
         'coins', ranked.coins,
-        'tier', public.lp_tier(ranked.lp)
+        'tier', case
+          when ranked.rank_position = 1 then '챌린저'
+          when ranked.rank_position in (2, 3) then '그마'
+          when ranked.lp >= 2700 and ranked.rank_position between 4 and 7 then '마스터'
+          else public.lp_tier(ranked.lp)
+        end
       )
-      order by ranked.lp desc, ranked.username asc
+      order by ranked.rank_position
     )
     from (
-      select id, username, lp, coins
-      from public.app_users
-      order by lp desc, username asc
-      limit 50
+      select ranked_users.*
+      from (
+        select id, username, lp, coins,
+          row_number() over (order by lp desc, username asc) as rank_position
+        from public.app_users
+      ) ranked_users
+      where ranked_users.rank_position <= 50
+    ) ranked
+  ), '[]'::jsonb);
+end;
+$$;
+
+create or replace function public.get_pve_rankings(session_token text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  return coalesce((
+    select jsonb_agg(
+      jsonb_build_object(
+        'id', ranked.id,
+        'name', ranked.username,
+        'lp', ranked.lp,
+        'coins', ranked.coins,
+        'pveDamageTotal', ranked.pve_damage_total
+      )
+      order by ranked.rank_position
+    )
+    from (
+      select ranked_users.*
+      from (
+        select id, username, lp, coins, pve_damage_total,
+          row_number() over (order by pve_damage_total desc, username asc) as rank_position
+        from public.app_users
+      ) ranked_users
+      where ranked_users.rank_position <= 50
     ) ranked
   ), '[]'::jsonb);
 end;
@@ -1252,6 +1328,7 @@ declare
   normalized_code text := upper(trim(room_code));
   room_players uuid[];
   room_state jsonb;
+  casual_match boolean := false;
   settled_winner_id uuid;
   settled_loser_id uuid;
   old_lp integer;
@@ -1279,6 +1356,8 @@ begin
     raise exception 'room not found';
   end if;
 
+  casual_match := coalesce((room_state->>'casual')::boolean, false);
+
   if active_user.id <> all(room_players)
     or winner_id <> all(room_players)
     or loser_id <> all(room_players) then
@@ -1301,7 +1380,8 @@ begin
     return jsonb_build_object(
       'winner', public.app_user_json(winner_user),
       'loser', public.app_user_json(loser_user),
-      'lpGain', coalesce((room_state->>'lpGain')::integer, 14),
+      'lpGain', case when coalesce((room_state->>'casual')::boolean, false) then 0 else coalesce((room_state->>'lpGain')::integer, 14) end,
+      'casual', coalesce((room_state->>'casual')::boolean, false),
       'promoted', coalesce((room_state->>'promoted')::boolean, false),
       'oldTier', room_state->>'oldTier',
       'newTier', room_state->>'newTier',
@@ -1312,20 +1392,53 @@ begin
   select * into loser_user from public.app_users where id = loser_id for update;
   select * into winner_user from public.app_users where id = winner_id for update;
 
+  if casual_match then
+    update public.app_rooms
+    set prep_state = room_state || jsonb_build_object(
+      'settled', true,
+      'winnerId', winner_id,
+      'lpGain', 0,
+      'casual', true,
+      'promoted', false,
+      'oldTier', public.lp_tier(winner_user.lp),
+      'newTier', public.lp_tier(winner_user.lp),
+      'promotionReward', 0
+    )
+    where code = normalized_code;
+
+    delete from public.match_queue
+    where matched_room_code = normalized_code;
+
+    return jsonb_build_object(
+      'winner', public.app_user_json(winner_user),
+      'loser', public.app_user_json(loser_user),
+      'lpGain', 0,
+      'casual', true,
+      'promoted', false,
+      'oldTier', public.lp_tier(winner_user.lp),
+      'newTier', public.lp_tier(winner_user.lp),
+      'promotionReward', 0
+    );
+  end if;
+
   old_lp := winner_user.lp;
   old_tier := case
-    when old_lp >= 1800 then '다이아'
-    when old_lp >= 1600 then '플레'
-    when old_lp >= 1400 then '골드'
+    when old_lp >= 2200 then '다이아'
+    when old_lp >= 1800 then '플레'
+    when old_lp >= 1500 then '골드'
     when old_lp >= 1200 then '실버'
-    else '브론즈'
+    when old_lp >= 1000 then '브론즈'
+    when old_lp >= 500 then '아이언'
+    else '구리'
   end;
   new_tier := case
-    when old_lp + 14 >= 1800 then '다이아'
-    when old_lp + 14 >= 1600 then '플레'
-    when old_lp + 14 >= 1400 then '골드'
+    when old_lp + 14 >= 2200 then '다이아'
+    when old_lp + 14 >= 1800 then '플레'
+    when old_lp + 14 >= 1500 then '골드'
     when old_lp + 14 >= 1200 then '실버'
-    else '브론즈'
+    when old_lp + 14 >= 1000 then '브론즈'
+    when old_lp + 14 >= 500 then '아이언'
+    else '구리'
   end;
   promoted := old_tier <> new_tier;
   promotion_reward := case when promoted then 200 else 0 end;
@@ -1343,6 +1456,7 @@ begin
     'settled', true,
     'winnerId', winner_id,
     'lpGain', 14,
+    'casual', false,
     'promoted', promoted,
     'oldTier', old_tier,
     'newTier', new_tier,
@@ -1357,6 +1471,7 @@ begin
     'winner', public.app_user_json(winner_user),
     'loser', public.app_user_json(loser_user),
     'lpGain', 14,
+    'casual', false,
     'promoted', promoted,
     'oldTier', old_tier,
     'newTier', new_tier,
@@ -1377,11 +1492,12 @@ grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.begin_pve_run(text, text) to anon, authenticated;
 grant execute on function public.get_pve_progress(text) to anon, authenticated;
-grant execute on function public.complete_survival_run(text, uuid, integer, integer) to anon, authenticated;
+grant execute on function public.complete_survival_run(text, uuid, integer, integer, numeric) to anon, authenticated;
 grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;
 grant execute on function public.get_rankings(text) to anon, authenticated;
+grant execute on function public.get_pve_rankings(text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
-grant execute on function public.find_pvp_match(text) to anon, authenticated;
+grant execute on function public.find_pvp_match(text, boolean) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
 grant execute on function public.set_character_ready(text, text, text, boolean, text) to anon, authenticated;

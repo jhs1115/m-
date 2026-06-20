@@ -180,7 +180,7 @@ async function handleApi(req, res) {
     const pool = [
       "charger", "grabber", "poker", "stealth", "enhancer",
       "tank", "beamer", "wild", "vampire", "brawler",
-      "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer"
+      "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"
     ].filter(kind => !user.ownedCharacters.includes(kind));
     if (user.coins < 50) return send(res, 400, { error: "not enough coins" });
     if (pool.length === 0) return send(res, 400, { error: "all characters owned" });
