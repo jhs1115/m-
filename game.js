@@ -428,7 +428,7 @@ const characterGuide = {
   },
   artist: {
     attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 50%입니다."],
-    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 10의 피해를 줍니다. 궤도가 겹친 곳은 중첩 피해를 줍니다."],
+    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 15의 피해를 줍니다. 궤도가 겹친 곳은 중첩 피해를 줍니다."],
     ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
   },
   believer: {
@@ -3941,18 +3941,19 @@ function useDrawing(owner) {
     }
     const stacks = Math.min(overlapGroups, 5);
     if (stacks > 0) {
-      damageCombatTarget(target, 10 * stacks, owner);
+      damageCombatTarget(target, 15 * stacks, owner);
       hits += stacks;
     }
   });
   owner.skillTimer = 180;
   addVisualEffect({
     type: "drawing-flash",
-    orb,
+    trail: orb.trail.map(point => ({ ...point })),
     color: owner.accent,
     life: 34,
     maxLife: 34
   });
+  orb.trail = [];
   addFloatingText(owner.x, owner.y - owner.radius - 38, hits ? `드로잉 x${hits}` : "드로잉", owner.accent);
 }
 
@@ -5270,8 +5271,8 @@ function drawArtOrbs() {
 }
 
 function drawDrawingFlash(effect) {
-  const orb = effect.orb;
-  if (!orb) return;
+  const trail = effect.trail || effect.orb?.trail || [];
+  if (trail.length < 2) return;
   const alpha = clamp(effect.life / effect.maxLife, 0, 1);
   const trailColor = "#67e8f9";
   ctx.save();
@@ -5282,9 +5283,9 @@ function drawDrawingFlash(effect) {
   ctx.shadowBlur = 6;
   ctx.strokeStyle = trailColor;
   ctx.lineWidth = 5;
-  for (let index = 1; index < orb.trail.length; index += 4) {
-    const previous = orb.trail[index - 1];
-    const current = orb.trail[index];
+  for (let index = 1; index < trail.length; index += 4) {
+    const previous = trail[index - 1];
+    const current = trail[index];
     ctx.beginPath();
     ctx.moveTo(previous.x, previous.y);
     ctx.lineTo(current.x, current.y);
@@ -5293,9 +5294,9 @@ function drawDrawingFlash(effect) {
   ctx.globalAlpha = alpha * 0.18;
   ctx.strokeStyle = trailColor;
   ctx.lineWidth = 2;
-  for (let index = 1; index < orb.trail.length; index += 2) {
-    const previous = orb.trail[index - 1];
-    const current = orb.trail[index];
+  for (let index = 1; index < trail.length; index += 2) {
+    const previous = trail[index - 1];
+    const current = trail[index];
     ctx.beginPath();
     ctx.moveTo(previous.x, previous.y);
     ctx.lineTo(current.x, current.y);
