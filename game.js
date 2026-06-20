@@ -424,11 +424,11 @@ const characterGuide = {
   demon: {
     attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 2초 둔화를 줍니다."],
     normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 10의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 10% 회복합니다."],
-    ultimate: ["로스트 엔젤", "30초", "적을 관통해 25의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
+    ultimate: ["로스트 엔젤", "30초", "적을 관통해 30의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
   },
   artist: {
-    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 50%입니다."],
-    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 15의 피해를 줍니다. 궤도가 겹친 곳은 중첩 피해를 줍니다."],
+    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 55%입니다."],
+    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 35의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
     ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
   },
   believer: {
@@ -3046,7 +3046,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "demon") {
     fireDemonLine(fighter, {
-      damage: 25,
+      damage: 30,
       addMark: 2,
       markDuration: 480,
       consumeAll: true,
@@ -3886,7 +3886,7 @@ function launchDemonMissile(owner) {
 
 function spawnArtOrb(owner) {
   if (!game || game.artOrbs?.some(orb => orb.owner === owner)) return;
-  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.5);
+  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.55);
   game.artOrbs.push({
     owner,
     x: owner.x,
@@ -3905,7 +3905,7 @@ function updateArtOrbs(dt) {
     .forEach(spawnArtOrb);
   game.artOrbs = game.artOrbs.filter(orb => orb.owner.hp > 0);
   game.artOrbs.forEach(orb => {
-    const speed = characterBaseSpeed(orb.owner) * 0.5 * (orb.owner.artSoulTime > 0 ? 2 : 1);
+    const speed = characterBaseSpeed(orb.owner) * 0.55 * (orb.owner.artSoulTime > 0 ? 2 : 1);
     const currentSpeed = Math.hypot(orb.vx, orb.vy) || speed || 1;
     orb.vx = orb.vx / currentSpeed * speed;
     orb.vy = orb.vy / currentSpeed * speed;
@@ -3939,10 +3939,9 @@ function useDrawing(owner) {
       if (insideTrail && !wasInsideTrail) overlapGroups += 1;
       wasInsideTrail = insideTrail;
     }
-    const stacks = Math.min(overlapGroups, 5);
-    if (stacks > 0) {
-      damageCombatTarget(target, 15 * stacks, owner);
-      hits += stacks;
+    if (overlapGroups > 0) {
+      damageCombatTarget(target, 35, owner);
+      hits += 1;
     }
   });
   owner.skillTimer = 180;
