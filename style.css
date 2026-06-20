@@ -3152,6 +3152,15 @@ h2 {
   background: linear-gradient(145deg, #4ade80, #facc15);
 }
 
+.fighter-icon.swordsman {
+  background: linear-gradient(145deg, #f8fafc, #77f7ff 48%, #2563eb);
+}
+
+.fighter-icon.demon {
+  color: #e0f2fe;
+  background: linear-gradient(145deg, #050505, #38bdf8 48%, #6b3f24);
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;

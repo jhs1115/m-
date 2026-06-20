@@ -294,10 +294,22 @@ const characters = {
     color: "#16a34a",
     accent: "#facc15",
     contactDamage: 0
+  },
+  swordsman: {
+    name: "칼쓰는 색히",
+    color: "#e8edf4",
+    accent: "#77f7ff",
+    contactDamage: 0
+  },
+  demon: {
+    name: "악마의 힘쓰는 색히",
+    color: "#1a120e",
+    accent: "#38bdf8",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -313,7 +325,9 @@ const skillNames = {
   brawler: { normal: "투지", ultimate: "야수성" },
   timekeeper: { normal: "건너뛰기", ultimate: "리플레이" },
   riftmaker: { normal: "보이드", ultimate: "게이트" },
-  summoner: { normal: "체제 전환", ultimate: "강림" }
+  summoner: { normal: "체제 전환", ultimate: "강림" },
+  swordsman: { normal: "제 2식 - 무형검무", ultimate: "최종식 - 절공검무" },
+  demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" }
 };
 
 const characterGuide = {
@@ -374,18 +388,28 @@ const characterGuide = {
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
-    normal: ["건너뛰기", "7초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
+    normal: ["건너뛰기", "4초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 다음 초침 피해가 7로 변경됩니다. 벽은 통과하지 못합니다."],
     ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 넓은 범위에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
     attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 5의 피해를 주고 연결된 일반 균열을 소모합니다."],
-    normal: ["보이드", "14초", "가장 가까운 균열에 3초 동안 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 5의 피해를 줍니다."],
+    normal: ["보이드", "10초", "가장 가까운 균열에 3초 동안 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 5의 피해를 줍니다."],
     ultimate: ["게이트", "5초", "모든 균열에서 적을 향해 튕기지 않는 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
   },
   summoner: {
-    attack: ["일어나라!", "4.5초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
+    attack: ["일어나라!", "4초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
     normal: ["체제 전환", "12초", "소환 체제를 전사와 궁수 사이에서 전환합니다. 전사는 추격과 접촉 공격, 궁수는 거리 유지와 원거리 공격을 담당합니다."],
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
+  },
+  swordsman: {
+    attack: ["제 1식 - 원형검무", "2.5초", "적의 위치로 순간이동한 뒤 주변을 원형으로 베어 5의 범위 피해를 줍니다. 기본적으로 움직이지 않습니다."],
+    normal: ["제 2식 - 무형검무", "14초", "3초 동안 사라진 뒤 적 주위를 시계 방향으로 돌며 6번 관통합니다. 각 관통은 3의 피해를 줍니다."],
+    ultimate: ["최종식 - 절공검무", "45초", "0.5초 간격으로 적을 관통해 바라보는 방향의 맵 끝까지 5번 이동합니다. 각 이동은 10의 피해를 주고 3초 동안 궤적을 남깁니다."]
+  },
+  demon: {
+    attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 10 추가 피해와 2초 둔화를 줍니다."],
+    normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 15의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 25% 회복합니다."],
+    ultimate: ["로스트 엔젤", "35초", "적을 관통해 15의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
   }
 };
 
@@ -869,7 +893,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M"
   })[kind] || "?";
 }
 
@@ -1651,9 +1675,11 @@ function normalSkillCooldown(kind) {
     wild: 1080,
     vampire: 0,
     brawler: 0,
-    timekeeper: 420,
-    riftmaker: 840,
-    summoner: 720
+    timekeeper: 240,
+    riftmaker: 600,
+    summoner: 720,
+    swordsman: 840,
+    demon: 540
   }[kind] ?? Infinity;
 }
 
@@ -1672,7 +1698,9 @@ function ultimateCooldown(kind) {
     brawler: 0,
     timekeeper: 2400,
     riftmaker: 300,
-    summoner: 3000
+    summoner: 3000,
+    swordsman: 2700,
+    demon: 2100
   }[kind] ?? Infinity;
 }
 
@@ -1715,6 +1743,7 @@ function makeCharacterCombatState(kind) {
     stunTime: 0,
     slowTime: 0,
     hasteTime: 0,
+    phaseTime: 0,
     hitFlash: 0,
     lockOnTime: 0,
     lockOnPulse: 0,
@@ -1739,12 +1768,23 @@ function makeCharacterCombatState(kind) {
     gritActive: false,
     idleAttackTime: 0,
     clockHandTimer: kind === "timekeeper" ? 240 : Infinity,
+    clockDamageOverride: 0,
     timeHistory: [],
     replayWindup: 0,
     replayTarget: null,
     riftWallCooldown: 0,
-    summonTimer: kind === "summoner" ? 270 : Infinity,
+    summonTimer: kind === "summoner" ? 240 : Infinity,
     summonMode: "warrior",
+    swordTimer: kind === "swordsman" ? 150 : Infinity,
+    swordDanceTime: 0,
+    swordDanceTimer: 0,
+    swordDanceHits: 0,
+    swordUltimateHits: 0,
+    swordUltimateTimer: 0,
+    demonSwordTimer: kind === "demon" ? 210 : Infinity,
+    demonBurstWindup: 0,
+    demonMarkCount: 0,
+    demonMarkTime: 0,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -1752,6 +1792,7 @@ function makeCharacterCombatState(kind) {
 }
 
 function characterBaseSpeed(fighter) {
+  if (fighter.kind === "swordsman") return 0;
   if (fighter.stealthTime > 0) return fighter.hyperStealthActive ? 125 : 12.5;
   if (fighter.canThrow) return 5.9;
   if (fighter.canGrab) return 6.2;
@@ -1860,6 +1901,7 @@ function updateHud() {
 function damage(fighter, amount, attacker = null) {
   if (amount <= 0 || game.over) return;
   if (fighter.stealthTime > 0) return;
+  if (fighter.phaseTime > 0) return;
   let finalAmount = amount;
   const reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
   finalAmount *= 1 - reduction;
@@ -1981,6 +2023,7 @@ function skipTime(fighter) {
   fighter.x = clamp(fighter.x + direction.x * distance, fighter.radius, canvas.width - fighter.radius);
   fighter.y = clamp(fighter.y + direction.y * distance, fighter.radius, canvas.height - fighter.radius);
   fighter.clockHandTimer = 0;
+  fighter.clockDamageOverride = 7;
   addVisualEffect({
     type: "time-skip",
     x1: fromX,
@@ -2054,6 +2097,8 @@ function finishReplay(fighter) {
 
 function swingClockHand(fighter) {
   const target = nearestEnemyTarget(fighter);
+  const damageAmount = fighter.clockDamageOverride || 15;
+  fighter.clockDamageOverride = 0;
   const dx = target.x - fighter.x;
   const dy = target.y - fighter.y;
   const distance = Math.hypot(dx, dy);
@@ -2070,6 +2115,7 @@ function swingClockHand(fighter) {
     halfAngle: Math.PI / 3,
     hitOpponent: false,
     hitSummonIds: [],
+    damage: damageAmount,
     life: 28,
     maxLife: 28
   };
@@ -2094,12 +2140,12 @@ function resolveClockSweepHits(effect) {
   const target = opponentOf(effect.fighter);
   if (!effect.hitOpponent && target?.hp > 0 && targetInsideClockSweep(effect, target)) {
     effect.hitOpponent = true;
-    damage(target, 15, effect.fighter);
+    damage(target, effect.damage || 15, effect.fighter);
   }
   enemySummonsOf(effect.fighter).forEach(summon => {
     if (effect.hitSummonIds.includes(summon.id) || !targetInsideClockSweep(effect, summon)) return;
     effect.hitSummonIds.push(summon.id);
-    damageSummon(summon, 15, effect.fighter);
+    damageSummon(summon, effect.damage || 15, effect.fighter);
   });
 }
 
@@ -2404,6 +2450,13 @@ function updateSummons(dt) {
     summon.contactCooldown = Math.max(0, summon.contactCooldown - dt);
     summon.fighterContactCooldown = Math.max(0, summon.fighterContactCooldown - dt);
     summon.hitFlash = Math.max(0, summon.hitFlash - dt);
+    if (summon.demonMarkTime > 0) {
+      summon.demonMarkTime -= dt;
+      if (summon.demonMarkTime <= 0) {
+        summon.demonMarkCount = 0;
+        summon.demonMarkTime = 0;
+      }
+    }
     const target = nearestEnemyTarget(summon.owner, summon.x, summon.y);
     const enemyFighter = opponentOf(summon.owner);
     const ownerSpeed = Math.max(0.1, Math.hypot(summon.owner.vx, summon.owner.vy) || characterBaseSpeed(summon.owner));
@@ -2791,13 +2844,13 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "timekeeper") {
     skipTime(fighter);
-    fighter.skillTimer = 420;
+    fighter.skillTimer = 240;
     return;
   }
 
   if (fighter.kind === "riftmaker") {
     if (createVoidRift(fighter)) {
-      fighter.skillTimer = 840;
+      fighter.skillTimer = 600;
     }
     return;
   }
@@ -2806,6 +2859,16 @@ function triggerNormalSkill(fighter) {
     fighter.summonMode = fighter.summonMode === "warrior" ? "archer" : "warrior";
     addSkillPulse(fighter, fighter.summonMode === "warrior" ? "#4ade80" : "#facc15");
     fighter.skillTimer = 720;
+    return;
+  }
+
+  if (fighter.kind === "swordsman") {
+    beginSwordDance(fighter);
+    return;
+  }
+
+  if (fighter.kind === "demon") {
+    beginDemonBurst(fighter);
   }
 }
 
@@ -2906,6 +2969,25 @@ function triggerUltimate(fighter) {
     summonUnit(fighter, true);
     addSkillPulse(fighter, fighter.summonMode === "warrior" ? "#4ade80" : "#facc15");
     fighter.ultimateTimer = 3000;
+    return;
+  }
+
+  if (fighter.kind === "swordsman") {
+    beginSwordUltimate(fighter);
+    return;
+  }
+
+  if (fighter.kind === "demon") {
+    fireDemonLine(fighter, {
+      damage: 15,
+      addMark: 2,
+      markDuration: 480,
+      consumeAll: true,
+      cooldownRefund: 450,
+      width: 30,
+      ultimate: true
+    });
+    fighter.ultimateTimer = 2100;
   }
 }
 
@@ -2922,6 +3004,7 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0) return false;
   if (type === "normal") {
     if (fighter.kind === "vampire" || fighter.kind === "brawler") return false;
     if (fighter.skillTimer > 0) return false;
@@ -3046,7 +3129,50 @@ function updateSkills(fighter, dt) {
 function moveFighter(fighter, dt) {
   fighter.timeHistory.push({ x: fighter.x, y: fighter.y, hp: fighter.hp });
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
+  if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
+  if (fighter.demonMarkTime > 0) {
+    fighter.demonMarkTime -= dt;
+    if (fighter.demonMarkTime <= 0) {
+      fighter.demonMarkCount = 0;
+      fighter.demonMarkTime = 0;
+    }
+  }
   if (fighter.silenceTime > 0) fighter.silenceTime -= dt;
+  if (fighter.swordDanceTime > 0) {
+    fighter.swordDanceTime -= dt;
+    fighter.swordDanceTimer -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.swordDanceTimer <= 0 && fighter.swordDanceHits > 0) {
+      const hitIndex = 6 - fighter.swordDanceHits;
+      performSwordDash(fighter, 3, hitIndex, 6, false);
+      fighter.swordDanceHits -= 1;
+      fighter.swordDanceTimer = 30;
+    }
+    return;
+  }
+  if (fighter.swordUltimateHits > 0) {
+    fighter.swordUltimateTimer -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.swordUltimateTimer <= 0) {
+      const hitIndex = 5 - fighter.swordUltimateHits;
+      performSwordDash(fighter, 10, hitIndex, 5, true);
+      fighter.swordUltimateHits -= 1;
+      fighter.swordUltimateTimer = 30;
+    }
+    return;
+  }
+  if (fighter.demonBurstWindup > 0) {
+    fighter.demonBurstWindup -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.demonBurstWindup <= 0) launchDemonMissile(fighter);
+    return;
+  }
   if (fighter.stunTime > 0) {
     fighter.stunTime -= dt;
     if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
@@ -3094,9 +3220,12 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
-  if (fighter.shieldTime <= 0) {
+  if (fighter.shieldTime <= 0 && fighter.kind !== "swordsman") {
     fighter.x += fighter.vx * dt;
     fighter.y += fighter.vy * dt;
+  } else if (fighter.kind === "swordsman") {
+    fighter.vx = 0;
+    fighter.vy = 0;
   }
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = characterBaseSpeed(fighter);
@@ -3124,6 +3253,10 @@ function moveFighter(fighter, dt) {
     const direction = fighterDirection(fighter);
     fighter.vx = direction.x * targetSpeed;
     fighter.vy = direction.y * targetSpeed;
+  }
+  if (fighter.kind === "swordsman") {
+    fighter.vx = 0;
+    fighter.vy = 0;
   }
   const wallHit = bounceOnWalls(fighter);
   updateSkills(fighter, dt);
@@ -3229,7 +3362,30 @@ function moveFighter(fighter, dt) {
     fighter.summonTimer -= dt;
     if (fighter.summonTimer <= 0) {
       summonUnit(fighter, false);
-      fighter.summonTimer = 270;
+      fighter.summonTimer = 240;
+    }
+  }
+
+  if (fighter.kind === "swordsman") {
+    fighter.swordTimer -= dt;
+    if (fighter.swordTimer <= 0) {
+      useSwordBasic(fighter);
+      fighter.swordTimer = 150;
+    }
+  }
+
+  if (fighter.kind === "demon") {
+    fighter.demonSwordTimer -= dt;
+    if (fighter.demonSwordTimer <= 0) {
+      fireDemonLine(fighter, {
+        damage: 5,
+        addMark: 1,
+        markDuration: 300,
+        bonusDamagePerMark: 10,
+        slowTime: 120,
+        width: 26
+      });
+      fighter.demonSwordTimer = 210;
     }
   }
 
@@ -3296,6 +3452,10 @@ function bounceOnWalls(body) {
 function handleFighterCollision() {
   const a = game.fighters[0];
   const b = game.fighters[1];
+  if (a.phaseTime > 0 || b.phaseTime > 0) {
+    game.contactLock = false;
+    return;
+  }
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const dist = Math.hypot(dx, dy);
@@ -3327,6 +3487,220 @@ function handleFighterCollision() {
     contactDamagePair(a, b);
     game.contactLock = true;
   }
+}
+
+function arenaEdgePoint(x, y, dx, dy, radius = 0) {
+  const candidates = [];
+  if (dx > 0) candidates.push((canvas.width - radius - x) / dx);
+  if (dx < 0) candidates.push((radius - x) / dx);
+  if (dy > 0) candidates.push((canvas.height - radius - y) / dy);
+  if (dy < 0) candidates.push((radius - y) / dy);
+  const distance = Math.max(0, Math.min(...candidates.filter(value => value >= 0)));
+  return {
+    x: clamp(x + dx * distance, radius, canvas.width - radius),
+    y: clamp(y + dy * distance, radius, canvas.height - radius)
+  };
+}
+
+function enemyTargetsOnLine(owner, x1, y1, x2, y2, width) {
+  return [opponentOf(owner), ...enemySummonsOf(owner)].filter(target => (
+    target?.hp > 0 && pointSegmentDistance(target.x, target.y, x1, y1, x2, y2) < target.radius + width
+  ));
+}
+
+function applySwordCircle(owner, damageAmount = 5, radius = 82) {
+  game.areaAttacks.push({
+    type: "sword-circle",
+    owner,
+    x: owner.x,
+    y: owner.y,
+    radius,
+    delay: 0,
+    life: 24,
+    hit: false,
+    damage: damageAmount,
+    color: owner.accent,
+    angle: seededRandom() * Math.PI
+  });
+  addVisualEffect({
+    type: "sword-ring",
+    x: owner.x,
+    y: owner.y,
+    color: owner.accent,
+    radius,
+    life: 24,
+    maxLife: 24
+  });
+}
+
+function useSwordBasic(owner) {
+  const target = nearestEnemyTarget(owner);
+  const fromX = owner.x;
+  const fromY = owner.y;
+  owner.x = clamp(target.x, owner.radius, canvas.width - owner.radius);
+  owner.y = clamp(target.y, owner.radius, canvas.height - owner.radius);
+  owner.vx = 0;
+  owner.vy = 0;
+  applySwordCircle(owner, 5, 82);
+  addVisualEffect({
+    type: "sword-step",
+    x1: fromX,
+    y1: fromY,
+    x2: owner.x,
+    y2: owner.y,
+    color: owner.accent,
+    life: 22,
+    maxLife: 22
+  });
+}
+
+function performSwordDash(owner, damageAmount, orbitIndex = 0, total = 1, ultimate = false) {
+  const target = nearestEnemyTarget(owner);
+  const angle = ultimate
+    ? Math.atan2(target.y - owner.y, target.x - owner.x)
+    : Math.atan2(target.y - owner.y, target.x - owner.x) + Math.PI / 2 + orbitIndex * Math.PI / 3;
+  const direction = { x: Math.cos(angle), y: Math.sin(angle) };
+  let startX = owner.x;
+  let startY = owner.y;
+  let end;
+  if (ultimate) {
+    end = arenaEdgePoint(owner.x, owner.y, direction.x, direction.y, owner.radius);
+  } else {
+    const orbitRadius = 118;
+    startX = clamp(target.x - direction.x * orbitRadius, owner.radius, canvas.width - owner.radius);
+    startY = clamp(target.y - direction.y * orbitRadius, owner.radius, canvas.height - owner.radius);
+    end = {
+      x: clamp(target.x + direction.x * orbitRadius, owner.radius, canvas.width - owner.radius),
+      y: clamp(target.y + direction.y * orbitRadius, owner.radius, canvas.height - owner.radius)
+    };
+  }
+  enemyTargetsOnLine(owner, startX, startY, end.x, end.y, ultimate ? 18 : 24)
+    .forEach(hitTarget => damageCombatTarget(hitTarget, damageAmount, owner));
+  owner.x = end.x;
+  owner.y = end.y;
+  owner.vx = 0;
+  owner.vy = 0;
+  addVisualEffect({
+    type: ultimate ? "sword-ultimate-trail" : "sword-dash-trail",
+    x1: startX,
+    y1: startY,
+    x2: end.x,
+    y2: end.y,
+    color: owner.accent,
+    life: ultimate ? 180 : 34,
+    maxLife: ultimate ? 180 : 34,
+    index: orbitIndex,
+    total
+  });
+}
+
+function beginSwordDance(owner) {
+  owner.phaseTime = 180;
+  owner.swordDanceTime = 180;
+  owner.swordDanceTimer = 1;
+  owner.swordDanceHits = 6;
+  owner.skillTimer = 840;
+  addSkillPulse(owner, owner.accent);
+}
+
+function beginSwordUltimate(owner) {
+  owner.swordUltimateHits = 5;
+  owner.swordUltimateTimer = 1;
+  owner.ultimateTimer = 2700;
+  addSkillPulse(owner, "#f7fbff");
+}
+
+function addDemonMark(target, count, duration) {
+  target.demonMarkCount = Math.min(9, (target.demonMarkCount || 0) + count);
+  target.demonMarkTime = Math.max(target.demonMarkTime || 0, duration);
+  addFloatingText(target.x, target.y - target.radius - 22, `표식 x${target.demonMarkCount}`, "#38bdf8");
+}
+
+function consumeDemonMarks(target, count = 1) {
+  const marks = target.demonMarkCount || 0;
+  const consumed = Math.min(marks, count);
+  target.demonMarkCount = marks - consumed;
+  if (target.demonMarkCount <= 0) {
+    target.demonMarkCount = 0;
+    target.demonMarkTime = 0;
+  }
+  return consumed;
+}
+
+function applyDemonHit(target, amount, owner, options = {}) {
+  const hadMark = (target.demonMarkCount || 0) > 0;
+  damageCombatTarget(target, amount, owner);
+  if (!hadMark) {
+    if (options.addMark) addDemonMark(target, options.addMark, options.markDuration || 300);
+    return 0;
+  }
+  const consumed = consumeDemonMarks(target, options.consumeAll ? target.demonMarkCount : 1);
+  if (options.bonusDamagePerMark) damageCombatTarget(target, options.bonusDamagePerMark * consumed, owner);
+  if (options.slowTime) target.slowTime = Math.max(target.slowTime || 0, options.slowTime);
+  if (options.healPercent && consumed > 0) heal(owner, owner.maxHp * options.healPercent);
+  if (options.cooldownRefund && consumed > 0) {
+    owner.skillTimer = Math.max(0, owner.skillTimer - options.cooldownRefund * consumed);
+    addFloatingText(owner.x, owner.y - owner.radius - 46, `쿨 -${(options.cooldownRefund * consumed / 60).toFixed(1)}초`, "#38bdf8");
+  }
+  return consumed;
+}
+
+function fireDemonLine(owner, options = {}) {
+  const target = nearestEnemyTarget(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const end = arenaEdgePoint(owner.x, owner.y, Math.cos(angle), Math.sin(angle), 0);
+  enemyTargetsOnLine(owner, owner.x, owner.y, end.x, end.y, options.width || 28)
+    .forEach(hitTarget => applyDemonHit(hitTarget, options.damage || 5, owner, options));
+  addVisualEffect({
+    type: options.ultimate ? "demon-cleave" : "demon-beam",
+    x1: owner.x,
+    y1: owner.y,
+    x2: end.x,
+    y2: end.y,
+    color: owner.accent,
+    life: options.ultimate ? 42 : 30,
+    maxLife: options.ultimate ? 42 : 30
+  });
+  if (options.ultimate) {
+    owner.x = clamp(target.x + Math.cos(angle) * (target.radius + owner.radius + 12), owner.radius, canvas.width - owner.radius);
+    owner.y = clamp(target.y + Math.sin(angle) * (target.radius + owner.radius + 12), owner.radius, canvas.height - owner.radius);
+  }
+}
+
+function beginDemonBurst(owner) {
+  owner.demonBurstWindup = 60;
+  owner.vx = 0;
+  owner.vy = 0;
+  owner.skillTimer = 540;
+  addVisualEffect({
+    type: "demon-focus",
+    fighter: owner,
+    color: owner.accent,
+    life: 60,
+    maxLife: 60
+  });
+}
+
+function launchDemonMissile(owner) {
+  const target = nearestEnemyTarget(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  game.balls.push({
+    owner,
+    x: owner.x + Math.cos(angle) * (owner.radius + 18),
+    y: owner.y + Math.sin(angle) * (owner.radius + 18),
+    vx: Math.cos(angle) * 8.8,
+    vy: Math.sin(angle) * 8.8,
+    radius: 13,
+    life: 260,
+    hitCooldown: 0,
+    damage: 15,
+    speed: 8.8,
+    color: "#38bdf8",
+    homing: true,
+    homeTarget: target,
+    homingTime: 260,
+    demonMissile: true
+  });
 }
 
 function throwBall(owner) {
@@ -3696,6 +4070,14 @@ function updateBalls(dt) {
 
     const summonTarget = collidingEnemySummon(ball.owner, ball.x, ball.y, ball.radius);
     if (summonTarget && ball.hitCooldown <= 0) {
+      if (ball.demonMissile) {
+        applyDemonHit(summonTarget, ball.damage, ball.owner, {
+          addMark: 1,
+          markDuration: 300,
+          healPercent: 0.25
+        });
+        return false;
+      }
       damageSummon(summonTarget, ball.damage, ball.owner);
       if (ball.blood || ball.riftShot || ball.summonArrow || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
@@ -3712,6 +4094,14 @@ function updateBalls(dt) {
       const dy = target.y - ball.y;
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
         if (target !== ball.owner) {
+          if (ball.demonMissile) {
+            applyDemonHit(target, ball.damage, ball.owner, {
+              addMark: 1,
+              markDuration: 300,
+              healPercent: 0.25
+            });
+            return false;
+          }
           damage(target, ball.damage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
           if (ball.blood || ball.riftShot || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
@@ -3829,6 +4219,14 @@ function updateAreaAttacks(dt) {
     if (attack.delay <= 0 && !attack.hit) {
       attack.hit = true;
       const target = opponentOf(attack.owner);
+      if (attack.type === "sword-circle") {
+        [target, ...enemySummonsOf(attack.owner)].forEach(hitTarget => {
+          if (hitTarget?.hp > 0 && Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y) < hitTarget.radius + attack.radius) {
+            damageCombatTarget(hitTarget, attack.damage, attack.owner);
+          }
+        });
+        return attack.life > 0;
+      }
       const summonTarget = attack.type === "laser"
         ? enemySummonsOf(attack.owner).find(summon => Math.abs(summon.x - attack.x) < summon.radius + 18)
         : enemySummonInArea(attack.owner, attack.x, attack.y, attack.radius);
@@ -4163,6 +4561,26 @@ function drawStealthMirrorEasterEgg() {
 }
 
 function drawVisualEffect(effect) {
+  if (effect.type === "sword-step") {
+    drawEnergyLine(effect, 5);
+    return;
+  }
+  if (effect.type === "sword-dash-trail" || effect.type === "sword-ultimate-trail") {
+    drawSwordTrail(effect);
+    return;
+  }
+  if (effect.type === "sword-ring") {
+    drawSwordRing(effect);
+    return;
+  }
+  if (effect.type === "demon-beam" || effect.type === "demon-cleave") {
+    drawDemonBeam(effect);
+    return;
+  }
+  if (effect.type === "demon-focus") {
+    drawDemonFocus(effect);
+    return;
+  }
   if (effect.type === "assassinate-slash") {
     drawAssassinateSlash(effect);
     return;
@@ -4234,6 +4652,7 @@ function drawSummon(summon) {
     width * clamp(summon.hp / summon.maxHp, 0, 1),
     6
   );
+  if ((summon.demonMarkCount || 0) > 0) drawDemonMark(summon);
 }
 
 function drawEnergyLine(effect, width = 6) {
@@ -4345,6 +4764,111 @@ function drawPointBurst(effect) {
     ctx.beginPath();
     ctx.moveTo(effect.x + Math.cos(angle) * inner, effect.y + Math.sin(angle) * inner);
     ctx.lineTo(effect.x + Math.cos(angle) * outer, effect.y + Math.sin(angle) * outer);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSwordTrail(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const angle = Math.atan2(effect.y2 - effect.y1, effect.x2 - effect.x1);
+  const sideX = Math.cos(angle + Math.PI / 2);
+  const sideY = Math.sin(angle + Math.PI / 2);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  [
+    { width: effect.type === "sword-ultimate-trail" ? 18 : 12, color: effect.color, alpha: 0.18 },
+    { width: effect.type === "sword-ultimate-trail" ? 9 : 6, color: "#a5f3fc", alpha: 0.58 },
+    { width: 2.4, color: "#ffffff", alpha: 0.95 }
+  ].forEach((layer, index) => {
+    ctx.globalAlpha = alpha * layer.alpha;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = layer.color;
+    ctx.shadowBlur = 26 + index * 8;
+    ctx.lineWidth = layer.width;
+    ctx.beginPath();
+    ctx.moveTo(effect.x1 + sideX * index * 3, effect.y1 + sideY * index * 3);
+    ctx.lineTo(effect.x2 + sideX * index * 3, effect.y2 + sideY * index * 3);
+    ctx.stroke();
+  });
+  for (let spark = 0; spark < 5; spark += 1) {
+    const t = (spark + 1) / 6;
+    const x = effect.x1 + (effect.x2 - effect.x1) * t;
+    const y = effect.y1 + (effect.y2 - effect.y1) * t;
+    ctx.globalAlpha = alpha * 0.42;
+    ctx.strokeStyle = spark % 2 ? "#f7fbff" : effect.color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - sideX * 14, y - sideY * 14);
+    ctx.lineTo(x + sideX * 14, y + sideY * 14);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSwordRing(effect) {
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = effect.radius * (0.65 + progress * 0.45);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = 1 - progress;
+  ctx.translate(effect.x, effect.y);
+  ctx.rotate(game.tick * 0.14);
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.strokeStyle = ring === 0 ? "#ffffff" : ring === 1 ? effect.color : "#60a5fa";
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 28;
+    ctx.lineWidth = 7 - ring * 2;
+    ctx.setLineDash(ring === 0 ? [] : [16, 9]);
+    ctx.lineDashOffset = -game.tick * (ring + 1);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + ring * 8, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDemonBeam(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  [
+    { width: effect.type === "demon-cleave" ? 28 : 22, color: "#050505", alpha: 0.88 },
+    { width: effect.type === "demon-cleave" ? 18 : 14, color: "#6b3f24", alpha: 0.45 },
+    { width: effect.type === "demon-cleave" ? 10 : 8, color: "#38bdf8", alpha: 0.72 },
+    { width: 2.5, color: "#dff8ff", alpha: 0.95 }
+  ].forEach(layer => {
+    ctx.globalAlpha = alpha * layer.alpha;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = layer.color === "#050505" ? "#38bdf8" : layer.color;
+    ctx.shadowBlur = 26;
+    ctx.lineWidth = layer.width;
+    ctx.beginPath();
+    ctx.moveTo(effect.x1, effect.y1);
+    ctx.lineTo(effect.x2, effect.y2);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawDemonFocus(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let ring = 0; ring < 4; ring += 1) {
+    ctx.globalAlpha = (0.75 - ring * 0.12) * (0.45 + progress * 0.55);
+    ctx.strokeStyle = ring % 2 ? "#6b3f24" : "#38bdf8";
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 26;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 10]);
+    ctx.lineDashOffset = -game.tick * (1 + ring * 0.45);
+    ctx.beginPath();
+    ctx.arc(fighter.x, fighter.y, fighter.radius + 18 + ring * 10, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
@@ -4483,6 +5007,7 @@ function drawStealthBurst(effect) {
 }
 
 function drawFighter(fighter) {
+  if (fighter.phaseTime > 0 && fighter.kind === "swordsman") return;
   ctx.save();
   ctx.translate(fighter.x, fighter.y);
   drawFighterAuras(fighter);
@@ -4534,6 +5059,41 @@ function drawFighter(fighter) {
     ctx.textBaseline = "middle";
     ctx.fillText(fighter.summonMode === "warrior" ? "W" : "A", -12, 14);
   }
+  if (fighter.kind === "swordsman") {
+    ctx.save();
+    ctx.rotate(game.tick * 0.025);
+    ctx.strokeStyle = "#f7fbff";
+    ctx.shadowColor = fighter.accent;
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-18, 16);
+    ctx.lineTo(18, -18);
+    ctx.stroke();
+    ctx.strokeStyle = fighter.accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 11, 0, Math.PI * 1.25);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (fighter.kind === "demon") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#38bdf8";
+    ctx.fillStyle = "#6b3f24";
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-17, 13);
+    ctx.lineTo(15, -15);
+    ctx.lineTo(8, 8);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  }
   if (fighter.unstoppableTime > 0) {
     drawUnstoppableAura(fighter);
   }
@@ -4563,6 +5123,7 @@ function drawFighter(fighter) {
     ctx.restore();
   });
   ctx.restore();
+  if ((fighter.demonMarkCount || 0) > 0) drawDemonMark(fighter);
   drawFighterName(fighter);
   drawFighterHealthBar(fighter);
   drawPokerHand(fighter);
@@ -4572,6 +5133,32 @@ function drawFighter(fighter) {
   if (fighter.kind === "summoner") {
     addFighterStatLabel(fighter, fighter.summonMode === "warrior" ? "전사 체제" : "궁수 체제", fighter.accent);
   }
+}
+
+function drawDemonMark(target) {
+  ctx.save();
+  const count = target.demonMarkCount || 0;
+  const alpha = clamp((target.demonMarkTime || 0) / 300, 0.35, 1);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.translate(target.x, target.y - target.radius - 16);
+  for (let index = 0; index < count; index += 1) {
+    const angle = index / Math.max(1, count) * Math.PI * 2 + game.tick * 0.04;
+    const x = Math.cos(angle) * 12;
+    const y = Math.sin(angle) * 5;
+    ctx.fillStyle = index % 2 ? "#6b3f24" : "#38bdf8";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#dff8ff";
+  ctx.font = "900 10px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(count), 0, 0);
+  ctx.restore();
 }
 
 function addFighterStatLabel(fighter, label, color) {
@@ -4793,6 +5380,30 @@ function drawBall(ball) {
     return;
   }
   ctx.save();
+  if (ball.demonMissile) {
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(Math.atan2(ball.vy, ball.vx));
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = 24;
+    const core = ctx.createLinearGradient(-ball.radius - 8, 0, ball.radius + 10, 0);
+    core.addColorStop(0, "#050505");
+    core.addColorStop(0.48, "#6b3f24");
+    core.addColorStop(1, "#38bdf8");
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.moveTo(ball.radius + 12, 0);
+    ctx.lineTo(-ball.radius, -ball.radius * 0.82);
+    ctx.lineTo(-ball.radius * 0.45, 0);
+    ctx.lineTo(-ball.radius, ball.radius * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#dff8ff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
   if (ball.blood) {
     ctx.shadowColor = "#ff174f";
     ctx.shadowBlur = 18;
@@ -4865,6 +5476,26 @@ function drawAreaAttack(attack) {
   ctx.save();
   const warning = attack.delay > 0;
   const isAnnihilator = attack.type === "annihilator-laser";
+  if (attack.type === "sword-circle") {
+    const alpha = clamp(attack.life / 24, 0, 1);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = alpha;
+    ctx.translate(attack.x, attack.y);
+    ctx.rotate(game.tick * 0.18 + attack.angle);
+    for (let ring = 0; ring < 3; ring += 1) {
+      ctx.strokeStyle = ring === 0 ? "#ffffff" : ring === 1 ? attack.color : "#60a5fa";
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 26;
+      ctx.lineWidth = 8 - ring * 2;
+      ctx.setLineDash(ring === 0 ? [] : [18, 10]);
+      ctx.lineDashOffset = -game.tick * (ring + 1);
+      ctx.beginPath();
+      ctx.arc(0, 0, attack.radius - ring * 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
   ctx.globalAlpha = warning ? 0.42 + Math.sin(game.tick * 0.32) * 0.12 : clamp(attack.life / 24, 0, 1);
   ctx.strokeStyle = isAnnihilator ? "#ff304f" : attack.type === "laser" ? "#62dfff" : attack.color;
   ctx.fillStyle = isAnnihilator ? "rgba(255,48,79,0.18)" : attack.type === "laser" ? "rgba(66,165,255,0.16)" : "rgba(216,255,117,0.12)";

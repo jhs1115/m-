@@ -177,7 +177,11 @@ async function handleApi(req, res) {
   }
 
   if (req.method === "POST" && req.url === "/api/gacha") {
-    const pool = ["charger", "grabber"].filter(kind => !user.ownedCharacters.includes(kind));
+    const pool = [
+      "charger", "grabber", "poker", "stealth", "enhancer",
+      "tank", "beamer", "wild", "vampire", "brawler",
+      "timekeeper", "riftmaker", "summoner", "swordsman", "demon"
+    ].filter(kind => !user.ownedCharacters.includes(kind));
     if (user.coins < 50) return send(res, 400, { error: "not enough coins" });
     if (pool.length === 0) return send(res, 400, { error: "all characters owned" });
 

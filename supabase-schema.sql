@@ -870,7 +870,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
