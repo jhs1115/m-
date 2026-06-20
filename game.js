@@ -5,6 +5,7 @@ const APP_SESSION_KEY = "matchzzang-supabase-session";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
+const VOID_RIFT_RADIUS = 200;
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -372,17 +373,17 @@ const characterGuide = {
     ultimate: ["야수성", "패시브", "공격하지 못한 시간 동안 이동속도가 매초 6%씩 증가합니다."]
   },
   timekeeper: {
-    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 20의 피해를 줍니다."],
+    attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
     normal: ["건너뛰기", "7초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 벽은 통과하지 못합니다."],
     ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 넓은 범위에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
     attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 5의 피해를 주고 연결된 일반 균열을 소모합니다."],
     normal: ["보이드", "14초", "가장 가까운 균열에 3초 동안 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 5의 피해를 줍니다."],
-    ultimate: ["게이트", "5초", "가장 가까운 균열에서 적을 향해 튕기지 않는 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
+    ultimate: ["게이트", "5초", "모든 균열에서 적을 향해 튕기지 않는 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
   },
   summoner: {
-    attack: ["일어나라!", "3초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
+    attack: ["일어나라!", "4.5초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
     normal: ["체제 전환", "12초", "소환 체제를 전사와 궁수 사이에서 전환합니다. 전사는 추격과 접촉 공격, 궁수는 거리 유지와 원거리 공격을 담당합니다."],
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
   }
@@ -1742,7 +1743,7 @@ function makeCharacterCombatState(kind) {
     replayWindup: 0,
     replayTarget: null,
     riftWallCooldown: 0,
-    summonTimer: kind === "summoner" ? 180 : Infinity,
+    summonTimer: kind === "summoner" ? 270 : Infinity,
     summonMode: "warrior",
     damageDealt: 0,
     damageTaken: 0,
@@ -2093,12 +2094,12 @@ function resolveClockSweepHits(effect) {
   const target = opponentOf(effect.fighter);
   if (!effect.hitOpponent && target?.hp > 0 && targetInsideClockSweep(effect, target)) {
     effect.hitOpponent = true;
-    damage(target, 20, effect.fighter);
+    damage(target, 15, effect.fighter);
   }
   enemySummonsOf(effect.fighter).forEach(summon => {
     if (effect.hitSummonIds.includes(summon.id) || !targetInsideClockSweep(effect, summon)) return;
     effect.hitSummonIds.push(summon.id);
-    damageSummon(summon, 20, effect.fighter);
+    damageSummon(summon, 15, effect.fighter);
   });
 }
 
@@ -2143,7 +2144,7 @@ function createVoidRift(fighter) {
     x: rift.x,
     y: rift.y,
     color: fighter.accent,
-    radius: 118,
+    radius: 160,
     life: 42,
     maxLife: 42
   });
@@ -2167,35 +2168,37 @@ function nearestOwnedRift(fighter) {
 }
 
 function useRiftGate(fighter) {
-  const rift = nearestOwnedRift(fighter);
-  if (!rift) return false;
-  const target = nearestEnemyTarget(fighter, rift.x, rift.y);
-  const angle = Math.atan2(target.y - rift.y, target.x - rift.x);
-  game.balls.push({
-    owner: fighter,
-    x: rift.x + Math.cos(angle) * 22,
-    y: rift.y + Math.sin(angle) * 22,
-    vx: Math.cos(angle) * 13.6,
-    vy: Math.sin(angle) * 13.6,
-    radius: 12,
-    life: 190,
-    hitCooldown: 0,
-    damage: 10,
-    speed: 13.6,
-    color: fighter.accent,
-    homing: false,
-    star: false,
-    riftShot: true,
-    noBounce: true
-  });
-  addVisualEffect({
-    type: "void-rift",
-    x: rift.x,
-    y: rift.y,
-    color: fighter.accent,
-    radius: 72,
-    life: 26,
-    maxLife: 26
+  const rifts = game.rifts.filter(rift => rift.owner === fighter && rift.life > 0 && rift.hitsRemaining > 0);
+  if (!rifts.length) return false;
+  rifts.forEach(rift => {
+    const target = nearestEnemyTarget(fighter, rift.x, rift.y);
+    const angle = Math.atan2(target.y - rift.y, target.x - rift.x);
+    game.balls.push({
+      owner: fighter,
+      x: rift.x + Math.cos(angle) * 22,
+      y: rift.y + Math.sin(angle) * 22,
+      vx: Math.cos(angle) * 13.6,
+      vy: Math.sin(angle) * 13.6,
+      radius: 12,
+      life: 190,
+      hitCooldown: 0,
+      damage: 10,
+      speed: 13.6,
+      color: fighter.accent,
+      homing: false,
+      star: false,
+      riftShot: true,
+      noBounce: true
+    });
+    addVisualEffect({
+      type: "void-rift",
+      x: rift.x,
+      y: rift.y,
+      color: fighter.accent,
+      radius: 72,
+      life: 26,
+      maxLife: 26
+    });
   });
   addSkillPulse(fighter, fighter.accent);
   return true;
@@ -2238,7 +2241,7 @@ function updateRifts(dt) {
     if (rift.voidFieldTime > 0) {
       rift.voidFieldTime -= dt;
       rift.voidDamageTick -= dt;
-      const radius = 150;
+      const radius = VOID_RIFT_RADIUS;
       const targets = [opponentOf(rift.owner), ...enemySummonsOf(rift.owner)].filter(target => target && target.hp > 0);
       targets.forEach(target => {
         const dx = rift.x - target.x;
@@ -2322,6 +2325,7 @@ function summonUnit(owner, elite = false) {
     life: archer && !elite ? 600 : Infinity,
     attackTimer: archer ? (elite ? 300 : 180) : Infinity,
     contactCooldown: 0,
+    fighterContactCooldown: 0,
     hitFlash: 0
   });
   addVisualEffect({
@@ -2337,10 +2341,20 @@ function summonUnit(owner, elite = false) {
 function damageSummon(summon, amount, attacker = null) {
   if (amount <= 0 || summon.hp <= 0) return;
   const actualDamage = Math.min(summon.hp, amount);
-  summon.hp -= amount;
+  summon.hp -= actualDamage;
   summon.hitFlash = 8;
   addDamageText(summon.x, summon.y - summon.radius, Math.round(actualDamage * 10) / 10);
   if (attacker && attacker !== summon.owner) attacker.damageDealt += actualDamage;
+  if (attacker?.kind === "vampire") {
+    heal(attacker, actualDamage * 0.3);
+  }
+  addVisualEffect({
+    type: "rage-burst",
+    fighter: summon,
+    life: 16,
+    maxLife: 16,
+    color: attacker?.accent || summon.owner.accent
+  });
 }
 
 function enemySummonsOf(owner) {
@@ -2388,6 +2402,7 @@ function updateSummons(dt) {
   game.summons.forEach(summon => {
     summon.life -= dt;
     summon.contactCooldown = Math.max(0, summon.contactCooldown - dt);
+    summon.fighterContactCooldown = Math.max(0, summon.fighterContactCooldown - dt);
     summon.hitFlash = Math.max(0, summon.hitFlash - dt);
     const target = nearestEnemyTarget(summon.owner, summon.x, summon.y);
     const enemyFighter = opponentOf(summon.owner);
@@ -2438,13 +2453,47 @@ function updateSummons(dt) {
 
     if (summon.hp > 0 && Math.hypot(enemyFighter.x - summon.x, enemyFighter.y - summon.y) < enemyFighter.radius + summon.radius) {
       const contactDamage = enemyFighter.kind === "enhancer" ? enemyFighter.attackPower : enemyFighter.contactDamage;
-      if (contactDamage > 0 && summon.contactCooldown <= 0) {
+      if (contactDamage > 0 && summon.fighterContactCooldown <= 0) {
         damageSummon(summon, contactDamage, enemyFighter);
-        summon.contactCooldown = 24;
+        summon.fighterContactCooldown = 24;
       }
+      if (enemyFighter.kind === "wild" && summon.fighterContactCooldown <= 0) {
+        createWildSlashes(enemyFighter, summon.x, summon.y);
+        summon.fighterContactCooldown = 30;
+      }
+      resolveFighterSummonImpact(enemyFighter, summon);
     }
   });
   game.summons = game.summons.filter(summon => summon.hp > 0 && summon.life > 0);
+}
+
+function resolveFighterSummonImpact(fighter, summon) {
+  const dx = summon.x - fighter.x;
+  const dy = summon.y - fighter.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const minDistance = fighter.radius + summon.radius;
+  if (distance >= minDistance) return;
+  const nx = dx / distance;
+  const ny = dy / distance;
+  const overlap = minDistance - distance;
+  fighter.x -= nx * overlap * 0.62;
+  fighter.y -= ny * overlap * 0.62;
+  summon.x += nx * overlap * 0.38;
+  summon.y += ny * overlap * 0.38;
+  bounceOnWalls(fighter);
+  bounceOnWalls(summon);
+
+  const fighterNormalSpeed = fighter.vx * nx + fighter.vy * ny;
+  const summonNormalSpeed = summon.vx * nx + summon.vy * ny;
+  fighter.vx += (summonNormalSpeed - fighterNormalSpeed) * nx - nx * 1.6;
+  fighter.vy += (summonNormalSpeed - fighterNormalSpeed) * ny - ny * 1.6;
+  summon.vx += (fighterNormalSpeed - summonNormalSpeed) * nx + nx * 1.2;
+  summon.vy += (fighterNormalSpeed - summonNormalSpeed) * ny + ny * 1.2;
+
+  if (fighter.kind === "wild" && fighter.chaseTime > 0) {
+    fighter.slowTime = Math.max(fighter.slowTime, 30);
+    fighter.chaseBounceTime = Math.max(fighter.chaseBounceTime, 24);
+  }
 }
 
 function finishGame(winner) {
@@ -3180,7 +3229,7 @@ function moveFighter(fighter, dt) {
     fighter.summonTimer -= dt;
     if (fighter.summonTimer <= 0) {
       summonUnit(fighter, false);
-      fighter.summonTimer = 180;
+      fighter.summonTimer = 270;
     }
   }
 
@@ -4317,13 +4366,13 @@ function drawRifts() {
         ctx.globalAlpha = 0.12 + fieldRate * 0.14;
         ctx.fillStyle = owner.accent;
         ctx.beginPath();
-        ctx.arc(rift.x, rift.y, 150, 0, Math.PI * 2);
+        ctx.arc(rift.x, rift.y, VOID_RIFT_RADIUS, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#f0abfc";
         ctx.lineWidth = 3;
         ctx.setLineDash([10, 8]);
         ctx.beginPath();
-        ctx.arc(rift.x, rift.y, 150 - (game.tick % 36), 0, Math.PI * 2);
+        ctx.arc(rift.x, rift.y, VOID_RIFT_RADIUS - (game.tick % 36), 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
