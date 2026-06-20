@@ -342,6 +342,15 @@ body:not(.is-authenticated) .coin-badge {
     linear-gradient(90deg, rgba(127, 29, 29, 0.12), transparent 35% 65%, rgba(127, 29, 29, 0.12));
 }
 
+#selectScreen.is-ban-phase .fighter-card.is-selected {
+  border-color: #f87171;
+  background:
+    linear-gradient(135deg, rgba(127, 29, 29, 0.34), rgba(42, 46, 56, 0.95));
+  box-shadow:
+    0 0 0 1px rgba(248, 113, 113, 0.34),
+    0 0 28px rgba(239, 68, 68, 0.26);
+}
+
 #selectScreen .top-copy {
   margin-bottom: 18px;
 }

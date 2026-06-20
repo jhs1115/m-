@@ -573,6 +573,7 @@ let roomRealtimeCode = "";
 let matchSelectionTouched = false;
 let matchmakingPollId = null;
 let selectedCharacterReady = false;
+let pendingBanKind = "";
 let selectCountdownId = null;
 let selectDeadline = 0;
 let matchmakingActive = false;
@@ -1813,11 +1814,14 @@ function updateCharacterCards(playerKey, player) {
     const canBan = banPhase && playerKey === mySlot && turnSlot === mySlot && isValidCharacter && !isBanned;
     const canPick = !banPhase && isOwned && !isBanned;
     const isSelected = selections[playerKey] === card.dataset.character;
+    const isPendingBan = banPhase
+      && playerKey === mySlot
+      && (pendingBanKind || "") === (isRandom ? "none" : card.dataset.character);
     const name = card.querySelector("strong");
     card.disabled = banPhase ? !canBan : !canPick;
     card.classList.toggle("is-locked", banPhase ? !canBan : !canPick);
     card.classList.toggle("is-banned", isBanned);
-    card.classList.toggle("is-selected", !banPhase && canPick && isSelected);
+    card.classList.toggle("is-selected", (!banPhase && canPick && isSelected) || isPendingBan);
     if (name) {
       if (banPhase && isRandom) name.textContent = "밴 없음";
       else if (isBanned) name.textContent = "밴됨";
@@ -1938,13 +1942,15 @@ function refreshCharacterSelectState() {
   const p2 = getPlayer(matchPlayers.p2);
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
+  if (pendingBanKind && pendingBanKind !== "none" && bannedCharacterSet(prep).has(pendingBanKind)) pendingBanKind = "";
   renderBanPickStatus();
   if (p1) updateCharacterCards("p1", p1);
   if (p2) updateCharacterCards("p2", p2);
   if (banPhase) {
     const turnSlot = currentBanSlot(prep);
-    ui.toBetButton.textContent = turnSlot === myMatchSlot() ? "밴할 캐릭터 선택중" : "상대 밴 대기중";
-    ui.toBetButton.disabled = true;
+    const isMyTurn = turnSlot === myMatchSlot();
+    ui.toBetButton.textContent = isMyTurn ? "밴 확정" : "상대 밴 대기중";
+    ui.toBetButton.disabled = !isMyTurn || !pendingBanKind;
     return;
   }
   ui.toBetButton.textContent = selectedCharacterReady ? "상대 준비 대기중" : "준비 완료";
@@ -1965,6 +1971,7 @@ async function submitCharacterBan(characterKind) {
       room_code: currentRoom.code,
       character_kind: picked
     });
+    pendingBanKind = "";
     applyRoom(room);
   } catch (error) {
     ui.toBetButton.textContent = error.message;
@@ -10808,7 +10815,8 @@ ui.cards.forEach(card => {
     const player = card.dataset.player;
     const prep = matchPrepState();
     if (isRankedBanPhase(prep)) {
-      await submitCharacterBan(card.dataset.character === "random" ? "none" : card.dataset.character);
+      pendingBanKind = card.dataset.character === "random" ? "none" : card.dataset.character;
+      refreshCharacterSelectState();
       return;
     }
     document.querySelectorAll(`.fighter-card[data-player="${player}"]`).forEach(item => {
@@ -10825,7 +10833,13 @@ ui.speedButtons.forEach(button => {
 
 ui.lobbyStartButton.addEventListener("click", prepareCharacterSelect);
 ui.backFromPvpButton.addEventListener("click", () => showScreen("lobby"));
-ui.toBetButton.addEventListener("click", submitCharacterReady);
+ui.toBetButton.addEventListener("click", () => {
+  if (isRankedBanPhase(matchPrepState())) {
+    submitCharacterBan(pendingBanKind);
+    return;
+  }
+  submitCharacterReady();
+});
 ui.againButton.addEventListener("click", returnToLobby);
 
 updateSoundSettingsUi();
