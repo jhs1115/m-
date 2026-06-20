@@ -432,9 +432,9 @@ const characterGuide = {
     ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
   },
   believer: {
-    attack: ["기도", "5초", "자신의 체력을 10 회복합니다."],
+    attack: ["기도", "7.5초", "자신의 체력을 10 회복합니다."],
     normal: ["주례", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 10, 적은 초당 8의 회복을 받습니다."],
-    ultimate: ["신앙", "15초", "게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 사용 횟수의 제곱으로 증가합니다."]
+    ultimate: ["신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
   }
 };
 
@@ -1818,7 +1818,7 @@ function makeCharacterCombatState(kind) {
     demonMarkCount: 0,
     demonMarkTime: 0,
     artSoulTime: 0,
-    prayerTimer: kind === "believer" ? 300 : Infinity,
+    prayerTimer: kind === "believer" ? 450 : Infinity,
     ceremonyTime: 0,
     ceremonyTick: 0,
     faithStacks: 0,
@@ -3225,7 +3225,7 @@ function moveFighter(fighter, dt) {
     fighter.prayerTimer -= dt;
     if (fighter.prayerTimer <= 0) {
       heal(fighter, 10);
-      fighter.prayerTimer = 300;
+      fighter.prayerTimer = 450;
       addVisualEffect({
         type: "prayer-heal",
         fighter,
@@ -3246,7 +3246,7 @@ function moveFighter(fighter, dt) {
     if (fighter.faithStacks > 0) {
       fighter.faithBurnTick -= dt;
       if (fighter.faithBurnTick <= 0) {
-        const faithDamage = fighter.faithStacks ** 2;
+        const faithDamage = 2 ** (fighter.faithStacks - 1);
         damage(opponentOf(fighter), faithDamage, fighter);
         fighter.faithBurnTick += 60;
       }
@@ -3913,16 +3913,13 @@ function updateArtOrbs(dt) {
     orb.y += orb.vy * dt;
     bounceOnWalls(orb);
     const last = orb.trail[orb.trail.length - 1];
-    if (!last || Math.hypot(last.x - orb.x, last.y - orb.y) > 10) {
+    if (!last || Math.hypot(last.x - orb.x, last.y - orb.y) > 18) {
       orb.trail.push({
         x: orb.x,
         y: orb.y,
-        radius: orb.owner.artSoulTime > 0 ? 30 : 18,
-        life: orb.owner.artSoulTime > 0 ? 420 : 300
+        radius: orb.owner.artSoulTime > 0 ? 30 : 18
       });
     }
-    orb.trail.forEach(point => point.life -= dt);
-    orb.trail = orb.trail.filter(point => point.life > 0).slice(-96);
   });
 }
 
@@ -3931,18 +3928,23 @@ function useDrawing(owner) {
   if (!orb) return;
   let hits = 0;
   const targets = [opponentOf(owner), ...enemySummonsOf(owner)].filter(target => target?.hp > 0);
-  for (let index = 1; index < orb.trail.length; index += 1) {
-    const previous = orb.trail[index - 1];
-    const current = orb.trail[index];
-    const width = Math.max(previous.radius || 18, current.radius || 18);
-    targets.forEach(target => {
-      if (target.hp <= 0) return;
-      if (pointSegmentDistance(target.x, target.y, previous.x, previous.y, current.x, current.y) < target.radius + width) {
-        damageCombatTarget(target, 10, owner);
-        hits += 1;
-      }
-    });
-  }
+  targets.forEach(target => {
+    let overlapGroups = 0;
+    let wasInsideTrail = false;
+    for (let index = 1; index < orb.trail.length; index += 1) {
+      const previous = orb.trail[index - 1];
+      const current = orb.trail[index];
+      const width = Math.max(previous.radius || 18, current.radius || 18);
+      const insideTrail = pointSegmentDistance(target.x, target.y, previous.x, previous.y, current.x, current.y) < target.radius + width;
+      if (insideTrail && !wasInsideTrail) overlapGroups += 1;
+      wasInsideTrail = insideTrail;
+    }
+    const stacks = Math.min(overlapGroups, 5);
+    if (stacks > 0) {
+      damageCombatTarget(target, 10 * stacks, owner);
+      hits += stacks;
+    }
+  });
   owner.skillTimer = 180;
   addVisualEffect({
     type: "drawing-flash",
@@ -5162,7 +5164,7 @@ function drawFaithFields() {
       ctx.restore();
     }
     if (fighter.faithStacks > 0) {
-      const power = fighter.faithStacks ** 2;
+      const power = 2 ** (fighter.faithStacks - 1);
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = clamp(0.05 + power * 0.015, 0.07, 0.28);
@@ -5182,6 +5184,30 @@ function drawFaithFields() {
         ctx.lineTo(line + canvas.height, 0);
         ctx.stroke();
       }
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.shadowColor = "#facc15";
+      ctx.shadowBlur = 34 + Math.min(34, power * 2.5);
+      ctx.globalAlpha = clamp(0.62 + power * 0.03, 0.62, 0.95);
+      ctx.fillStyle = "#facc15";
+      ctx.strokeStyle = "#fff7ad";
+      ctx.lineWidth = 5;
+      const pulse = Math.sin(game.tick * 0.08) * 4;
+      ctx.beginPath();
+      ctx.roundRect(-17 - pulse * 0.25, -132 - pulse, 34 + pulse * 0.5, 264 + pulse * 2, 10);
+      ctx.roundRect(-92 - pulse, -22 - pulse * 0.2, 184 + pulse * 2, 44 + pulse * 0.4, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.globalAlpha = 0.32;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([14, 12]);
+      ctx.lineDashOffset = -game.tick * 1.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 150 + pulse * 2, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
   });
@@ -5208,17 +5234,17 @@ function drawArtOrbs() {
   if (!game.artOrbs?.length) return;
   game.artOrbs.forEach(orb => {
     const boosted = orb.owner.artSoulTime > 0;
+    const trailColor = "#67e8f9";
     ctx.save();
-    ctx.globalCompositeOperation = "lighter";
+    ctx.globalCompositeOperation = "source-over";
     for (let index = 1; index < orb.trail.length; index += 1) {
       const previous = orb.trail[index - 1];
       const current = orb.trail[index];
-      const alpha = clamp(current.life / (boosted ? 420 : 300), 0, 1) * 0.32;
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = index % 3 === 0 ? "#f472b6" : index % 3 === 1 ? "#67e8f9" : "#fde68a";
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = boosted ? 18 : 10;
-      ctx.lineWidth = current.radius * (boosted ? 0.72 : 0.48);
+      ctx.globalAlpha = boosted ? 0.16 : 0.085;
+      ctx.strokeStyle = trailColor;
+      ctx.shadowColor = trailColor;
+      ctx.shadowBlur = boosted ? 6 : 2;
+      ctx.lineWidth = current.radius * (boosted ? 0.46 : 0.28);
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(previous.x, previous.y);
@@ -5227,13 +5253,14 @@ function drawArtOrbs() {
     }
     ctx.globalAlpha = 1;
     ctx.translate(orb.x, orb.y);
-    ctx.shadowColor = boosted ? "#fde68a" : orb.owner.accent;
-    ctx.shadowBlur = boosted ? 34 : 22;
-    ctx.fillStyle = boosted ? "#fff7ad" : orb.owner.accent;
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = trailColor;
+    ctx.shadowBlur = boosted ? 24 : 14;
+    ctx.fillStyle = trailColor;
     ctx.beginPath();
     ctx.arc(0, 0, orb.radius + (boosted ? 5 : 0), 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#f7f4eb";
+    ctx.strokeStyle = trailColor;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(0, 0, orb.radius + 8 + Math.sin(game.tick * 0.18) * 3, 0, Math.PI * 2);
@@ -5246,14 +5273,15 @@ function drawDrawingFlash(effect) {
   const orb = effect.orb;
   if (!orb) return;
   const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const trailColor = "#67e8f9";
   ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = alpha * 0.28;
   ctx.lineCap = "round";
-  ctx.shadowColor = effect.color;
-  ctx.shadowBlur = 28;
-  ctx.strokeStyle = "#f7f4eb";
-  ctx.lineWidth = 8;
+  ctx.shadowColor = trailColor;
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = trailColor;
+  ctx.lineWidth = 5;
   for (let index = 1; index < orb.trail.length; index += 4) {
     const previous = orb.trail[index - 1];
     const current = orb.trail[index];
@@ -5262,8 +5290,9 @@ function drawDrawingFlash(effect) {
     ctx.lineTo(current.x, current.y);
     ctx.stroke();
   }
-  ctx.strokeStyle = effect.color;
-  ctx.lineWidth = 4;
+  ctx.globalAlpha = alpha * 0.18;
+  ctx.strokeStyle = trailColor;
+  ctx.lineWidth = 2;
   for (let index = 1; index < orb.trail.length; index += 2) {
     const previous = orb.trail[index - 1];
     const current = orb.trail[index];
