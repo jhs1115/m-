@@ -402,7 +402,7 @@ const characterGuide = {
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
   },
   swordsman: {
-    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않고 체력은 110입니다."],
+    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않고 체력은 125입니다."],
     normal: ["제 1식", "30초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 2의 피해를 받습니다."],
     ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
   },
@@ -1706,7 +1706,7 @@ function ultimateCooldown(kind) {
 
 function makeCharacterCombatState(kind) {
   const character = characters[kind];
-  const maxHp = kind === "swordsman" ? 110 : 200;
+  const maxHp = kind === "swordsman" ? 125 : 200;
   return {
     kind,
     name: character.name,
