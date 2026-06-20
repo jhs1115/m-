@@ -449,12 +449,12 @@ const characterGuide = {
     ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
   },
   demon: {
-    attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 2초 둔화를 줍니다."],
+    attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 5의 추가 피해와 2초 둔화를 줍니다. 악마의 표식은 터질 때마다 추가로 5의 피해를 줍니다."],
     normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 10의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 10% 회복합니다."],
-    ultimate: ["로스트 엔젤", "30초", "적을 관통해 30의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
+    ultimate: ["로스트 엔젤", "30초", "적을 관통해 20의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
   },
   artist: {
-    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 55%입니다."],
+    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 60.5%입니다."],
     normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 35의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
     ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
   },
@@ -1738,7 +1738,7 @@ function openGachaScreen() {
   ui.gachaPlayer.appendChild(option);
   ui.gachaPlayer.value = currentUser.id;
   ui.gachaMessage.textContent = "";
-  ui.gachaResultName.textContent = "READY";
+  ui.gachaResultName.textContent = "";
   ui.gachaReveal.querySelector("span").textContent = "?";
   ui.gachaReveal.classList.remove("is-rolling", "is-hit");
   showScreen("gacha");
@@ -3462,7 +3462,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "demon") {
     fireDemonLine(fighter, {
-      damage: 30,
+      damage: 20,
       addMark: 2,
       markDuration: 480,
       consumeAll: true,
@@ -4276,6 +4276,7 @@ function applyDemonHit(target, amount, owner, options = {}) {
     return 0;
   }
   const consumed = consumeDemonMarks(target, options.consumeAll ? target.demonMarkCount : 1);
+  if (consumed > 0) damageCombatTarget(target, 5 * consumed, owner);
   if (options.bonusDamagePerMark) damageCombatTarget(target, options.bonusDamagePerMark * consumed, owner);
   if (options.slowTime) target.slowTime = Math.max(target.slowTime || 0, options.slowTime);
   if (options.healPercent && consumed > 0) heal(owner, owner.maxHp * options.healPercent);
@@ -4346,7 +4347,7 @@ function launchDemonMissile(owner) {
 
 function spawnArtOrb(owner) {
   if (!game || game.artOrbs?.some(orb => orb.owner === owner)) return;
-  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.55);
+  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.605);
   game.artOrbs.push({
     owner,
     x: owner.x,
@@ -4365,7 +4366,7 @@ function updateArtOrbs(dt) {
     .forEach(spawnArtOrb);
   game.artOrbs = game.artOrbs.filter(orb => orb.owner.hp > 0);
   game.artOrbs.forEach(orb => {
-    const speed = characterBaseSpeed(orb.owner) * 0.55 * (orb.owner.artSoulTime > 0 ? 2 : 1);
+    const speed = characterBaseSpeed(orb.owner) * 0.605 * (orb.owner.artSoulTime > 0 ? 2 : 1);
     const currentSpeed = Math.hypot(orb.vx, orb.vy) || speed || 1;
     orb.vx = orb.vx / currentSpeed * speed;
     orb.vy = orb.vy / currentSpeed * speed;
@@ -9087,14 +9088,14 @@ function spawnSurvivalEnemy() {
     thrower: { hp: 25, speed: 1.7, radius: 21, damage: 5, xp: 4.5, color: "#a78bfa" },
     brute: { hp: 72, speed: 1.25, radius: 30, damage: 11, xp: 8, color: "#94a3b8" },
     bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" },
-    voidKnight: { hp: 190, speed: 2.28, radius: 29, damage: 24, xp: 18, color: "#6366f1" },
-    arcSniper: { hp: 120, speed: 1.62, radius: 23, damage: 22, xp: 17, color: "#22d3ee" },
-    colossus: { hp: 380, speed: 0.95, radius: 43, damage: 34, xp: 28, color: "#b45309" },
-    nightmare: { hp: 170, speed: 3.32, radius: 25, damage: 28, xp: 23, color: "#e11d48" },
-    riftReaver: { hp: 260, speed: 2.55, radius: 31, damage: 36, xp: 31, color: "#8b5cf6" },
-    eclipseSniper: { hp: 150, speed: 1.55, radius: 24, damage: 30, xp: 29, color: "#38bdf8" },
-    bloodWraith: { hp: 220, speed: 3.72, radius: 26, damage: 34, xp: 32, color: "#fb7185" },
-    obsidianTitan: { hp: 620, speed: 0.82, radius: 50, damage: 52, xp: 52, color: "#111827" }
+    voidKnight: { hp: 190, speed: 2.28, radius: 29, damage: 21, xp: 18, color: "#6366f1" },
+    arcSniper: { hp: 120, speed: 1.62, radius: 23, damage: 19, xp: 17, color: "#22d3ee" },
+    colossus: { hp: 380, speed: 0.95, radius: 43, damage: 30, xp: 28, color: "#b45309" },
+    nightmare: { hp: 170, speed: 3.32, radius: 25, damage: 25, xp: 23, color: "#e11d48" },
+    riftReaver: { hp: 260, speed: 2.55, radius: 31, damage: 32, xp: 31, color: "#8b5cf6" },
+    eclipseSniper: { hp: 150, speed: 1.55, radius: 24, damage: 26, xp: 29, color: "#38bdf8" },
+    bloodWraith: { hp: 220, speed: 3.72, radius: 26, damage: 30, xp: 32, color: "#fb7185" },
+    obsidianTitan: { hp: 620, speed: 0.82, radius: 50, damage: 46, xp: 52, color: "#111827" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({

@@ -294,47 +294,27 @@
     <section id="gachaScreen" class="screen">
       <div class="panel gacha-stage">
         <div class="gacha-header">
+          <button id="backFromGachaButton" class="gacha-back-button" type="button">←</button>
           <span>CHARACTER SUMMON</span>
-          <h1 class="screen-title">캐릭터 뽑기</h1>
+          <h1 class="screen-title">캐릭터 소환</h1>
         </div>
-        <div class="gacha-stage-grid">
-          <div class="gacha-machine">
-            <div class="summon-beam"></div>
-            <div class="summon-sigil sigil-one">M</div>
-            <div class="summon-sigil sigil-two">Z</div>
-            <div class="summon-sigil sigil-three">R</div>
-            <div class="summon-ring"></div>
-            <div id="gachaReveal" class="gacha-reveal">
-              <small>SUMMON CORE</small>
-              <span>?</span>
-              <strong id="gachaResultName">READY</strong>
-            </div>
-            <div class="summon-platform"></div>
+        <div class="gacha-machine">
+          <div class="summon-sky"></div>
+          <div class="summon-beam"></div>
+          <div class="summon-sigil sigil-one">M</div>
+          <div class="summon-sigil sigil-two">Z</div>
+          <div class="summon-sigil sigil-three">R</div>
+          <div class="summon-ring"></div>
+          <div class="summon-ring summon-ring-two"></div>
+          <div id="gachaReveal" class="gacha-reveal">
+            <span>?</span>
+            <strong id="gachaResultName"></strong>
           </div>
-
-          <div class="gacha-controls">
-            <div class="gacha-control-title">
-              <small>STANDARD CONTRACT</small>
-              <strong>황금 소환권</strong>
-              <span>미보유 캐릭터 중 하나를 획득합니다.</span>
-            </div>
-            <div class="summon-odds">
-              <span>소환 대상</span>
-              <strong>미보유 캐릭터 확정</strong>
-              <i>중복 없음</i>
-            </div>
-            <label class="bet-label is-hidden" for="gachaPlayer">뽑을 플레이어</label>
-            <select id="gachaPlayer" class="player-select is-hidden"></select>
-            <div class="gacha-price">
-              <span>필요 재화</span>
-              <strong>50C</strong>
-            </div>
-            <p id="gachaMessage" class="status-message"></p>
-            <div class="bet-actions gacha-actions">
-              <button id="backFromGachaButton" class="ghost-button">로비로</button>
-              <button id="gachaButton" class="primary-button">뽑기</button>
-            </div>
-          </div>
+          <div class="summon-platform"></div>
+          <label class="bet-label is-hidden" for="gachaPlayer">뽑을 플레이어</label>
+          <select id="gachaPlayer" class="player-select is-hidden"></select>
+          <p id="gachaMessage" class="status-message gacha-message"></p>
+          <button id="gachaButton" class="primary-button gacha-summon-button">1회 소환</button>
         </div>
       </div>
     </section>
