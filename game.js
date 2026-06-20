@@ -142,6 +142,7 @@ const ui = {
   pveUltimateSkillName: document.getElementById("pveUltimateSkillName"),
   pveNormalSkillCooldown: document.getElementById("pveNormalSkillCooldown"),
   pveUltimateSkillCooldown: document.getElementById("pveUltimateSkillCooldown"),
+  pveSpeedButtons: document.querySelectorAll("[data-pve-speed]"),
   backFromPvpButton: document.getElementById("backFromPvpButton"),
   modeMessage: document.getElementById("modeMessage"),
   openGachaButton: document.getElementById("openGachaButton"),
@@ -306,10 +307,22 @@ const characters = {
     color: "#1a120e",
     accent: "#38bdf8",
     contactDamage: 0
+  },
+  artist: {
+    name: "그림그리는 색히",
+    color: "#f7f4eb",
+    accent: "#f472b6",
+    contactDamage: 0
+  },
+  believer: {
+    name: "신앙하는 색히",
+    color: "#fef3c7",
+    accent: "#fb7185",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -327,7 +340,9 @@ const skillNames = {
   riftmaker: { normal: "보이드", ultimate: "게이트" },
   summoner: { normal: "체제 전환", ultimate: "강림" },
   swordsman: { normal: "제 1식", ultimate: "제 2식" },
-  demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" }
+  demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" },
+  artist: { normal: "드로잉", ultimate: "예술의 혼" },
+  believer: { normal: "주례", ultimate: "신앙" }
 };
 
 const characterGuide = {
@@ -410,6 +425,16 @@ const characterGuide = {
     attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 2초 둔화를 줍니다."],
     normal: ["데빌 버스트", "9초", "1초 집중 후 악마의 유도탄을 발사해 10의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 체력을 10% 회복합니다."],
     ultimate: ["로스트 엔젤", "30초", "적을 관통해 25의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
+  },
+  artist: {
+    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 50%입니다."],
+    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 10의 피해를 줍니다. 궤도가 겹친 곳은 중첩 피해를 줍니다."],
+    ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
+  },
+  believer: {
+    attack: ["기도", "5초", "자신의 체력을 10 회복합니다."],
+    normal: ["주례", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 10, 적은 초당 8의 회복을 받습니다."],
+    ultimate: ["신앙", "15초", "게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 사용 횟수의 제곱으로 증가합니다."]
   }
 };
 
@@ -893,7 +918,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H"
   })[kind] || "?";
 }
 
@@ -1679,7 +1704,9 @@ function normalSkillCooldown(kind) {
     riftmaker: 600,
     summoner: 720,
     swordsman: 1800,
-    demon: 540
+    demon: 540,
+    artist: 180,
+    believer: 1200
   }[kind] ?? Infinity;
 }
 
@@ -1700,7 +1727,9 @@ function ultimateCooldown(kind) {
     riftmaker: 300,
     summoner: 3000,
     swordsman: 3600,
-    demon: 1800
+    demon: 1800,
+    artist: 1200,
+    believer: 900
   }[kind] ?? Infinity;
 }
 
@@ -1788,6 +1817,12 @@ function makeCharacterCombatState(kind) {
     demonBurstWindup: 0,
     demonMarkCount: 0,
     demonMarkTime: 0,
+    artSoulTime: 0,
+    prayerTimer: kind === "believer" ? 300 : Infinity,
+    ceremonyTime: 0,
+    ceremonyTick: 0,
+    faithStacks: 0,
+    faithBurnTick: 60,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -1846,6 +1881,7 @@ function resetGame() {
     weapons: [],
     rifts: [],
     summons: [],
+    artOrbs: [],
     damageTexts: [],
     visualEffects: [],
     contactLock: false,
@@ -1861,6 +1897,9 @@ function resetGame() {
     startTimeMs: Number((currentRoom?.prepState || currentRoom?.prep_state || {}).matchStartAt || 0) * 1000 || serverNowMs(),
     lastCanonicalTick: 0
   };
+  game.fighters.forEach(fighter => {
+    if (fighter.kind === "artist") spawnArtOrb(fighter);
+  });
   appliedSkillEvents = new Set();
   pendingSkillUse = false;
 
@@ -2876,6 +2915,27 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "demon") {
     beginDemonBurst(fighter);
+    return;
+  }
+
+  if (fighter.kind === "artist") {
+    useDrawing(fighter);
+    return;
+  }
+
+  if (fighter.kind === "believer") {
+    fighter.ceremonyTime = 300;
+    fighter.ceremonyTick = 60;
+    fighter.skillTimer = 1200;
+    addSkillPulse(fighter, fighter.accent);
+    addVisualEffect({
+      type: "ceremony-light",
+      fighter,
+      color: fighter.accent,
+      life: 300,
+      maxLife: 300
+    });
+    return;
   }
 }
 
@@ -2995,6 +3055,22 @@ function triggerUltimate(fighter) {
       ultimate: true
     });
     fighter.ultimateTimer = 1800;
+    return;
+  }
+
+  if (fighter.kind === "artist") {
+    fighter.artSoulTime = 300;
+    fighter.ultimateTimer = 1200;
+    addSkillPulse(fighter, fighter.accent);
+    return;
+  }
+
+  if (fighter.kind === "believer") {
+    fighter.faithStacks += 1;
+    fighter.faithBurnTick = Math.min(fighter.faithBurnTick, 60);
+    fighter.ultimateTimer = 900;
+    addSkillPulse(fighter, "#fb7185");
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 46, `신앙 ${fighter.faithStacks}중첩`, fighter.accent);
   }
 }
 
@@ -3142,6 +3218,38 @@ function moveFighter(fighter, dt) {
     if (fighter.demonMarkTime <= 0) {
       fighter.demonMarkCount = 0;
       fighter.demonMarkTime = 0;
+    }
+  }
+  if (fighter.artSoulTime > 0) fighter.artSoulTime -= dt;
+  if (fighter.kind === "believer") {
+    fighter.prayerTimer -= dt;
+    if (fighter.prayerTimer <= 0) {
+      heal(fighter, 10);
+      fighter.prayerTimer = 300;
+      addVisualEffect({
+        type: "prayer-heal",
+        fighter,
+        color: fighter.accent,
+        life: 34,
+        maxLife: 34
+      });
+    }
+    if (fighter.ceremonyTime > 0) {
+      fighter.ceremonyTime -= dt;
+      fighter.ceremonyTick -= dt;
+      if (fighter.ceremonyTick <= 0) {
+        heal(fighter, 10);
+        heal(opponentOf(fighter), 8);
+        fighter.ceremonyTick += 60;
+      }
+    }
+    if (fighter.faithStacks > 0) {
+      fighter.faithBurnTick -= dt;
+      if (fighter.faithBurnTick <= 0) {
+        const faithDamage = fighter.faithStacks ** 2;
+        damage(opponentOf(fighter), faithDamage, fighter);
+        fighter.faithBurnTick += 60;
+      }
     }
   }
   if (fighter.silenceTime > 0) fighter.silenceTime -= dt;
@@ -3661,6 +3769,11 @@ function performSwordDash(owner, damageAmount, orbitIndex = 0, total = 1, ultima
 }
 
 function beginSwordDance(owner) {
+  const selfCost = Math.min(5, Math.max(0, owner.hp - 1));
+  owner.hp -= selfCost;
+  owner.damageTaken += selfCost;
+  addDamageText(owner.x, owner.y - owner.radius, selfCost);
+  updateHud();
   owner.swordReturnX = owner.x;
   owner.swordReturnY = owner.y;
   owner.phaseTime = 180;
@@ -3769,6 +3882,76 @@ function launchDemonMissile(owner) {
     homingTime: 260,
     demonMissile: true
   });
+}
+
+function spawnArtOrb(owner) {
+  if (!game || game.artOrbs?.some(orb => orb.owner === owner)) return;
+  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.5);
+  game.artOrbs.push({
+    owner,
+    x: owner.x,
+    y: owner.y,
+    vx: velocity.vx,
+    vy: velocity.vy,
+    radius: 13,
+    trail: []
+  });
+}
+
+function updateArtOrbs(dt) {
+  if (!game.artOrbs) game.artOrbs = [];
+  game.fighters
+    .filter(fighter => fighter.kind === "artist" && fighter.hp > 0)
+    .forEach(spawnArtOrb);
+  game.artOrbs = game.artOrbs.filter(orb => orb.owner.hp > 0);
+  game.artOrbs.forEach(orb => {
+    const speed = characterBaseSpeed(orb.owner) * 0.5 * (orb.owner.artSoulTime > 0 ? 2 : 1);
+    const currentSpeed = Math.hypot(orb.vx, orb.vy) || speed || 1;
+    orb.vx = orb.vx / currentSpeed * speed;
+    orb.vy = orb.vy / currentSpeed * speed;
+    orb.x += orb.vx * dt;
+    orb.y += orb.vy * dt;
+    bounceOnWalls(orb);
+    const last = orb.trail[orb.trail.length - 1];
+    if (!last || Math.hypot(last.x - orb.x, last.y - orb.y) > 10) {
+      orb.trail.push({
+        x: orb.x,
+        y: orb.y,
+        radius: orb.owner.artSoulTime > 0 ? 30 : 18,
+        life: orb.owner.artSoulTime > 0 ? 420 : 300
+      });
+    }
+    orb.trail.forEach(point => point.life -= dt);
+    orb.trail = orb.trail.filter(point => point.life > 0).slice(-96);
+  });
+}
+
+function useDrawing(owner) {
+  const orb = game.artOrbs?.find(item => item.owner === owner);
+  if (!orb) return;
+  let hits = 0;
+  const targets = [opponentOf(owner), ...enemySummonsOf(owner)].filter(target => target?.hp > 0);
+  for (let index = 1; index < orb.trail.length; index += 1) {
+    const previous = orb.trail[index - 1];
+    const current = orb.trail[index];
+    const width = Math.max(previous.radius || 18, current.radius || 18);
+    targets.forEach(target => {
+      if (target.hp <= 0) return;
+      if (pointSegmentDistance(target.x, target.y, previous.x, previous.y, current.x, current.y) < target.radius + width) {
+        damageCombatTarget(target, 10, owner);
+        hits += 1;
+      }
+    });
+  }
+  owner.skillTimer = 180;
+  addVisualEffect({
+    type: "drawing-flash",
+    orb,
+    color: owner.accent,
+    life: 34,
+    maxLife: 34
+  });
+  addFloatingText(owner.x, owner.y - owner.radius - 38, hits ? `드로잉 x${hits}` : "드로잉", owner.accent);
 }
 
 function throwBall(owner) {
@@ -4563,12 +4746,14 @@ function drawArena() {
     ctx.lineTo(canvas.width, y);
     ctx.stroke();
   }
+  drawFaithFields();
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
   game.beams.forEach(drawBeam);
   game.weapons.forEach(drawWeapon);
   drawRifts();
+  drawArtOrbs();
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
@@ -4647,6 +4832,14 @@ function drawVisualEffect(effect) {
   }
   if (effect.type === "demon-focus") {
     drawDemonFocus(effect);
+    return;
+  }
+  if (effect.type === "drawing-flash") {
+    drawDrawingFlash(effect);
+    return;
+  }
+  if (effect.type === "ceremony-light" || effect.type === "prayer-heal") {
+    drawFaithPulse(effect);
     return;
   }
   if (effect.type === "assassinate-slash") {
@@ -4942,6 +5135,146 @@ function drawDemonFocus(effect) {
   ctx.restore();
 }
 
+function drawFaithFields() {
+  const believers = game.fighters.filter(fighter => fighter.kind === "believer" && fighter.hp > 0);
+  believers.forEach(fighter => {
+    if (fighter.ceremonyTime > 0) {
+      const alpha = clamp(fighter.ceremonyTime / 300, 0, 1);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.08 + alpha * 0.14;
+      const gradient = ctx.createRadialGradient(fighter.x, fighter.y, 30, canvas.width / 2, canvas.height / 2, canvas.width * 0.75);
+      gradient.addColorStop(0, "#fef3c7");
+      gradient.addColorStop(0.48, fighter.accent);
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#fef3c7";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([18, 14]);
+      ctx.lineDashOffset = -game.tick * 1.2;
+      for (let ring = 0; ring < 4; ring += 1) {
+        ctx.globalAlpha = (0.22 - ring * 0.03) * alpha;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 80 + ring * 70 + (game.tick % 60), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (fighter.faithStacks > 0) {
+      const power = fighter.faithStacks ** 2;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = clamp(0.05 + power * 0.015, 0.07, 0.28);
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, "#7f1d1d");
+      gradient.addColorStop(0.45, "#fb7185");
+      gradient.addColorStop(1, "#fef3c7");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#fb7185";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 22]);
+      ctx.lineDashOffset = -game.tick * (1 + fighter.faithStacks * 0.18);
+      for (let line = -canvas.height; line < canvas.width; line += 66) {
+        ctx.beginPath();
+        ctx.moveTo(line, canvas.height);
+        ctx.lineTo(line + canvas.height, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  });
+}
+
+function drawFaithPulse(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.strokeStyle = effect.type === "prayer-heal" ? "#fef3c7" : effect.color;
+  ctx.shadowColor = ctx.strokeStyle;
+  ctx.shadowBlur = 28;
+  ctx.lineWidth = effect.type === "prayer-heal" ? 5 : 9;
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, fighter.radius + 18 + progress * (effect.type === "prayer-heal" ? 38 : 210), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawArtOrbs() {
+  if (!game.artOrbs?.length) return;
+  game.artOrbs.forEach(orb => {
+    const boosted = orb.owner.artSoulTime > 0;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let index = 1; index < orb.trail.length; index += 1) {
+      const previous = orb.trail[index - 1];
+      const current = orb.trail[index];
+      const alpha = clamp(current.life / (boosted ? 420 : 300), 0, 1) * 0.32;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = index % 3 === 0 ? "#f472b6" : index % 3 === 1 ? "#67e8f9" : "#fde68a";
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = boosted ? 18 : 10;
+      ctx.lineWidth = current.radius * (boosted ? 0.72 : 0.48);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(previous.x, previous.y);
+      ctx.lineTo(current.x, current.y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.translate(orb.x, orb.y);
+    ctx.shadowColor = boosted ? "#fde68a" : orb.owner.accent;
+    ctx.shadowBlur = boosted ? 34 : 22;
+    ctx.fillStyle = boosted ? "#fff7ad" : orb.owner.accent;
+    ctx.beginPath();
+    ctx.arc(0, 0, orb.radius + (boosted ? 5 : 0), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#f7f4eb";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, orb.radius + 8 + Math.sin(game.tick * 0.18) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawDrawingFlash(effect) {
+  const orb = effect.orb;
+  if (!orb) return;
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = "round";
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = 28;
+  ctx.strokeStyle = "#f7f4eb";
+  ctx.lineWidth = 8;
+  for (let index = 1; index < orb.trail.length; index += 4) {
+    const previous = orb.trail[index - 1];
+    const current = orb.trail[index];
+    ctx.beginPath();
+    ctx.moveTo(previous.x, previous.y);
+    ctx.lineTo(current.x, current.y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = effect.color;
+  ctx.lineWidth = 4;
+  for (let index = 1; index < orb.trail.length; index += 2) {
+    const previous = orb.trail[index - 1];
+    const current = orb.trail[index];
+    ctx.beginPath();
+    ctx.moveTo(previous.x, previous.y);
+    ctx.lineTo(current.x, current.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawRifts() {
   const owners = [...new Set(game.rifts.map(rift => rift.owner))];
   owners.forEach(owner => {
@@ -5160,6 +5493,51 @@ function drawFighter(fighter) {
     ctx.closePath();
     ctx.stroke();
     ctx.fill();
+    ctx.restore();
+  }
+  if (fighter.kind === "artist") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#f7f4eb";
+    ctx.fillStyle = fighter.accent;
+    ctx.shadowColor = fighter.accent;
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(-6, 2, 13, 0, Math.PI * 2);
+    ctx.stroke();
+    ["#f472b6", "#67e8f9", "#fde68a"].forEach((color, index) => {
+      const angle = index / 3 * Math.PI * 2 + game.tick * 0.04;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * 13, Math.sin(angle) * 9, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = "#f7f4eb";
+    ctx.beginPath();
+    ctx.moveTo(8, 16);
+    ctx.lineTo(20, -12);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (fighter.kind === "believer") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#fef3c7";
+    ctx.fillStyle = fighter.accent;
+    ctx.shadowColor = "#fef3c7";
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, -21);
+    ctx.lineTo(0, 18);
+    ctx.moveTo(-14, -5);
+    ctx.lineTo(14, -5);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, fighter.radius + 12 + Math.sin(game.tick * 0.12) * 3, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
   if (fighter.unstoppableTime > 0) {
@@ -5822,6 +6200,7 @@ function stepGame(dt) {
     updateWeapons(dt);
     updateRifts(dt);
     updateSummons(dt);
+    updateArtOrbs(dt);
     updateDamageTexts(dt);
     updateVisualEffects(dt);
     updateSkillHud();
@@ -6065,6 +6444,16 @@ function selectSurvivalDifficulty(difficulty) {
   });
 }
 
+function setPveSpeed(speed) {
+  const value = speed === 2 ? 2 : 1;
+  if (pveGame) pveGame.speedMultiplier = value;
+  ui.pveSpeedButtons?.forEach(button => {
+    const selected = Number(button.dataset.pveSpeed) === value;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+}
+
 async function startPveStage(stage) {
   stopPveGame();
   let pveRun = null;
@@ -6095,6 +6484,7 @@ async function startPveStage(stage) {
     tick: 0,
     lastTime: performance.now(),
     accumulator: 0,
+    speedMultiplier: 1,
     over: false,
     pausedForAugment: false,
     augmentRerolls: 2,
@@ -6102,7 +6492,7 @@ async function startPveStage(stage) {
     pendingLevels: 0,
     level: 1,
     xp: 0,
-    xpRequired: 10,
+    xpRequired: survivalXpRequired(1),
     kills: 0,
     bonusCoins: 0,
     spawnTimer: 105,
@@ -6145,6 +6535,7 @@ async function startPveStage(stage) {
     damageTexts: [],
     floatingTexts: []
   };
+  setPveSpeed(1);
   ui.pvePlayerLabel.textContent = `${currentUser.name} · ${difficulty.label}`;
   ui.pveResultOverlay.classList.remove("is-active");
   ui.pveAugmentOverlay.classList.remove("is-active");
@@ -7757,13 +8148,14 @@ function spawnSurvivalEnemy() {
   const seconds = pveGame.tick / 60;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
   const lateSurge = seconds >= 420 ? 1.25 + Math.min(0.75, (seconds - 420) / 360) : 1;
+  const endgameSurge = seconds >= 600 ? 1.85 + Math.min(1.35, (seconds - 600) / 300) : 1;
   const edge = pveRandomIndex(4);
   const margin = 30;
   const x = edge === 0 ? margin : edge === 1 ? pveCanvas.width - margin : 50 + pveRandomIndex(pveCanvas.width - 100);
   const y = edge === 2 ? margin : edge === 3 ? pveCanvas.height - margin : 50 + pveRandomIndex(pveCanvas.height - 100);
   const roll = pveRandomIndex(100);
   const type = seconds >= 600
-    ? (roll < 28 ? "voidKnight" : roll < 52 ? "arcSniper" : roll < 78 ? "colossus" : "nightmare")
+    ? (roll < 16 ? "voidKnight" : roll < 30 ? "arcSniper" : roll < 43 ? "colossus" : roll < 56 ? "nightmare" : roll < 70 ? "riftReaver" : roll < 82 ? "eclipseSniper" : roll < 92 ? "bloodWraith" : "obsidianTitan")
     : seconds < 90 ? "melee"
     : seconds < 150 ? (roll < 82 ? "melee" : "dasher")
       : seconds < 240 ? (roll < 55 ? "melee" : roll < 78 ? "dasher" : roll < 92 ? "thrower" : "brute")
@@ -7777,10 +8169,14 @@ function spawnSurvivalEnemy() {
     thrower: { hp: 25, speed: 1.7, radius: 21, damage: 5, xp: 4.5, color: "#a78bfa" },
     brute: { hp: 72, speed: 1.25, radius: 30, damage: 11, xp: 8, color: "#94a3b8" },
     bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" },
-    voidKnight: { hp: 110, speed: 2.05, radius: 27, damage: 14, xp: 11, color: "#6366f1" },
-    arcSniper: { hp: 68, speed: 1.45, radius: 22, damage: 12, xp: 10, color: "#22d3ee" },
-    colossus: { hp: 185, speed: 1.05, radius: 36, damage: 18, xp: 15, color: "#b45309" },
-    nightmare: { hp: 92, speed: 3.05, radius: 24, damage: 15, xp: 13, color: "#e11d48" }
+    voidKnight: { hp: 190, speed: 2.28, radius: 29, damage: 24, xp: 18, color: "#6366f1" },
+    arcSniper: { hp: 120, speed: 1.62, radius: 23, damage: 22, xp: 17, color: "#22d3ee" },
+    colossus: { hp: 380, speed: 0.95, radius: 43, damage: 34, xp: 28, color: "#b45309" },
+    nightmare: { hp: 170, speed: 3.32, radius: 25, damage: 28, xp: 23, color: "#e11d48" },
+    riftReaver: { hp: 260, speed: 2.55, radius: 31, damage: 36, xp: 31, color: "#8b5cf6" },
+    eclipseSniper: { hp: 150, speed: 1.55, radius: 24, damage: 30, xp: 29, color: "#38bdf8" },
+    bloodWraith: { hp: 220, speed: 3.72, radius: 26, damage: 34, xp: 32, color: "#fb7185" },
+    obsidianTitan: { hp: 620, speed: 0.82, radius: 50, damage: 52, xp: 52, color: "#111827" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({
@@ -7789,20 +8185,24 @@ function spawnSurvivalEnemy() {
     vx: Math.cos(angle) * base.speed,
     vy: Math.sin(angle) * base.speed,
     baseSpeed: base.speed * mode.enemySpeed
-      * Math.min(1.68, (1 + Math.max(0, seconds - 150) / 900) * Math.sqrt(lateSurge)),
+      * Math.min(1.92, (1 + Math.max(0, seconds - 150) / 900) * Math.sqrt(lateSurge))
+      * (seconds >= 600 ? 1.08 : 1),
     radius: base.radius,
-    hp: base.hp * difficulty * lateSurge * mode.enemyHp,
-    maxHp: base.hp * difficulty * lateSurge * mode.enemyHp,
+    hp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp,
+    maxHp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp,
     contactDamage: base.damage * mode.enemyDamage
-      * Math.min(2.6, (1 + Math.max(0, seconds - 60) / 420) * lateSurge),
+      * Math.min(4.2, (1 + Math.max(0, seconds - 60) / 420) * lateSurge * Math.sqrt(endgameSurge)),
     xpValue: base.xp * mode.enemyXp,
     color: base.color,
     contactCooldown: 0,
     attackTimer: type === "thrower" ? 150
       : type === "bomber" ? 210
         : type === "arcSniper" ? 105
+          : type === "eclipseSniper" ? 90
           : type === "nightmare" ? 165
-            : Infinity,
+            : type === "bloodWraith" ? 132
+              : type === "obsidianTitan" ? 150
+                : Infinity,
     stunTime: 0,
     slowTime: 0
   });
@@ -7889,12 +8289,19 @@ function dropSurvivalXp(enemy) {
   }
 }
 
+function survivalXpRequired(level) {
+  const base = 8 + level * 3.7 + level ** 1.2;
+  if (level <= 30) return Math.floor(base);
+  const lateLevel = level - 30;
+  return Math.floor(base + lateLevel ** 2.15 * 4.8 + lateLevel * level * 1.35);
+}
+
 function gainSurvivalXp(amount) {
   pveGame.xp += amount;
   while (pveGame.xp >= pveGame.xpRequired) {
     pveGame.xp -= pveGame.xpRequired;
     pveGame.level += 1;
-    pveGame.xpRequired = Math.floor(8 + pveGame.level * 3.7 + pveGame.level ** 1.2);
+    pveGame.xpRequired = survivalXpRequired(pveGame.level);
     pveGame.pendingLevels += 1;
     healPvePlayer(pveGame.player.maxHp * 0.1);
     addPveFloating("LEVEL UP · 체력 10% 회복", "#67e8f9");
@@ -8284,7 +8691,10 @@ function stepSurvivalPve() {
   if (pveGame.spawnTimer <= 0) {
     const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
     const lateRush = seconds >= 420;
-    const baseCount = lateRush
+    const endgame = seconds >= 600;
+    const baseCount = endgame
+      ? 2 + Math.floor((seconds - 600) / 150)
+      : lateRush
       ? 5 + Math.floor((seconds - 420) / 90)
       : 1 + Math.floor(Math.max(0, seconds - 210) / 120);
     const count = Math.ceil(baseCount * mode.spawnCount);
@@ -8292,15 +8702,16 @@ function stepSurvivalPve() {
       : seconds < 180 ? 20
         : seconds < 420 ? 32 + Math.floor((seconds - 180) / 90) * 5
           : seconds < 600 ? 76 + Math.floor((seconds - 420) / 60) * 8
-            : Math.min(108, 94 + Math.floor((seconds - 600) / 60) * 4);
-    const enemyCap = Math.min(140, Math.floor(baseEnemyCap * mode.enemyCap));
+            : Math.min(64, 42 + Math.floor((seconds - 600) / 90) * 4);
+    const enemyCap = Math.min(endgame ? 78 : 140, Math.floor(baseEnemyCap * mode.enemyCap));
     const availableSlots = Math.max(0, enemyCap - pveGame.enemies.filter(enemy => !enemy.dead).length);
-    const waveLimit = Math.ceil((lateRush ? 9 : 4) * mode.spawnCount);
+    const waveLimit = Math.ceil((endgame ? 3 : lateRush ? 9 : 4) * mode.spawnCount);
     for (let index = 0; index < Math.min(waveLimit, count, availableSlots); index += 1) spawnSurvivalEnemy();
     const baseInterval = seconds < 90 ? 122
       : seconds < 180 ? 102
         : seconds < 420 ? Math.max(38, 82 - (seconds - 180) * 0.06)
-          : Math.max(16, 27 - (seconds - 420) * 0.02);
+          : seconds < 600 ? Math.max(16, 27 - (seconds - 420) * 0.02)
+            : Math.max(44, 70 - (seconds - 600) * 0.035);
     pveGame.spawnTimer = Math.max(10, baseInterval * mode.spawnInterval);
   }
 
@@ -8388,6 +8799,53 @@ function stepSurvivalPve() {
             pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
           });
           enemy.attackTimer = 165;
+        } else if (enemy.type === "eclipseSniper") {
+          const centerAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+          [-0.08, 0, 0.08].forEach(offset => {
+            const shotAngle = centerAngle + offset;
+            spawnSurvivalProjectile({
+              x: enemy.x, y: enemy.y,
+              vx: Math.cos(shotAngle) * 13.2,
+              vy: Math.sin(shotAngle) * 13.2,
+              damage: enemy.contactDamage * 0.82,
+              radius: 7,
+              color: enemy.color,
+              life: 210,
+              pierce: 1,
+              trail: enemy.color
+            });
+            pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
+          });
+          enemy.attackTimer = 90;
+        } else if (enemy.type === "bloodWraith") {
+          const centerAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+          for (let index = 0; index < 5; index += 1) {
+            const shotAngle = centerAngle + (index - 2) * 0.19;
+            spawnSurvivalProjectile({
+              x: enemy.x, y: enemy.y,
+              vx: Math.cos(shotAngle) * 9.4,
+              vy: Math.sin(shotAngle) * 9.4,
+              damage: enemy.contactDamage * 0.55,
+              radius: 9,
+              color: enemy.color,
+              life: 150,
+              trail: "#fb7185"
+            });
+            pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
+          }
+          enemy.attackTimer = 132;
+        } else if (enemy.type === "obsidianTitan") {
+          pveGame.enemyAreas.push({
+            x: player.x,
+            y: player.y,
+            radius: 86,
+            damage: enemy.contactDamage * 0.72,
+            delay: 34,
+            life: 64,
+            color: enemy.color,
+            stun: 20
+          });
+          enemy.attackTimer = 150;
         } else {
           const shotAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
           spawnSurvivalProjectile({
@@ -8839,6 +9297,7 @@ function drawSurvivalPve() {
     pveCtx.restore();
   });
   pveGame.enemies.forEach(enemy => {
+    const endgameType = ["riftReaver", "eclipseSniper", "bloodWraith", "obsidianTitan"].includes(enemy.type);
     if (enemy.boss || enemy.miniBoss) {
       pveCtx.save();
       pveCtx.strokeStyle = enemy.boss ? "#fda4af" : "#fde68a";
@@ -8852,6 +9311,24 @@ function drawSurvivalPve() {
       pveCtx.font = "900 12px Segoe UI";
       pveCtx.textAlign = "center";
       pveCtx.fillText(enemy.boss ? "BOSS" : "MINI BOSS", enemy.x, enemy.y - enemy.radius - 17);
+      pveCtx.restore();
+    }
+    if (endgameType) {
+      pveCtx.save();
+      pveCtx.globalCompositeOperation = "lighter";
+      pveCtx.strokeStyle = enemy.type === "obsidianTitan" ? "#f9fafb" : enemy.color;
+      pveCtx.shadowColor = enemy.color;
+      pveCtx.shadowBlur = enemy.type === "obsidianTitan" ? 34 : 24;
+      pveCtx.lineWidth = enemy.type === "obsidianTitan" ? 5 : 3;
+      pveCtx.setLineDash(enemy.type === "bloodWraith" ? [8, 9] : []);
+      pveCtx.lineDashOffset = -pveGame.tick * 0.9;
+      pveCtx.beginPath();
+      pveCtx.arc(enemy.x, enemy.y, enemy.radius + 9 + Math.sin(pveGame.tick * 0.12) * 3, 0, Math.PI * 2);
+      pveCtx.stroke();
+      pveCtx.fillStyle = enemy.type === "obsidianTitan" ? "#f9fafb" : enemy.color;
+      pveCtx.font = "900 10px Segoe UI";
+      pveCtx.textAlign = "center";
+      pveCtx.fillText(enemy.type === "obsidianTitan" ? "TITAN" : "ELITE", enemy.x, enemy.y - enemy.radius - 13);
       pveCtx.restore();
     }
     pveCtx.fillStyle = enemy.color;
@@ -8941,9 +9418,13 @@ function pveLoop(now) {
   if (!pveGame) return;
   pveGame.accumulator += Math.min(100, now - pveGame.lastTime);
   pveGame.lastTime = now;
+  const stepMultiplier = pveGame.speedMultiplier || 1;
   while (pveGame.accumulator >= FIXED_STEP_MS) {
-    if (pveGame.mode === "survival") stepSurvivalPve();
-    else stepPve();
+    for (let step = 0; step < stepMultiplier; step += 1) {
+      if (!pveGame || pveGame.over) break;
+      if (pveGame.mode === "survival") stepSurvivalPve();
+      else stepPve();
+    }
     pveGame.accumulator -= FIXED_STEP_MS;
   }
   if (pveGame.mode === "survival") drawSurvivalPve();
@@ -9200,6 +9681,9 @@ ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
 ui.pveNormalSkillButton.addEventListener("click", () => usePveSkill("normal"));
 ui.pveUltimateSkillButton.addEventListener("click", () => usePveSkill("ultimate"));
 ui.pveAugmentReroll.addEventListener("click", rerollSurvivalAugments);
+ui.pveSpeedButtons?.forEach(button => {
+  button.addEventListener("click", () => setPveSpeed(Number(button.dataset.pveSpeed)));
+});
 document.addEventListener("keydown", event => {
   if (screens.pveBattle.classList.contains("is-active") && pveGame) {
     if (pveGame.mode === "survival") return;

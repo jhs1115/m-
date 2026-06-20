@@ -3161,6 +3161,16 @@ h2 {
   background: linear-gradient(145deg, #050505, #38bdf8 48%, #6b3f24);
 }
 
+.fighter-icon.artist {
+  color: #180716;
+  background: linear-gradient(145deg, #f7f4eb, #f472b6 48%, #67e8f9);
+}
+
+.fighter-icon.believer {
+  color: #3f0f18;
+  background: linear-gradient(145deg, #fef3c7, #fb7185 52%, #7f1d1d);
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;
@@ -3314,6 +3324,41 @@ h2 {
 }
 
 .speed-button.is-active {
+  color: #17120a;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.survival-speed {
+  display: grid;
+  gap: 4px;
+  min-width: 116px;
+}
+
+.survival-speed span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.pve-speed-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.pve-speed-button {
+  min-height: 30px;
+  padding: 0 8px;
+  color: var(--text);
+  background: rgba(28, 32, 41, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.pve-speed-button.is-active {
   color: #17120a;
   background: var(--gold);
   border-color: var(--gold);
