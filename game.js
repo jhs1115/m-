@@ -172,8 +172,13 @@ const ui = {
   gachaReveal: document.getElementById("gachaReveal"),
   gachaResultName: document.getElementById("gachaResultName"),
   backFromGachaButton: document.getElementById("backFromGachaButton"),
+  selectTitle: document.getElementById("selectTitle"),
   selectP1Label: document.getElementById("selectP1Label"),
   selectP2Label: document.getElementById("selectP2Label"),
+  banPickStatus: document.getElementById("banPickStatus"),
+  p1BanList: document.getElementById("p1BanList"),
+  p2BanList: document.getElementById("p2BanList"),
+  banTurnText: document.getElementById("banTurnText"),
   toBetButton: document.getElementById("toBetButton"),
   timerLeftBar: document.getElementById("timerLeftBar"),
   timerRightBar: document.getElementById("timerRightBar"),
@@ -919,6 +924,7 @@ function setRoomRealtime(roomCode) {
       if (row.prep_state.matchmaking && !row.prep_state.started && !game) {
         beginMatchedRoomTransition(roomCode, matchmakingGeneration);
       }
+      if (screens.select.classList.contains("is-active")) refreshCharacterSelectState();
       maybeStartReadyMatch();
     })
     .subscribe();
@@ -1573,6 +1579,7 @@ function applyRoom(room) {
   if (prep.matchmaking && !prep.started && !game) {
     beginMatchedRoomTransition(currentRoom.code, matchmakingGeneration);
   }
+  if (screens.select.classList.contains("is-active")) refreshCharacterSelectState();
   maybeStartReadyMatch();
 }
 
@@ -1788,46 +1795,136 @@ async function drawCharacter() {
 }
 
 function updateCharacterCards(playerKey, player) {
+  const prep = matchPrepState();
+  const banPhase = isRankedBanPhase(prep);
+  const banned = bannedCharacterSet(prep);
+  const turnSlot = currentBanSlot(prep);
+  const mySlot = myMatchSlot();
   const owned = player.ownedCharacters;
-  if (selections[playerKey] !== "random" && !owned.includes(selections[playerKey])) {
-    selections[playerKey] = owned[0] ?? DEFAULT_CHARACTER;
+  if (!banPhase && selections[playerKey] !== "random" && (!owned.includes(selections[playerKey]) || banned.has(selections[playerKey]))) {
+    selections[playerKey] = firstSelectableCharacter(player, prep);
   }
 
   document.querySelectorAll(`.fighter-card[data-player="${playerKey}"]`).forEach(card => {
     const isRandom = card.dataset.character === "random";
+    const isBanned = !isRandom && banned.has(card.dataset.character);
+    const isValidCharacter = isRandom || Boolean(characters[card.dataset.character]);
     const isOwned = isRandom || owned.includes(card.dataset.character);
+    const canBan = banPhase && playerKey === mySlot && turnSlot === mySlot && isValidCharacter && !isBanned;
+    const canPick = !banPhase && isOwned && !isBanned;
     const isSelected = selections[playerKey] === card.dataset.character;
     const name = card.querySelector("strong");
-    card.disabled = !isOwned;
-    card.classList.toggle("is-locked", !isOwned);
-    card.classList.toggle("is-selected", isOwned && isSelected);
-    if (name) name.textContent = isOwned ? name.dataset.name : "";
+    card.disabled = banPhase ? !canBan : !canPick;
+    card.classList.toggle("is-locked", banPhase ? !canBan : !canPick);
+    card.classList.toggle("is-banned", isBanned);
+    card.classList.toggle("is-selected", !banPhase && canPick && isSelected);
+    if (name) {
+      if (banPhase && isRandom) name.textContent = "밴 없음";
+      else if (isBanned) name.textContent = "밴됨";
+      else name.textContent = (banPhase || isOwned) ? name.dataset.name : "";
+    }
   });
 }
 
 function resolveRandomCharacter(player) {
-  const owned = player?.ownedCharacters?.filter(kind => characters[kind]) || [DEFAULT_CHARACTER];
+  const banned = bannedCharacterSet();
+  const owned = player?.ownedCharacters?.filter(kind => characters[kind] && !banned.has(kind)) || [DEFAULT_CHARACTER];
   if (!owned.length) return DEFAULT_CHARACTER;
   const seed = hashSeed(`${currentRoom?.code || "match"}|${player.id}|random-pick`);
   return owned[seed % owned.length];
 }
 
+function myMatchSlot() {
+  if (!currentUser) return "";
+  if (currentUser.id === matchPlayers.p1) return "p1";
+  if (currentUser.id === matchPlayers.p2) return "p2";
+  return "";
+}
+
+function matchPrepState() {
+  return currentRoom?.prepState || currentRoom?.prep_state || {};
+}
+
+function banListsFromPrep(prep = matchPrepState()) {
+  const bans = prep.bans || {};
+  return {
+    p1: Array.isArray(bans.p1) ? bans.p1 : [],
+    p2: Array.isArray(bans.p2) ? bans.p2 : []
+  };
+}
+
+function visibleBanKinds(list) {
+  return list.filter(kind => kind && kind !== "none");
+}
+
+function bannedCharacterSet(prep = matchPrepState()) {
+  const bans = banListsFromPrep(prep);
+  return new Set([...visibleBanKinds(bans.p1), ...visibleBanKinds(bans.p2)]);
+}
+
+function totalBanTurns(prep = matchPrepState()) {
+  const bans = banListsFromPrep(prep);
+  return Math.min(4, bans.p1.length + bans.p2.length);
+}
+
+function isRankedBanPhase(prep = matchPrepState()) {
+  return !Boolean(prep.casual) && totalBanTurns(prep) < 4;
+}
+
+function currentBanSlot(prep = matchPrepState()) {
+  const total = totalBanTurns(prep);
+  return total % 2 === 0 ? "p1" : "p2";
+}
+
+function firstSelectableCharacter(player, prep = matchPrepState()) {
+  const banned = bannedCharacterSet(prep);
+  return player?.ownedCharacters?.find(kind => characters[kind] && !banned.has(kind)) || DEFAULT_CHARACTER;
+}
+
+function renderBanPickStatus() {
+  const prep = matchPrepState();
+  const banPhase = isRankedBanPhase(prep);
+  const bans = banListsFromPrep(prep);
+  const turnSlot = currentBanSlot(prep);
+  const mySlot = myMatchSlot();
+  if (ui.selectTitle) ui.selectTitle.textContent = banPhase ? "캐릭터 밴" : "캐릭터 선택";
+  ui.banPickStatus?.classList.toggle("is-hidden", Boolean(prep.casual));
+  screens.select?.classList.toggle("is-ban-phase", banPhase);
+  const renderList = (target, list) => {
+    if (!target) return;
+    target.innerHTML = [0, 1].map(index => {
+      const kind = list[index];
+      if (!kind) return `<span class="ban-chip empty">?</span>`;
+      if (kind === "none") return `<span class="ban-chip none">없음</span>`;
+      return `<span class="ban-chip" style="--ban-color:${characters[kind]?.color || "#f87171"}">${characterInitial(kind)}</span>`;
+    }).join("");
+  };
+  renderList(ui.p1BanList, bans.p1);
+  renderList(ui.p2BanList, bans.p2);
+  if (ui.banTurnText) {
+    if (prep.casual) ui.banTurnText.textContent = "";
+    else if (banPhase) {
+      const activeName = getPlayer(matchPlayers[turnSlot])?.name || (turnSlot === "p1" ? "PLAYER 1" : "PLAYER 2");
+      ui.banTurnText.textContent = turnSlot === mySlot ? "밴할 캐릭터를 선택하세요" : `${activeName} 밴 선택중`;
+    } else {
+      ui.banTurnText.textContent = "밴 완료 · 캐릭터 선택";
+    }
+  }
+}
+
 function prepareCharacterSelect() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
-  const mySlot = currentUser?.id === matchPlayers.p1 ? "p1" : currentUser?.id === matchPlayers.p2 ? "p2" : "";
+  const mySlot = myMatchSlot();
   if (!currentRoom || !p1 || !p2 || !mySlot) return false;
   ui.selectP1Label.textContent = `PLAYER 1 - ${p1.name}`;
   ui.selectP2Label.textContent = `PLAYER 2 - ${p2.name}`;
-  updateCharacterCards("p1", p1);
-  updateCharacterCards("p2", p2);
   document.querySelectorAll(".select-panel").forEach(panel => {
     const label = panel.querySelector(".player-label");
     const isMine = label?.id === (mySlot === "p1" ? "selectP1Label" : "selectP2Label");
     panel.classList.toggle("is-hidden", !isMine);
   });
-  ui.toBetButton.textContent = "준비 완료";
-  ui.toBetButton.disabled = false;
+  refreshCharacterSelectState();
   selectedCharacterReady = false;
   syncServerClock(3).catch(() => {});
   showScreen("select");
@@ -1835,16 +1932,62 @@ function prepareCharacterSelect() {
   return true;
 }
 
+function refreshCharacterSelectState() {
+  if (!currentRoom) return;
+  const p1 = getPlayer(matchPlayers.p1);
+  const p2 = getPlayer(matchPlayers.p2);
+  const prep = matchPrepState();
+  const banPhase = isRankedBanPhase(prep);
+  renderBanPickStatus();
+  if (p1) updateCharacterCards("p1", p1);
+  if (p2) updateCharacterCards("p2", p2);
+  if (banPhase) {
+    const turnSlot = currentBanSlot(prep);
+    ui.toBetButton.textContent = turnSlot === myMatchSlot() ? "밴할 캐릭터 선택중" : "상대 밴 대기중";
+    ui.toBetButton.disabled = true;
+    return;
+  }
+  ui.toBetButton.textContent = selectedCharacterReady ? "상대 준비 대기중" : "준비 완료";
+  ui.toBetButton.disabled = selectedCharacterReady;
+}
+
+async function submitCharacterBan(characterKind) {
+  if (!currentRoom || !currentUser) return;
+  const prep = matchPrepState();
+  const mySlot = myMatchSlot();
+  if (!isRankedBanPhase(prep) || currentBanSlot(prep) !== mySlot) return;
+  const picked = characterKind === "none" ? "none" : characterKind;
+  if (picked !== "none" && bannedCharacterSet(prep).has(picked)) return;
+  try {
+    ui.toBetButton.textContent = "밴 적용중...";
+    const room = await rpc("set_character_ban", {
+      session_token: appSessionToken,
+      room_code: currentRoom.code,
+      character_kind: picked
+    });
+    applyRoom(room);
+  } catch (error) {
+    ui.toBetButton.textContent = error.message;
+  }
+}
+
 async function submitCharacterReady() {
   if (!currentRoom || !currentUser) return;
   if (selectedCharacterReady) return;
-  const mySlot = currentUser.id === matchPlayers.p1 ? "p1" : currentUser.id === matchPlayers.p2 ? "p2" : "";
+  const prep = matchPrepState();
+  if (isRankedBanPhase(prep)) return;
+  const mySlot = myMatchSlot();
   if (!mySlot) return;
   try {
+    const banned = bannedCharacterSet(prep);
     const selectedKind = selections[mySlot] === "random"
       ? resolveRandomCharacter(getPlayer(matchPlayers[mySlot]))
       : selections[mySlot];
-    selections[mySlot] = selectedKind;
+    if (banned.has(selectedKind)) {
+      selections[mySlot] = firstSelectableCharacter(getPlayer(matchPlayers[mySlot]), prep);
+    } else {
+      selections[mySlot] = selectedKind;
+    }
     updateCharacterCards(mySlot, getPlayer(matchPlayers[mySlot]));
     selectedCharacterReady = true;
     stopSelectTimer();
@@ -1852,7 +1995,7 @@ async function submitCharacterReady() {
     const room = await rpc("set_character_ready", {
       session_token: appSessionToken,
       room_code: currentRoom.code,
-      character_kind: selectedKind,
+      character_kind: selections[mySlot],
       is_ready: true,
       simulation_version: SIMULATION_VERSION
     });
@@ -1869,6 +2012,7 @@ async function submitCharacterReady() {
 function maybeStartReadyMatch() {
   if (!currentRoom || !screens.select.classList.contains("is-active") || game) return;
   const prep = currentRoom.prepState || currentRoom.prep_state || {};
+  if (isRankedBanPhase(prep)) return;
   if (!prep.started) return;
   const charSelections = prep.characterSelections || {};
   selections.p1 = charSelections[matchPlayers.p1] || selections.p1;
@@ -10659,9 +10803,14 @@ document.addEventListener("keydown", event => {
 });
 
 ui.cards.forEach(card => {
-  card.addEventListener("click", () => {
+  card.addEventListener("click", async () => {
     if (card.disabled) return;
     const player = card.dataset.player;
+    const prep = matchPrepState();
+    if (isRankedBanPhase(prep)) {
+      await submitCharacterBan(card.dataset.character === "random" ? "none" : card.dataset.character);
+      return;
+    }
     document.querySelectorAll(`.fighter-card[data-player="${player}"]`).forEach(item => {
       item.classList.remove("is-selected");
     });

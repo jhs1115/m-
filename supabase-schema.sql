@@ -585,6 +585,7 @@ begin
       'lpGain', case when is_casual then 0 else 14 end,
       'matchPlayers', jsonb_build_object('p1', active_user.id, 'p2', opponent.id),
       'characterSelections', '{}'::jsonb,
+      'bans', jsonb_build_object('p1', '[]'::jsonb, 'p2', '[]'::jsonb),
       'ready', '{}'::jsonb,
       'started', false,
       'createdAt', extract(epoch from now())
@@ -665,6 +666,104 @@ begin
 end;
 $$;
 
+drop function if exists public.set_character_ban(text, text, text);
+create or replace function public.set_character_ban(
+  session_token text,
+  room_code text,
+  character_kind text
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
+  current_state jsonb;
+  next_state jsonb;
+  active_slot text;
+  active_list jsonb;
+  other_list jsonb;
+  total_bans integer;
+  expected_slot text;
+  other_slot text;
+  valid_character_kinds text[] := array[
+    'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
+    'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
+    'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
+    'believer', 'archmage'
+  ];
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select player_ids, coalesce(prep_state, '{}'::jsonb)
+  into room_players, current_state
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null or active_user.id <> all(room_players) then
+    raise exception 'not a match participant';
+  end if;
+
+  if coalesce((current_state->>'casual')::boolean, false) then
+    raise exception 'casual match has no bans';
+  end if;
+
+  active_slot := case when active_user.id = room_players[1] then 'p1' else 'p2' end;
+  other_slot := case when active_slot = 'p1' then 'p2' else 'p1' end;
+  active_list := coalesce(current_state->'bans'->active_slot, '[]'::jsonb);
+  other_list := coalesce(current_state->'bans'->other_slot, '[]'::jsonb);
+  total_bans := jsonb_array_length(active_list) + jsonb_array_length(other_list);
+  expected_slot := case when total_bans % 2 = 0 then 'p1' else 'p2' end;
+
+  if total_bans >= 4 then
+    raise exception 'ban phase already finished';
+  end if;
+
+  if active_slot <> expected_slot then
+    raise exception 'not your ban turn';
+  end if;
+
+  if jsonb_array_length(active_list) >= 2 then
+    raise exception 'ban limit reached';
+  end if;
+
+  if character_kind <> 'none' then
+    if character_kind <> all(valid_character_kinds) then
+      raise exception 'invalid character';
+    end if;
+    if (coalesce(current_state->'bans'->'p1', '[]'::jsonb) || coalesce(current_state->'bans'->'p2', '[]'::jsonb)) ? character_kind then
+      raise exception 'character already banned';
+    end if;
+  end if;
+
+  next_state := jsonb_set(
+    current_state,
+    array['bans', active_slot],
+    active_list || to_jsonb(character_kind),
+    true
+  );
+
+  if total_bans + 1 >= 4 then
+    next_state := jsonb_set(next_state, array['bansComplete'], 'true'::jsonb, true);
+  end if;
+
+  update public.app_rooms
+  set prep_state = next_state,
+      updated_at = now()
+  where code = normalized_code;
+
+  return public.app_room_json(normalized_code);
+end;
+$$;
+
 drop function if exists public.set_character_ready(text, text, text, boolean);
 
 create or replace function public.set_character_ready(
@@ -710,6 +809,17 @@ begin
   select coalesce(prep_state, '{}'::jsonb) into current_state
   from public.app_rooms
   where code = normalized_code;
+
+  if not coalesce((current_state->>'casual')::boolean, false) then
+    if jsonb_array_length(coalesce(current_state->'bans'->'p1', '[]'::jsonb))
+      + jsonb_array_length(coalesce(current_state->'bans'->'p2', '[]'::jsonb)) < 4 then
+      raise exception 'ban phase is not finished';
+    end if;
+
+    if (coalesce(current_state->'bans'->'p1', '[]'::jsonb) || coalesce(current_state->'bans'->'p2', '[]'::jsonb)) ? character_kind then
+      raise exception 'character is banned';
+    end if;
+  end if;
 
   next_ready := jsonb_set(
     coalesce(current_state->'ready', '{}'::jsonb),
@@ -1610,6 +1720,7 @@ revoke execute on function public.set_match_ready(text, text, uuid, uuid, intege
 grant execute on function public.find_pvp_match(text, boolean) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
+grant execute on function public.set_character_ban(text, text, text) to anon, authenticated;
 grant execute on function public.set_character_ready(text, text, text, boolean, text) to anon, authenticated;
 grant execute on function public.use_skill_event(text, text, text, integer) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
