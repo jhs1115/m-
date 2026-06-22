@@ -1922,9 +1922,9 @@ function renderBanPickStatus() {
     if (!target) return;
     target.innerHTML = [0, 1].map(index => {
       const kind = list[index];
-      if (!kind) return `<span class="ban-chip empty">?</span>`;
-      if (kind === "none") return `<span class="ban-chip none">없음</span>`;
-      return `<span class="ban-chip" style="--ban-color:${characters[kind]?.color || "#f87171"}">${characterInitial(kind)}</span>`;
+      if (!kind) return `<span class="ban-chip empty"><i>?</i><b>대기</b></span>`;
+      if (kind === "none") return `<span class="ban-chip none"><i>-</i><b>밴 없음</b></span>`;
+      return `<span class="ban-chip" style="--ban-color:${characters[kind]?.color || "#f87171"}"><i>${characterInitial(kind)}</i><b>${characters[kind]?.name || kind}</b></span>`;
     }).join("");
   };
   renderList(ui.p1BanList, bans.p1);
@@ -2333,7 +2333,7 @@ function resetGame() {
   appliedSkillEvents = new Set();
   pendingSkillUse = false;
 
-  ui.currentBet.textContent = "+10~20 LP";
+  ui.currentBet.textContent = "";
   ui.hudP1Label.textContent = p1.name;
   ui.hudP2Label.textContent = p2.name;
   ui.playerOneName.textContent = game.fighters[0].name;
