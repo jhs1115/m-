@@ -756,8 +756,7 @@ begin
   end if;
 
   update public.app_rooms
-  set prep_state = next_state,
-      updated_at = now()
+  set prep_state = next_state
   where code = normalized_code;
 
   return public.app_room_json(normalized_code);
