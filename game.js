@@ -2249,6 +2249,8 @@ function makeCharacterCombatState(kind) {
     rouletteFormTime: 0,
     gamblerBodyDamageTime: 0,
     gamblerBodyDamage: 0,
+    gamblerEnhanceTicks: 0,
+    gamblerEnhanceTimer: 0,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -3417,13 +3419,13 @@ function announceRoulette(owner, kind, label) {
 function useRouletteAttack(owner) {
   const kind = roulettePick(rouletteAttackPool, owner, "attack");
   announceRoulette(owner, kind, "룰렛");
-  if (kind === "thrower") throwBall(owner);
+  if (kind === "thrower") throwBall(owner, { force: true, rouletteShot: true });
   else if (kind === "charger") {
     owner.gamblerBodyDamage = 10;
     owner.gamblerBodyDamageTime = 180;
     owner.rageTime = Math.max(owner.rageTime, 90);
-  } else if (kind === "grabber") throwGrapple(owner);
-  else if (kind === "poker") dealPokerAttack(owner);
+  } else if (kind === "grabber") throwGrapple(owner, false, true);
+  else if (kind === "poker") dealPokerAttack(owner, { force: true });
   else if (kind === "beamer") createSkyLaser(owner);
   else if (kind === "wild") createWildSlashes(owner);
   else if (kind === "vampire") fireBloodBullet(owner);
@@ -3454,6 +3456,11 @@ function useRouletteNormal(owner) {
   } else if (kind === "beamer") {
     fireSlowBeam(owner);
     owner.stunTime = Math.max(owner.stunTime, 18);
+  } else if (kind === "enhancer") {
+    owner.gamblerEnhanceTicks = 3;
+    owner.gamblerEnhanceTimer = 120;
+    owner.gamblerBodyDamageTime = Math.max(owner.gamblerBodyDamageTime, 420);
+    addFloatingText(owner.x, owner.y - owner.radius - 42, "몸빵 강화 준비", "#fdba74");
   } else if (kind === "riftmaker") {
     const target = nearestEnemyTarget(owner);
     addRift(owner, target.x, target.y, true);
@@ -3496,6 +3503,28 @@ function useRouletteUltimate(owner) {
       }
     }
     useRiftGate(owner);
+    owner.ultimateTimer = 1800;
+    return;
+  }
+  if (kind === "thrower") {
+    fireStarStrike(owner, { force: true });
+    owner.ultimateTimer = 1800;
+    return;
+  }
+  if (kind === "poker") {
+    dealPokerAttack(owner, { force: true });
+    for (let index = 0; index < 3; index += 1) throwDrawCard(owner);
+    owner.ultimateTimer = 1800;
+    return;
+  }
+  if (kind === "enhancer") {
+    for (let index = 0; index < 3; index += 1) launchGodWeapon(owner, 24);
+    owner.ultimateTimer = 1800;
+    return;
+  }
+  if (kind === "artist") {
+    spawnArtOrb(owner);
+    owner.artSoulTime = 300;
     owner.ultimateTimer = 1800;
     return;
   }
@@ -3734,7 +3763,7 @@ function triggerUltimate(fighter) {
     return;
   }
 
-  if (fighter.kind === "vampire") {
+  if (fighterActsLike(fighter, "vampire")) {
     fighter.hp = Math.max(1, fighter.hp * 0.5);
     fighter.bloodPreludeTime = 180;
     fighter.bloodTimer = Math.min(fighter.bloodTimer, 60);
@@ -4274,7 +4303,7 @@ function moveFighter(fighter, dt) {
     }
   }
 
-  if (fighter.kind === "vampire") {
+  if (fighterActsLike(fighter, "vampire")) {
     fighter.bloodTimer -= dt;
     if (fighter.bloodTimer <= 0) {
       fireBloodBullet(fighter);
@@ -4346,11 +4375,23 @@ function moveFighter(fighter, dt) {
         fighter.rouletteFormTime = 0;
       }
     }
+    if (fighter.gamblerEnhanceTicks > 0) {
+      fighter.gamblerEnhanceTimer -= dt;
+      if (fighter.gamblerEnhanceTimer <= 0) {
+        fighter.gamblerBodyDamage += 2;
+        fighter.gamblerBodyDamageTime = Math.max(fighter.gamblerBodyDamageTime, 180);
+        fighter.gamblerEnhanceTicks -= 1;
+        fighter.gamblerEnhanceTimer = 120;
+        addFloatingText(fighter.x, fighter.y - fighter.radius - 42, `몸빵딜 +2 (${fighter.gamblerBodyDamage})`, "#fdba74");
+      }
+    }
     if (fighter.gamblerBodyDamageTime > 0) {
       fighter.gamblerBodyDamageTime -= dt;
       if (fighter.gamblerBodyDamageTime <= 0) {
         fighter.gamblerBodyDamage = 0;
         fighter.gamblerBodyDamageTime = 0;
+        fighter.gamblerEnhanceTicks = 0;
+        fighter.gamblerEnhanceTimer = 0;
       }
     }
   }
@@ -4749,8 +4790,8 @@ function useDrawing(owner) {
   addFloatingText(owner.x, owner.y - owner.radius - 38, hits ? `드로잉 x${hits}` : "드로잉", owner.accent);
 }
 
-function throwBall(owner) {
-  if (!owner.canThrow || game.over) return;
+function throwBall(owner, options = {}) {
+  if ((!owner.canThrow && !options.force) || game.over) return;
   const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.balls.push({
@@ -4766,12 +4807,13 @@ function throwBall(owner) {
     speed: 12.4,
     color: owner.accent,
     homing: false,
-    star: false
+    star: false,
+    rouletteShot: Boolean(options.rouletteShot)
   });
 }
 
-function fireStarStrike(owner) {
-  if (!owner.canThrow || game.over) return;
+function fireStarStrike(owner, options = {}) {
+  if ((!owner.canThrow && !options.force) || game.over) return;
   const target = nearestEnemyTarget(owner);
   const baseAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
   [-0.18, 0.18].forEach(spread => {
@@ -4795,8 +4837,8 @@ function fireStarStrike(owner) {
   addSkillPulse(owner, "#ffe28a");
 }
 
-function throwGrapple(owner, enhanced = false) {
-  if (!owner.canGrab || game.over) return;
+function throwGrapple(owner, enhanced = false, force = false) {
+  if ((!owner.canGrab && !force) || game.over) return;
   const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.grapples.push({
@@ -5028,8 +5070,8 @@ function assassinate(owner) {
   });
 }
 
-function dealPokerAttack(owner) {
-  if (!owner.canPoker || game.over) return;
+function dealPokerAttack(owner, options = {}) {
+  if ((!owner.canPoker && !options.force) || game.over) return;
   const ranks = ["A", "K", "Q", "J", "10", "9"];
   const hand = Array.from({ length: 5 }, () => ranks[Math.floor(seededRandom() * ranks.length)]);
   const counts = Object.values(hand.reduce((acc, rank) => {
@@ -5132,7 +5174,7 @@ function updateBalls(dt) {
         return false;
       }
       damageSummon(summonTarget, ball.damage, ball.owner);
-      if (ball.blood || ball.riftShot || ball.summonArrow || (ball.owner.canThrow && !ball.star)) {
+      if (ball.blood || ball.riftShot || ball.summonArrow || ball.rouletteShot || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
       }
       const angle = Math.atan2(summonTarget.y - ball.y, summonTarget.x - ball.x);
@@ -5164,7 +5206,7 @@ function updateBalls(dt) {
           }
           damage(target, ball.damage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || ball.riftShot || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.blood || ball.riftShot || ball.rouletteShot || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
