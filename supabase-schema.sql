@@ -694,7 +694,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
     'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
-    'believer', 'archmage'
+    'believer', 'archmage', 'gambler'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
@@ -1072,7 +1072,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gambler'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 

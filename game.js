@@ -2266,6 +2266,10 @@ function characterBaseSpeed(fighter) {
   return 6.8;
 }
 
+function fighterActsLike(fighter, kind) {
+  return fighter?.kind === kind || fighter?.rouletteFormKind === kind;
+}
+
 function makeFighter(kind, label, ownerId, x, y) {
   const velocity = randomVelocity(6.5);
   return {
@@ -2380,7 +2384,7 @@ function damage(fighter, amount, attacker = null) {
   if (attacker && attacker !== fighter) attacker.damageDealt += actualDamage;
   fighter.hitFlash = 10;
   addDamageText(fighter.x, fighter.y - fighter.radius, Math.round(finalAmount * 10) / 10);
-  if (attacker?.kind === "vampire") {
+  if (fighterActsLike(attacker, "vampire")) {
     heal(attacker, finalAmount * 0.3);
   }
   if (fighter.kind === "brawler" && !fighter.gritUsed && fighter.hp <= fighter.maxHp * 0.5 && fighter.hp > 0) {
@@ -2406,24 +2410,24 @@ function contactDamagePair(a, b) {
     }
     return;
   }
-  if (a.kind === "wild") createWildSlashes(a);
-  if (b.kind === "wild") createWildSlashes(b);
-  if (a.kind === "wild" && a.chaseTime > 0) {
+  if (fighterActsLike(a, "wild")) createWildSlashes(a);
+  if (fighterActsLike(b, "wild")) createWildSlashes(b);
+  if (fighterActsLike(a, "wild") && a.chaseTime > 0) {
     const angle = Math.atan2(a.y - b.y, a.x - b.x);
     a.vx = Math.cos(angle) * 10;
     a.vy = Math.sin(angle) * 10;
     a.slowTime = Math.max(a.slowTime, 45);
     a.chaseBounceTime = 30;
   }
-  if (b.kind === "wild" && b.chaseTime > 0) {
+  if (fighterActsLike(b, "wild") && b.chaseTime > 0) {
     const angle = Math.atan2(b.y - a.y, b.x - a.x);
     b.vx = Math.cos(angle) * 10;
     b.vy = Math.sin(angle) * 10;
     b.slowTime = Math.max(b.slowTime, 45);
     b.chaseBounceTime = 30;
   }
-  const aDamage = a.kind === "enhancer" ? a.attackPower : a.contactDamage;
-  const bDamage = b.kind === "enhancer" ? b.attackPower : b.contactDamage;
+  const aDamage = a.gamblerBodyDamageTime > 0 ? a.gamblerBodyDamage : a.kind === "enhancer" ? a.attackPower : a.contactDamage;
+  const bDamage = b.gamblerBodyDamageTime > 0 ? b.gamblerBodyDamage : b.kind === "enhancer" ? b.attackPower : b.contactDamage;
   if (a.kind === "charger" && b.kind === "charger" && a.hp <= bDamage && b.hp <= aDamage) {
     const damageToA = Math.min(a.hp, bDamage);
     const damageToB = Math.min(b.hp, aDamage);
@@ -3450,7 +3454,11 @@ function useRouletteNormal(owner) {
   } else if (kind === "beamer") {
     fireSlowBeam(owner);
     owner.stunTime = Math.max(owner.stunTime, 18);
-  } else if (kind === "riftmaker") createVoidRift(owner);
+  } else if (kind === "riftmaker") {
+    const target = nearestEnemyTarget(owner);
+    addRift(owner, target.x, target.y, true);
+    createVoidRift(owner);
+  }
   else if (kind === "summoner") {
     owner.summonMode = owner.summonMode === "warrior" ? "archer" : "warrior";
   } else if (kind === "artist") useDrawing(owner);
@@ -3469,6 +3477,28 @@ function useRouletteNormal(owner) {
 function useRouletteUltimate(owner) {
   const kind = roulettePick(rouletteUltimatePool, owner, "ultimate");
   announceRoulette(owner, kind, "궁극");
+  if (kind === "stealth") {
+    owner.stealthTime = 240;
+    owner.stealthDamage = 10;
+    owner.hyperStealthActive = true;
+    setRouletteForm(owner, "stealth", 240);
+    addSkillPulse(owner, "#8d7cff");
+    owner.ultimateTimer = 1800;
+    return;
+  }
+  if (kind === "riftmaker") {
+    const existingRifts = game.rifts.filter(rift => rift.owner === owner && rift.life > 0 && rift.hitsRemaining > 0);
+    if (!existingRifts.length) {
+      const target = nearestEnemyTarget(owner);
+      for (let index = 0; index < 3; index += 1) {
+        const angle = index / 3 * Math.PI * 2;
+        addRift(owner, clamp(target.x + Math.cos(angle) * 86, 24, canvas.width - 24), clamp(target.y + Math.sin(angle) * 86, 24, canvas.height - 24));
+      }
+    }
+    useRiftGate(owner);
+    owner.ultimateTimer = 1800;
+    return;
+  }
   if (kind === "beamer") setRouletteForm(owner, "beamer", 180);
   if (kind === "vampire") setRouletteForm(owner, "vampire", 180);
   if (kind === "tank") setRouletteForm(owner, "tank", 180);
@@ -3631,6 +3661,10 @@ function triggerNormalSkill(fighter) {
 }
 
 function triggerUltimate(fighter) {
+  if (fighter.kind === "gambler") {
+    useRouletteUltimate(fighter);
+    return;
+  }
   if (fighter.kind === "thrower") {
     fireStarStrike(fighter);
     fighter.ultimateTimer = 1800;
@@ -4149,7 +4183,7 @@ function moveFighter(fighter, dt) {
     fighter.vx = Math.cos(angle) * Math.max(baseSpeed * 3, speed);
     fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 3, speed);
   }
-  const wildInstinct = fighter.kind === "wild" && target.hp <= target.maxHp * 0.5 ? 3.5 : 1;
+  const wildInstinct = fighterActsLike(fighter, "wild") && target.hp <= target.maxHp * 0.5 ? 3.5 : 1;
   const brawlerRamp = fighter.kind === "brawler" ? 1 + fighter.idleAttackTime / 60 * 0.06 : 1;
   const targetSpeed = baseSpeed
     * (fighter.rageTime > 0 ? 1.55 : 1)
@@ -4213,7 +4247,7 @@ function moveFighter(fighter, dt) {
     });
   }
 
-  if (fighter.kind === "tank" && fighter.shieldTime > 0) {
+  if (fighter.shieldTime > 0 && (fighterActsLike(fighter, "tank") || fighter.shieldBlastPending)) {
     fighter.shieldTime -= dt;
     fighter.vx = 0;
     fighter.vy = 0;
@@ -4223,7 +4257,7 @@ function moveFighter(fighter, dt) {
     }
   }
 
-  if (fighter.kind === "beamer") {
+  if (fighterActsLike(fighter, "beamer")) {
     fighter.beamTimer -= dt;
     if (fighter.beamTimer <= 0) {
       createSkyLaser(fighter);
@@ -4299,6 +4333,25 @@ function moveFighter(fighter, dt) {
         width: 26
       });
       fighter.demonSwordTimer = 210;
+    }
+  }
+
+  if (fighter.kind === "gambler") {
+    fighter.rouletteAttackTimer -= dt;
+    if (fighter.rouletteAttackTimer <= 0) useRouletteAttack(fighter);
+    if (fighter.rouletteFormTime > 0) {
+      fighter.rouletteFormTime -= dt;
+      if (fighter.rouletteFormTime <= 0) {
+        fighter.rouletteFormKind = "";
+        fighter.rouletteFormTime = 0;
+      }
+    }
+    if (fighter.gamblerBodyDamageTime > 0) {
+      fighter.gamblerBodyDamageTime -= dt;
+      if (fighter.gamblerBodyDamageTime <= 0) {
+        fighter.gamblerBodyDamage = 0;
+        fighter.gamblerBodyDamageTime = 0;
+      }
     }
   }
 
