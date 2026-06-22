@@ -350,10 +350,16 @@ const characters = {
     color: "#312e81",
     accent: "#facc15",
     contactDamage: 0
+  },
+  gambler: {
+    name: "도박하는 색히",
+    color: "#f2c14e",
+    accent: "#ef476f",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gambler"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -374,7 +380,8 @@ const skillNames = {
   demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" },
   artist: { normal: "드로잉", ultimate: "예술의 혼" },
   believer: { normal: "주신을 위해", ultimate: "커져가는신앙" },
-  archmage: { normal: "작열", ultimate: "창해" }
+  archmage: { normal: "작열", ultimate: "창해" },
+  gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" }
 };
 
 const characterGuide = {
@@ -472,6 +479,11 @@ const characterGuide = {
     attack: ["벼락", "5초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해와 감전 원소를 부착합니다. 원소가 붙은 적에게 다른 원소가 붙으면 원소 반응이 터지고 기존 원소는 모두 사라집니다. 습기+화상은 증발로 2초간 초당 20 피해, 습기+감전은 감전으로 2초간 초당 10 피해, 감전+화상은 과부하로 즉시 20 피해를 줍니다."],
     normal: ["작열", "10초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 10의 피해와 2초 동안 초당 2의 화상 피해를 주며 화상 원소를 부착합니다."],
     ultimate: ["창해", "12초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 5의 피해를 주고 습기 원소를 부착합니다."]
+  },
+  gambler: {
+    attack: ["룰렛", "5초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
+    normal: ["스킬 룰렛", "10초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다. 추격 같은 지속형 스킬은 지속시간 동안 해당 캐릭터처럼 판정됩니다."],
+    ultimate: ["궁극 룰렛", "30초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
   }
 };
 
@@ -546,6 +558,18 @@ const enemyGuide = {
       ["등장 주기", "5분마다", "생존 시간 5분, 10분, 15분마다 더 강한 개체가 출현합니다."],
       ["균열 원형탄", "약 3초", "주변 열 방향으로 느린 탄환을 한 번 발사합니다. 탄 사이가 넓어 지나갈 공간이 있습니다."],
       ["보상", "대량 XP", "처치하면 일반 적보다 훨씬 많은 경험치를 떨어뜨립니다."]
+    ]
+  },
+  endgame: {
+    name: "심연 후반 개체",
+    initial: "X",
+    color: "#6366f1",
+    accent: "#fca5a5",
+    badge: "10분 이후 적",
+    entries: [
+      ["등장 시점", "10분 이후", "공허 기사, 균열 저격수, 거상, 악몽, 균열 약탈자, 일식 저격수, 피의 망령, 흑요석 거인이 섞여 등장합니다."],
+      ["특징", "느린 압박", "이전보다 이동속도가 크게 느려졌지만 체력과 패턴으로 전장을 압박합니다."],
+      ["피해량", "대폭 너프", "기존 후반 개체 피해량의 절반 수준으로 낮아졌습니다."]
     ]
   }
 };
@@ -1053,7 +1077,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gambler: "?"
   })[kind] || "?";
 }
 
@@ -2082,7 +2106,8 @@ function normalSkillCooldown(kind) {
     demon: 540,
     artist: 180,
     believer: 1200,
-    archmage: 600
+    archmage: 600,
+    gambler: 600
   }[kind] ?? Infinity;
 }
 
@@ -2106,14 +2131,15 @@ function ultimateCooldown(kind) {
     demon: 1800,
     artist: 1200,
     believer: 900,
-    archmage: 720
+    archmage: 720,
+    gambler: 1800
   }[kind] ?? Infinity;
 }
 
 function characterMaxHp(kind) {
   return {
     swordsman: 125,
-    archmage: 130,
+    archmage: 140,
     believer: 175,
     charger: 250,
     tank: 250
@@ -2214,9 +2240,15 @@ function makeCharacterCombatState(kind) {
     mageFireDelay: 0,
     mageSeaTime: 0,
     mageSeaTick: 60,
+    mageSeaElementApplied: false,
     mageElements: { wet: 0, fire: 0, electro: 0 },
     mageDots: {},
     mageReaction: null,
+    rouletteAttackTimer: kind === "gambler" ? 300 : Infinity,
+    rouletteFormKind: "",
+    rouletteFormTime: 0,
+    gamblerBodyDamageTime: 0,
+    gamblerBodyDamage: 0,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -3359,7 +3391,99 @@ function detonateMageFire(owner) {
   });
 }
 
+const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage"];
+const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
+const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
+
+function roulettePick(pool, owner, salt) {
+  const seed = hashSeed(`${currentRoom?.code || "local"}|${owner.id}|${game.tick}|${salt}|${pool.length}`);
+  return pool[seed % pool.length];
+}
+
+function setRouletteForm(owner, kind, duration) {
+  owner.rouletteFormKind = kind;
+  owner.rouletteFormTime = Math.max(owner.rouletteFormTime || 0, duration);
+}
+
+function announceRoulette(owner, kind, label) {
+  addFloatingText(owner.x, owner.y - owner.radius - 54, `${label}: ${characters[kind]?.name || kind}`, owner.accent);
+  addSkillPulse(owner, characters[kind]?.accent || owner.accent);
+}
+
+function useRouletteAttack(owner) {
+  const kind = roulettePick(rouletteAttackPool, owner, "attack");
+  announceRoulette(owner, kind, "룰렛");
+  if (kind === "thrower") throwBall(owner);
+  else if (kind === "charger") {
+    owner.gamblerBodyDamage = 10;
+    owner.gamblerBodyDamageTime = 180;
+    owner.rageTime = Math.max(owner.rageTime, 90);
+  } else if (kind === "grabber") throwGrapple(owner);
+  else if (kind === "poker") dealPokerAttack(owner);
+  else if (kind === "beamer") createSkyLaser(owner);
+  else if (kind === "wild") createWildSlashes(owner);
+  else if (kind === "vampire") fireBloodBullet(owner);
+  else if (kind === "brawler") {
+    const target = nearestEnemyTarget(owner);
+    if (target.owner) punchSummon(owner, target);
+    else punchTarget(owner, target);
+  } else if (kind === "timekeeper") swingClockHand(owner);
+  else if (kind === "summoner") summonUnit(owner, false);
+  else if (kind === "swordsman") useSwordBasic(owner);
+  else if (kind === "demon") {
+    fireDemonLine(owner, { damage: 5, addMark: 1, markDuration: 300, slowTime: 120, width: 26 });
+  } else if (kind === "believer") heal(owner, 10);
+  else if (kind === "archmage") castMageLightning(owner);
+  owner.rouletteAttackTimer = 300;
+}
+
+function useRouletteNormal(owner) {
+  const kind = roulettePick(rouletteNormalPool, owner, "normal");
+  announceRoulette(owner, kind, "스킬");
+  if (kind === "charger") {
+    owner.rageTime = 180;
+    owner.gamblerBodyDamage = 10;
+    owner.gamblerBodyDamageTime = 180;
+  } else if (kind === "wild") {
+    owner.chaseTime = 300;
+    setRouletteForm(owner, "wild", 300);
+  } else if (kind === "beamer") {
+    fireSlowBeam(owner);
+    owner.stunTime = Math.max(owner.stunTime, 18);
+  } else if (kind === "riftmaker") createVoidRift(owner);
+  else if (kind === "summoner") {
+    owner.summonMode = owner.summonMode === "warrior" ? "archer" : "warrior";
+  } else if (kind === "artist") useDrawing(owner);
+  else if (kind === "archmage") {
+    owner.mageFireDelay = 180;
+    addFloatingText(owner.x, owner.y - owner.radius - 46, "작열 준비", "#fb923c");
+  } else {
+    const previousKind = owner.kind;
+    owner.kind = kind;
+    triggerNormalSkill(owner);
+    owner.kind = previousKind;
+  }
+  owner.skillTimer = 600;
+}
+
+function useRouletteUltimate(owner) {
+  const kind = roulettePick(rouletteUltimatePool, owner, "ultimate");
+  announceRoulette(owner, kind, "궁극");
+  if (kind === "beamer") setRouletteForm(owner, "beamer", 180);
+  if (kind === "vampire") setRouletteForm(owner, "vampire", 180);
+  if (kind === "tank") setRouletteForm(owner, "tank", 180);
+  const previousKind = owner.kind;
+  owner.kind = kind;
+  triggerUltimate(owner);
+  owner.kind = previousKind;
+  owner.ultimateTimer = 1800;
+}
+
 function triggerNormalSkill(fighter) {
+  if (fighter.kind === "gambler") {
+    useRouletteNormal(fighter);
+    return;
+  }
   if (fighter.kind === "thrower") {
     const target = nearestEnemyTarget(fighter);
     let count = 0;
@@ -3644,6 +3768,7 @@ function triggerUltimate(fighter) {
   if (fighter.kind === "archmage") {
     fighter.mageSeaTime = 300;
     fighter.mageSeaTick = 0;
+    fighter.mageSeaElementApplied = false;
     fighter.ultimateTimer = 600;
     addSkillPulse(fighter, "#38bdf8");
     addVisualEffect({
@@ -3857,7 +3982,10 @@ function moveFighter(fighter, dt) {
         const target = opponentOf(fighter);
         target.slowTime = Math.max(target.slowTime, 75);
         damage(target, 5, fighter);
-        applyMageElement(fighter, target, "wet");
+        if (!fighter.mageSeaElementApplied) {
+          applyMageElement(fighter, target, "wet");
+          fighter.mageSeaElementApplied = true;
+        }
         fighter.mageSeaTick += 60;
         if (game.over) return;
       }
@@ -8465,33 +8593,7 @@ function drawPve() {
     pveCtx.fill();
     pveCtx.restore();
   });
-  pveGame.areaAttacks.forEach(attack => {
-    const warning = attack.delay > 0;
-    pveCtx.save();
-    pveCtx.globalAlpha = warning ? 0.4 : Math.min(1, attack.life / 18);
-    pveCtx.strokeStyle = attack.color;
-    pveCtx.fillStyle = `${attack.color}28`;
-    pveCtx.lineWidth = warning ? 3 : 8;
-    pveCtx.setLineDash(warning ? [8, 7] : []);
-    pveCtx.beginPath();
-    pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
-    pveCtx.fill();
-    pveCtx.stroke();
-    if (!warning && (attack.type === "laser" || attack.type === "annihilator")) {
-      drawPrismaticBeam(
-        pveCtx,
-        attack.x,
-        0,
-        attack.x,
-        attack.type === "annihilator" ? attack.y : pveCanvas.height,
-        attack.type === "annihilator" ? 26 : 38,
-        attack.type === "annihilator" ? "#ff304f" : "#7de7ff",
-        pveGame.tick,
-        pveCtx.globalAlpha
-      );
-    }
-    pveCtx.restore();
-  });
+  pveGame.areaAttacks.forEach(drawSurvivalAreaAttack);
   pveGame.beams.forEach(beam => {
     const alpha = beam.delay > 0 ? 0.35 : Math.min(1, beam.life / 24);
     if (beam.delay > 0) {
@@ -8540,6 +8642,51 @@ function drawPve() {
     pveCtx.restore();
   });
   pveGame.projectiles.forEach(projectile => {
+    if (projectile.visual === "orb") {
+      pveCtx.save();
+      pveCtx.translate(projectile.x, projectile.y);
+      pveCtx.globalCompositeOperation = "lighter";
+      pveCtx.rotate(pveGame.tick * 0.04);
+      pveCtx.shadowColor = projectile.trail || projectile.color;
+      pveCtx.shadowBlur = 28;
+      const glow = pveCtx.createRadialGradient(0, 0, 2, 0, 0, projectile.radius * 2.4);
+      glow.addColorStop(0, "#ffffff");
+      glow.addColorStop(0.24, projectile.color);
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      pveCtx.fillStyle = glow;
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, projectile.radius * 2.1, 0, Math.PI * 2);
+      pveCtx.fill();
+      pveCtx.strokeStyle = projectile.color;
+      pveCtx.lineWidth = 2.4;
+      pveCtx.setLineDash([8, 7]);
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, projectile.radius * 1.65, 0, Math.PI * 2);
+      pveCtx.stroke();
+      pveCtx.restore();
+      return;
+    }
+    if (projectile.visual === "lance") {
+      pveCtx.save();
+      pveCtx.translate(projectile.x, projectile.y);
+      pveCtx.rotate(Math.atan2(projectile.vy, projectile.vx));
+      pveCtx.globalCompositeOperation = "lighter";
+      pveCtx.shadowColor = projectile.color;
+      pveCtx.shadowBlur = 22;
+      pveCtx.fillStyle = projectile.color;
+      pveCtx.beginPath();
+      pveCtx.moveTo(projectile.radius * 2.4, 0);
+      pveCtx.lineTo(-projectile.radius * 1.1, -projectile.radius * 0.72);
+      pveCtx.lineTo(-projectile.radius * 0.42, 0);
+      pveCtx.lineTo(-projectile.radius * 1.1, projectile.radius * 0.72);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.strokeStyle = "#f7fbff";
+      pveCtx.lineWidth = 1.8;
+      pveCtx.stroke();
+      pveCtx.restore();
+      return;
+    }
     if (projectile.star) {
       pveCtx.save();
       pveCtx.translate(projectile.x, projectile.y);
@@ -8576,10 +8723,26 @@ function drawPve() {
       pveCtx.restore();
       return;
     }
+    pveCtx.save();
+    pveCtx.globalCompositeOperation = "lighter";
+    pveCtx.shadowColor = projectile.color;
+    pveCtx.shadowBlur = 14;
+    const projectileGlow = pveCtx.createRadialGradient(
+      projectile.x - projectile.radius * 0.35,
+      projectile.y - projectile.radius * 0.35,
+      1,
+      projectile.x,
+      projectile.y,
+      projectile.radius * 1.45
+    );
+    projectileGlow.addColorStop(0, "#ffffff");
+    projectileGlow.addColorStop(0.34, projectile.color);
+    projectileGlow.addColorStop(1, "rgba(0,0,0,0)");
+    pveCtx.fillStyle = projectileGlow;
     pveCtx.beginPath();
-    pveCtx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
-    pveCtx.fillStyle = projectile.color;
+    pveCtx.arc(projectile.x, projectile.y, projectile.radius * 1.28, 0, Math.PI * 2);
     pveCtx.fill();
+    pveCtx.restore();
   });
   pveGame.pokerShots.forEach(card => {
     if (card.delay > 0 || !card.launched) return;
@@ -9210,6 +9373,8 @@ function fireSurvivalWeapon(id) {
   });
   pveGame.areaAttacks.slice(areaAttackStart).forEach(attack => {
     attack.sourceWeaponId = id;
+    attack.visual = `${id}${entry.awakened ? "-awakened" : ""}`;
+    attack.awakened = Boolean(entry.awakened);
   });
   pveGame.activeWeaponId = "";
 }
@@ -9239,14 +9404,14 @@ function spawnSurvivalEnemy() {
     thrower: { hp: 25, speed: 1.7, radius: 21, damage: 5, xp: 4.5, color: "#a78bfa" },
     brute: { hp: 72, speed: 1.25, radius: 30, damage: 11, xp: 8, color: "#94a3b8" },
     bomber: { hp: 48, speed: 1.55, radius: 23, damage: 9, xp: 7, color: "#d946ef" },
-    voidKnight: { hp: 190, speed: 2.28, radius: 29, damage: 21, xp: 18, color: "#6366f1" },
-    arcSniper: { hp: 120, speed: 1.62, radius: 23, damage: 19, xp: 17, color: "#22d3ee" },
-    colossus: { hp: 380, speed: 0.95, radius: 43, damage: 30, xp: 28, color: "#b45309" },
-    nightmare: { hp: 170, speed: 3.32, radius: 25, damage: 25, xp: 23, color: "#e11d48" },
-    riftReaver: { hp: 260, speed: 2.55, radius: 31, damage: 32, xp: 31, color: "#8b5cf6" },
-    eclipseSniper: { hp: 150, speed: 1.55, radius: 24, damage: 26, xp: 29, color: "#38bdf8" },
-    bloodWraith: { hp: 220, speed: 3.72, radius: 26, damage: 30, xp: 32, color: "#fb7185" },
-    obsidianTitan: { hp: 620, speed: 0.82, radius: 50, damage: 46, xp: 52, color: "#111827" }
+    voidKnight: { hp: 190, speed: 1.18, radius: 29, damage: 10.5, xp: 18, color: "#6366f1" },
+    arcSniper: { hp: 120, speed: 0.84, radius: 23, damage: 9.5, xp: 17, color: "#22d3ee" },
+    colossus: { hp: 380, speed: 0.48, radius: 43, damage: 15, xp: 28, color: "#b45309" },
+    nightmare: { hp: 170, speed: 1.68, radius: 25, damage: 12.5, xp: 23, color: "#e11d48" },
+    riftReaver: { hp: 260, speed: 1.28, radius: 31, damage: 16, xp: 31, color: "#8b5cf6" },
+    eclipseSniper: { hp: 150, speed: 0.78, radius: 24, damage: 13, xp: 29, color: "#38bdf8" },
+    bloodWraith: { hp: 220, speed: 1.86, radius: 26, damage: 15, xp: 32, color: "#fb7185" },
+    obsidianTitan: { hp: 620, speed: 0.38, radius: 50, damage: 23, xp: 52, color: "#111827" }
   }[type];
   const angle = Math.atan2(pveGame.player.y - y, pveGame.player.x - x);
   pveGame.enemies.push({
@@ -10167,6 +10332,236 @@ function stepSurvivalReaper() {
     player.hp = 0;
     finishSurvivalPve(true);
   }
+}
+
+function drawPveStarPolygon(x, y, outer, inner, points, rotation = -Math.PI / 2) {
+  pveCtx.beginPath();
+  for (let index = 0; index < points * 2; index += 1) {
+    const radius = index % 2 === 0 ? outer : inner;
+    const angle = rotation + index * Math.PI / points;
+    const px = x + Math.cos(angle) * radius;
+    const py = y + Math.sin(angle) * radius;
+    if (index === 0) pveCtx.moveTo(px, py);
+    else pveCtx.lineTo(px, py);
+  }
+  pveCtx.closePath();
+}
+
+function drawSurvivalAreaAttack(attack) {
+  const warning = attack.delay > 0;
+  const alpha = warning ? 0.34 + Math.sin(pveGame.tick * 0.26) * 0.08 : Math.min(1, attack.life / 18);
+  const progress = warning ? 0 : 1 - Math.min(1, attack.life / 28);
+  const visual = attack.visual || attack.type;
+  pveCtx.save();
+  pveCtx.globalCompositeOperation = "lighter";
+  pveCtx.globalAlpha = alpha;
+  pveCtx.shadowColor = attack.color;
+  pveCtx.shadowBlur = warning ? 10 : attack.awakened ? 38 : 24;
+
+  if (attack.type === "lineLaser") {
+    if (warning) {
+      pveCtx.strokeStyle = attack.color;
+      pveCtx.lineWidth = Math.max(3, attack.radius * 0.25);
+      pveCtx.setLineDash([14, 10]);
+      pveCtx.beginPath();
+      pveCtx.moveTo(attack.x1, attack.y1);
+      pveCtx.lineTo(attack.x2, attack.y2);
+      pveCtx.stroke();
+    } else {
+      const width = attack.radius * (attack.awakened ? 2.7 : 2.15);
+      drawPrismaticBeam(pveCtx, attack.x1, attack.y1, attack.x2, attack.y2, width, attack.color, pveGame.tick, alpha);
+      if (attack.awakened) {
+        pveCtx.globalAlpha = alpha * 0.45;
+        pveCtx.strokeStyle = "#f7fbff";
+        pveCtx.lineWidth = Math.max(2, attack.radius * 0.22);
+        pveCtx.setLineDash([18, 16]);
+        pveCtx.lineDashOffset = -pveGame.tick * 1.8;
+        pveCtx.beginPath();
+        pveCtx.moveTo(attack.x1, attack.y1);
+        pveCtx.lineTo(attack.x2, attack.y2);
+        pveCtx.stroke();
+      }
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (!warning && (attack.type === "laser" || attack.type === "annihilator")) {
+    drawPrismaticBeam(
+      pveCtx,
+      attack.x,
+      0,
+      attack.x,
+      attack.type === "annihilator" ? attack.y : pveCanvas.height,
+      attack.type === "annihilator" ? 26 : 38,
+      attack.type === "annihilator" ? "#ff304f" : "#7de7ff",
+      pveGame.tick,
+      alpha
+    );
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("fist")) {
+    pveCtx.translate(attack.x, attack.y);
+    pveCtx.rotate(pveGame.tick * 0.025);
+    const points = attack.awakened ? 10 : 8;
+    pveCtx.fillStyle = `${attack.color}38`;
+    pveCtx.strokeStyle = "#fff7ed";
+    pveCtx.lineWidth = attack.awakened ? 6 : 4;
+    drawPveStarPolygon(0, 0, attack.radius * (0.9 + progress * 0.18), attack.radius * 0.34, points);
+    pveCtx.fill();
+    pveCtx.stroke();
+    pveCtx.globalAlpha *= 0.75;
+    for (let ray = 0; ray < points; ray += 1) {
+      const angle = ray * Math.PI * 2 / points;
+      pveCtx.beginPath();
+      pveCtx.moveTo(Math.cos(angle) * attack.radius * 0.22, Math.sin(angle) * attack.radius * 0.22);
+      pveCtx.lineTo(Math.cos(angle) * attack.radius * 1.18, Math.sin(angle) * attack.radius * 1.18);
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("replay") || visual.startsWith("clock")) {
+    pveCtx.translate(attack.x, attack.y);
+    pveCtx.rotate(-pveGame.tick * 0.018);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.lineWidth = attack.awakened ? 5 : 3;
+    for (let ring = 0; ring < (attack.awakened ? 5 : 3); ring += 1) {
+      pveCtx.globalAlpha = alpha * (0.8 - ring * 0.1);
+      pveCtx.setLineDash(ring % 2 ? [10, 9] : [24, 12]);
+      pveCtx.lineDashOffset = pveGame.tick * (ring + 1);
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, attack.radius * (0.35 + ring * 0.16 + progress * 0.08), 0, Math.PI * 2);
+      pveCtx.stroke();
+    }
+    pveCtx.setLineDash([]);
+    for (let hand = 0; hand < (attack.awakened ? 8 : 4); hand += 1) {
+      const angle = hand * Math.PI * 2 / (attack.awakened ? 8 : 4) + pveGame.tick * 0.025;
+      pveCtx.beginPath();
+      pveCtx.moveTo(0, 0);
+      pveCtx.lineTo(Math.cos(angle) * attack.radius * 0.92, Math.sin(angle) * attack.radius * 0.92);
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("void")) {
+    pveCtx.translate(attack.x, attack.y);
+    for (let arm = 0; arm < (attack.awakened ? 7 : 5); arm += 1) {
+      const angle = arm * Math.PI * 2 / (attack.awakened ? 7 : 5) + pveGame.tick * 0.035;
+      pveCtx.strokeStyle = arm % 2 ? "#0f172a" : attack.color;
+      pveCtx.lineWidth = attack.awakened ? 9 : 6;
+      pveCtx.globalAlpha = alpha * (0.75 - arm * 0.04);
+      pveCtx.beginPath();
+      for (let step = 0; step < 34; step += 1) {
+        const t = step / 33;
+        const radius = attack.radius * t;
+        const twist = angle + t * Math.PI * (attack.awakened ? 2.4 : 1.7);
+        const x = Math.cos(twist) * radius;
+        const y = Math.sin(twist) * radius;
+        if (step === 0) pveCtx.moveTo(x, y);
+        else pveCtx.lineTo(x, y);
+      }
+      pveCtx.stroke();
+    }
+    const core = pveCtx.createRadialGradient(0, 0, 4, 0, 0, attack.radius * 0.45);
+    core.addColorStop(0, "rgba(255,255,255,0.85)");
+    core.addColorStop(0.28, attack.color);
+    core.addColorStop(1, "rgba(0,0,0,0)");
+    pveCtx.fillStyle = core;
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, attack.radius * 0.5, 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("mageFire")) {
+    pveCtx.translate(attack.x, attack.y);
+    const meteor = pveCtx.createRadialGradient(0, 0, 0, 0, 0, attack.radius);
+    meteor.addColorStop(0, "#fff7ed");
+    meteor.addColorStop(0.22, "#fb923c");
+    meteor.addColorStop(0.52, "#7c2d12");
+    meteor.addColorStop(1, "rgba(0,0,0,0)");
+    pveCtx.fillStyle = meteor;
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, attack.radius * (0.55 + progress * 0.36), 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.strokeStyle = "#fed7aa";
+    pveCtx.lineWidth = attack.awakened ? 7 : 4;
+    for (let crack = 0; crack < (attack.awakened ? 14 : 8); crack += 1) {
+      const angle = crack * Math.PI * 2 / (attack.awakened ? 14 : 8);
+      pveCtx.beginPath();
+      pveCtx.moveTo(Math.cos(angle) * attack.radius * 0.18, Math.sin(angle) * attack.radius * 0.18);
+      pveCtx.lineTo(Math.cos(angle + 0.14) * attack.radius * 0.95, Math.sin(angle + 0.14) * attack.radius * 0.95);
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("mageSea")) {
+    pveCtx.translate(attack.x, attack.y);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.lineWidth = attack.awakened ? 8 : 5;
+    for (let wave = 0; wave < (attack.awakened ? 6 : 4); wave += 1) {
+      pveCtx.globalAlpha = alpha * (0.62 - wave * 0.07);
+      pveCtx.beginPath();
+      const radius = attack.radius * (0.22 + wave * 0.15 + progress * 0.08);
+      for (let step = 0; step <= 80; step += 1) {
+        const angle = step / 80 * Math.PI * 2;
+        const r = radius + Math.sin(angle * 6 + pveGame.tick * 0.11 + wave) * (attack.awakened ? 18 : 11);
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r * 0.68;
+        if (step === 0) pveCtx.moveTo(x, y);
+        else pveCtx.lineTo(x, y);
+      }
+      pveCtx.closePath();
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("swordDance") || attack.type === "slash" || visual.startsWith("wild")) {
+    pveCtx.translate(attack.x, attack.y);
+    pveCtx.rotate(pveGame.tick * 0.035);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.lineWidth = attack.awakened ? 9 : 6;
+    for (let slash = 0; slash < (attack.awakened ? 5 : 3); slash += 1) {
+      pveCtx.globalAlpha = alpha * (0.85 - slash * 0.13);
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, attack.radius * (0.45 + slash * 0.18), -0.9, 1.2);
+      pveCtx.stroke();
+      pveCtx.rotate(Math.PI * 2 / (attack.awakened ? 5 : 3));
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  pveCtx.strokeStyle = attack.color;
+  pveCtx.fillStyle = `${attack.color}${attack.awakened ? "38" : "24"}`;
+  pveCtx.lineWidth = warning ? 3 : attack.awakened ? 11 : 7;
+  pveCtx.setLineDash(warning ? [8, 7] : []);
+  pveCtx.beginPath();
+  pveCtx.arc(attack.x, attack.y, attack.radius * (1 + progress * 0.06), 0, Math.PI * 2);
+  pveCtx.fill();
+  pveCtx.stroke();
+  if (!warning) {
+    pveCtx.globalAlpha = alpha * 0.55;
+    pveCtx.strokeStyle = "#f7fbff";
+    pveCtx.lineWidth = 2;
+    pveCtx.setLineDash([16, 12]);
+    pveCtx.lineDashOffset = -pveGame.tick * 2;
+    pveCtx.beginPath();
+    pveCtx.arc(attack.x, attack.y, attack.radius * 0.72, 0, Math.PI * 2);
+    pveCtx.stroke();
+  }
+  pveCtx.restore();
 }
 
 function drawSurvivalPve() {

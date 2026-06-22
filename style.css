@@ -3740,6 +3740,12 @@ h2 {
   background: conic-gradient(from 20deg, #38bdf8, #facc15, #fb923c, #312e81, #38bdf8);
 }
 
+.fighter-icon.gambler {
+  color: #160b08;
+  background: conic-gradient(from 0deg, #facc15, #ef476f, #38bdf8, #f7f4eb, #facc15);
+  box-shadow: 0 0 26px rgba(242, 193, 78, 0.32);
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;
