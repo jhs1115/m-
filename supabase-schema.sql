@@ -1239,16 +1239,18 @@ begin
 
   elapsed_seconds := greatest(0, extract(epoch from now() - active_run.started_at)::integer);
   elapsed_seconds := least(elapsed_seconds, greatest(0, client_seconds) + 5);
-  safe_bonus := least(25, greatest(0, bonus_coins));
+  safe_bonus := least(12, greatest(0, bonus_coins));
   safe_damage := least(1000000000, greatest(0, coalesce(damage_dealt, 0)));
   survival_reward := least(
-    1000,
-    floor(least(elapsed_seconds, 300) / 30.0)::integer * 5
-      + floor(least(greatest(elapsed_seconds - 300, 0), 300) / 30.0)::integer * 12
-      + floor(greatest(elapsed_seconds - 600, 0) / 30.0)::integer * 18
-      + floor(elapsed_seconds / 300.0)::integer * 50
-      + case when elapsed_seconds >= 900 then 50 else 0 end
-      + safe_bonus
+    500,
+    floor(
+      floor(least(elapsed_seconds, 300) / 30.0)::numeric * 2.5
+        + floor(least(greatest(elapsed_seconds - 300, 0), 300) / 30.0)::numeric * 6
+        + floor(greatest(elapsed_seconds - 600, 0) / 30.0)::numeric * 9
+        + floor(elapsed_seconds / 300.0)::numeric * 25
+        + case when elapsed_seconds >= 900 then 25 else 0 end
+        + safe_bonus
+    )::integer
   );
 
   update public.pve_runs
@@ -1359,8 +1361,8 @@ begin
   ) into first_clear;
 
   stage_reward := case
-    when active_run.stage = '1-10' and first_clear then 100
-    else 10
+    when active_run.stage = '1-10' and first_clear then 50
+    else 5
   end;
 
   update public.pve_runs

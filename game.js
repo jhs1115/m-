@@ -50,6 +50,8 @@ const ui = {
   mailboxButton: document.getElementById("mailboxButton"),
   mailboxModal: document.getElementById("mailboxModal"),
   mailboxCloseButton: document.getElementById("mailboxCloseButton"),
+  mailboxRewardItem: document.getElementById("mailboxRewardItem"),
+  mailboxEmpty: document.getElementById("mailboxEmpty"),
   claimMailboxRewardButton: document.getElementById("claimMailboxRewardButton"),
   mailboxMessage: document.getElementById("mailboxMessage"),
   openSignupButton: document.getElementById("openSignupButton"),
@@ -585,6 +587,7 @@ let currentUser = null;
 let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
 let currentRoom = null;
 let players = [];
+let mailboxJustClaimed = false;
 let matchPlayers = {
   p1: "",
   p2: ""
@@ -641,61 +644,61 @@ const PVE_STAGES = {
     title: "첫 충돌",
     description: "기본 움직임과 충돌 전투를 익히는 첫 작전입니다.",
     enemies: "근접형 1기",
-    reward: 10
+    reward: 5
   },
   "1-2": {
     title: "협공 지대",
     description: "서로 다른 궤도로 움직이는 근접형 적 둘을 상대합니다.",
     enemies: "근접형 2기",
-    reward: 10
+    reward: 5
   },
   "1-3": {
     title: "탄환 교차로",
     description: "투척형의 탄환을 피하면서 근접형 적을 함께 처리합니다.",
     enemies: "근접형 1기 · 투척형 1기",
-    reward: 10
+    reward: 5
   },
   "1-4": {
     title: "중장갑 초소",
     description: "느리지만 체력과 충돌 피해가 높은 중장갑 적이 길을 막습니다.",
     enemies: "중장갑 1기 · 투척형 1기",
-    reward: 10
+    reward: 5
   },
   "1-5": {
     title: "철갑 거체",
     description: "복잡한 패턴 없이 압도적인 체력과 무게로 밀어붙이는 미니보스입니다.",
     enemies: "미니보스 철갑 거체",
-    reward: 10
+    reward: 5
   },
   "1-6": {
     title: "추격 협곡",
     description: "주기적으로 플레이어를 향해 가속 돌진하는 추격형이 등장합니다.",
     enemies: "추격형 2기 · 근접형 1기",
-    reward: 10
+    reward: 5
   },
   "1-7": {
     title: "폭격 지대",
     description: "플레이어가 있던 위치를 조준해 위험 지대를 생성하는 포격형 부대입니다.",
     enemies: "포격형 2기 · 중장갑 1기",
-    reward: 10
+    reward: 5
   },
   "1-8": {
     title: "혼성 부대",
     description: "투척, 추격, 중장갑 병력이 서로 다른 방식으로 압박합니다.",
     enemies: "투척형 · 추격형 · 중장갑",
-    reward: 10
+    reward: 5
   },
   "1-9": {
     title: "성문 돌파",
     description: "챕터 보스 직전의 정예 혼성 부대를 돌파해야 합니다.",
     enemies: "중장갑 2기 · 추격형 · 포격형",
-    reward: 10
+    reward: 5
   },
   "1-10": {
     title: "균열의 지배자",
     description: "탄막, 추적 포격, 광폭 돌진을 순환하는 챕터 1 보스입니다.",
     enemies: "보스 균열의 지배자",
-    reward: 100
+    reward: 50
   }
 };
 
@@ -913,13 +916,18 @@ function setMailboxOpen(open) {
   ui.mailboxModal?.classList.toggle("is-active", open);
   ui.mailboxModal?.setAttribute("aria-hidden", open ? "false" : "true");
   if (open) updateMailboxUi();
+  else mailboxJustClaimed = false;
 }
 
 function updateMailboxUi() {
   if (!ui.claimMailboxRewardButton || !currentUser) return;
-  ui.claimMailboxRewardButton.disabled = Boolean(currentUser.noticeRewardClaimed);
-  ui.claimMailboxRewardButton.textContent = currentUser.noticeRewardClaimed ? "수령 완료" : "받기";
-  if (ui.mailboxMessage) ui.mailboxMessage.textContent = "";
+  const claimed = Boolean(currentUser.noticeRewardClaimed);
+  const showReward = !claimed || mailboxJustClaimed;
+  ui.mailboxRewardItem?.classList.toggle("is-hidden", !showReward);
+  ui.mailboxEmpty?.classList.toggle("is-hidden", showReward);
+  ui.claimMailboxRewardButton.disabled = claimed;
+  ui.claimMailboxRewardButton.textContent = claimed ? "수령 완료" : "받기";
+  if (ui.mailboxMessage && !mailboxJustClaimed) ui.mailboxMessage.textContent = "";
 }
 
 async function claimMailboxReward() {
@@ -931,6 +939,7 @@ async function claimMailboxReward() {
     currentUser = normalizePlayer(data.user);
     players = players.map(player => player.id === currentUser.id ? currentUser : player);
     renderLobby();
+    mailboxJustClaimed = true;
     updateMailboxUi();
     ui.mailboxMessage.textContent = "100C를 받았습니다.";
   } catch (error) {
@@ -1568,7 +1577,7 @@ function renderPveWorldMap() {
   ui.pveStageDetailDescription.textContent = stage.description;
   ui.pveStageDetailEnemies.textContent = stage.enemies;
   ui.pveStageDetailReward.textContent = selectedPveMapStage === "1-10"
-    ? pveProgress.completedStages.includes("1-10") ? "재도전 10C" : "최초 클리어 100C"
+    ? pveProgress.completedStages.includes("1-10") ? "재도전 5C" : "최초 클리어 50C"
     : `${stage.reward}C`;
   ui.pveStageDetailStatus.textContent = locked ? "이전 스테이지 클리어 필요" : completed ? "클리어 완료" : "도전 가능";
   ui.pveStageDetailStatus.classList.toggle("is-completed", completed);
@@ -7700,7 +7709,7 @@ const SURVIVAL_SUBS = [
   { id: "power", name: "과충전", icon: "↑", description: "모든 피해가 영구적으로 7% 증가합니다." },
   { id: "cooldown", name: "시간 압축", icon: "⌛", description: "모든 무기의 공격주기가 6% 감소합니다." },
   { id: "magnet", name: "자기장 확장", icon: "⊙", description: "XP 흡수 범위가 35 증가합니다." },
-  { id: "coin", name: "균열 주화", icon: "C", description: "이번 런의 코인 보상에 5C를 추가합니다." }
+  { id: "coin", name: "균열 주화", icon: "C", description: "이번 런의 코인 보상에 3C를 추가합니다." }
 ];
 
 const SURVIVAL_DIFFICULTIES = {
@@ -7741,6 +7750,11 @@ const SURVIVAL_DIFFICULTIES = {
     rewardMultiplier: 2
   }
 };
+
+function earlySurvivalNerfScale(seconds) {
+  if (seconds >= 300) return 1;
+  return 0.42 + seconds / 300 * 0.58;
+}
 
 function selectSurvivalDifficulty(difficulty) {
   if (!SURVIVAL_DIFFICULTIES[difficulty]) return;
@@ -9677,6 +9691,7 @@ function fireSurvivalWeapon(id) {
 function spawnSurvivalEnemy() {
   const seconds = pveGame.tick / 60;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
+  const earlyScale = earlySurvivalNerfScale(seconds);
   const lateSurge = seconds >= 420 ? 1.25 + Math.min(0.75, (seconds - 420) / 360) : 1;
   const endgameSurge = seconds >= 600 ? 1.85 + Math.min(1.35, (seconds - 600) / 300) : 1;
   const edge = pveRandomIndex(4);
@@ -9718,10 +9733,11 @@ function spawnSurvivalEnemy() {
       * Math.min(1.92, (1 + Math.max(0, seconds - 150) / 900) * Math.sqrt(lateSurge))
       * (seconds >= 600 ? 1.08 : 1),
     radius: base.radius,
-    hp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp,
-    maxHp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp,
+    hp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp * earlyScale,
+    maxHp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp * earlyScale,
     contactDamage: base.damage * mode.enemyDamage
-      * Math.min(4.2, (1 + Math.max(0, seconds - 60) / 420) * lateSurge * Math.sqrt(endgameSurge)),
+      * Math.min(4.2, (1 + Math.max(0, seconds - 60) / 420) * lateSurge * Math.sqrt(endgameSurge))
+      * earlyScale,
     xpValue: base.xp * mode.enemyXp,
     color: base.color,
     contactCooldown: 0,
@@ -9742,7 +9758,8 @@ function spawnSurvivalBoss() {
   pveGame.bossCount += 1;
   const count = pveGame.bossCount;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
-  const hp = 2400 * (1 + (count - 1) * 0.6) * mode.bossPower;
+  const bossScale = count === 1 ? 0.48 : 1;
+  const hp = 2400 * (1 + (count - 1) * 0.6) * mode.bossPower * bossScale;
   if (count >= 3) pveGame.reaperAfterBoss = true;
   pveGame.enemies.push({
     id: `boss-${count}-${pveGame.tick}`,
@@ -9757,7 +9774,7 @@ function spawnSurvivalBoss() {
     radius: 52 + Math.min(10, count * 2),
     hp,
     maxHp: hp,
-    contactDamage: (20 + count * 4) * mode.enemyDamage,
+    contactDamage: (20 + count * 4) * mode.enemyDamage * bossScale,
     xpValue: (280 + count * 120) * mode.enemyXp,
     color: "#f43f5e",
     contactCooldown: 0,
@@ -9773,7 +9790,8 @@ function spawnSurvivalMiniBoss() {
   pveGame.miniBossCount += 1;
   const count = pveGame.miniBossCount;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
-  const hp = 220 * (1 + (count - 1) * 0.28) * mode.bossPower;
+  const miniScale = count <= 2 ? 0.45 : 1;
+  const hp = 220 * (1 + (count - 1) * 0.28) * mode.bossPower * miniScale;
   pveGame.enemies.push({
     id: `mini-boss-${count}-${pveGame.tick}`,
     type: "survivalMiniBoss",
@@ -9786,7 +9804,7 @@ function spawnSurvivalMiniBoss() {
     radius: 36,
     hp,
     maxHp: hp,
-    contactDamage: (9 + count) * mode.enemyDamage,
+    contactDamage: (9 + count) * mode.enemyDamage * miniScale,
     xpValue: (35 + count * 5) * mode.enemyXp,
     color: "#f59e0b",
     contactCooldown: 0,
@@ -10067,7 +10085,7 @@ function chooseSurvivalAugment(choice) {
     if (choice.id === "power") pveGame.player.damageMultiplier *= 1.07;
     if (choice.id === "cooldown") pveGame.player.cooldownMultiplier *= 0.94;
     if (choice.id === "magnet") pveGame.player.magnetRadius += 35;
-    if (choice.id === "coin") pveGame.bonusCoins += 5;
+    if (choice.id === "coin") pveGame.bonusCoins += 3;
   }
   checkSurvivalAwakenings();
   if (pveGame.startingChoice) {
@@ -11363,9 +11381,9 @@ async function finishSurvivalPve(cleared = false) {
   const midIntervals = Math.floor(Math.min(Math.max(elapsedSeconds - 300, 0), 300) / 30);
   const lateIntervals = Math.floor(Math.max(elapsedSeconds - 600, 0) / 30);
   const rewardMultiplier = pveGame.difficulty?.rewardMultiplier || 1;
-  const baseReward = Math.min(1000, earlyIntervals * 5 + midIntervals * 12
-    + lateIntervals * 18 + Math.floor(elapsedSeconds / 300) * 50
-    + (cleared ? 50 : 0) + pveGame.bonusCoins);
+  const baseReward = Math.min(500, earlyIntervals * 2.5 + midIntervals * 6
+    + lateIntervals * 9 + Math.floor(elapsedSeconds / 300) * 25
+    + (cleared ? 25 : 0) + pveGame.bonusCoins);
   const expectedReward = Math.floor(baseReward * rewardMultiplier);
   pveGame.over = true;
   pveGame.pausedForAugment = false;

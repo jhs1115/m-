@@ -58,8 +58,8 @@
         <div class="patch-note-heading mailbox-heading">
           <h2>우편함</h2>
         </div>
-        <div class="mailbox-list">
-          <article class="mailbox-item">
+        <div id="mailboxList" class="mailbox-list">
+          <article id="mailboxRewardItem" class="mailbox-item">
             <div>
               <strong>업데이트 보상</strong>
               <small>업데이트 기념 지원 코인입니다.</small>
@@ -67,6 +67,7 @@
             </div>
             <button id="claimMailboxRewardButton" class="primary-button" type="button">받기</button>
           </article>
+          <p id="mailboxEmpty" class="mailbox-empty is-hidden">우편이 없습니다.</p>
         </div>
         <p id="mailboxMessage" class="status-message"></p>
       </div>

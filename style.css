@@ -350,12 +350,12 @@ body:not(.is-authenticated) .notice-actions {
   width: min(820px, 100%);
   min-height: min(640px, calc(100vh - 48px));
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.9), transparent 34%),
-    linear-gradient(180deg, rgba(249, 250, 251, 0.98), rgba(226, 232, 240, 0.98));
-  border-color: rgba(255, 255, 255, 0.72);
+    radial-gradient(circle at 50% 0%, rgba(242, 193, 78, 0.15), transparent 34%),
+    linear-gradient(180deg, rgba(24, 29, 39, 0.98), rgba(17, 23, 33, 0.98));
+  border-color: rgba(242, 193, 78, 0.34);
   box-shadow:
     0 30px 90px rgba(0, 0, 0, 0.64),
-    0 0 40px rgba(255, 255, 255, 0.12);
+    0 0 40px rgba(242, 193, 78, 0.08);
 }
 
 .mailbox-heading {
@@ -363,14 +363,14 @@ body:not(.is-authenticated) .notice-actions {
 }
 
 .mailbox-heading h2 {
-  color: #111827;
-  text-shadow: none;
+  color: #f8d891;
+  text-shadow: 0 0 22px rgba(242, 193, 78, 0.18);
 }
 
 .mailbox-modal .patch-note-close {
-  color: #111827;
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(15, 23, 42, 0.18);
+  color: #f7f4eb;
+  background: rgba(5, 8, 14, 0.62);
+  border-color: rgba(226, 232, 240, 0.22);
 }
 
 .mailbox-list {
@@ -380,7 +380,7 @@ body:not(.is-authenticated) .notice-actions {
   max-height: 450px;
   padding-right: 6px;
   overflow-y: auto;
-  scrollbar-color: rgba(31, 41, 55, 0.45) rgba(255, 255, 255, 0.42);
+  scrollbar-color: rgba(242, 193, 78, 0.48) rgba(5, 8, 14, 0.45);
 }
 
 .mailbox-item {
@@ -390,10 +390,10 @@ body:not(.is-authenticated) .notice-actions {
   gap: 16px;
   padding: 18px;
   min-height: 82px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(7, 12, 20, 0.56);
+  border: 1px solid rgba(226, 232, 240, 0.12);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
 }
 
 .mailbox-item div {
@@ -402,23 +402,40 @@ body:not(.is-authenticated) .notice-actions {
 }
 
 .mailbox-item strong {
-  color: #111827;
+  color: #f7f4eb;
   font-size: 1.05rem;
 }
 
 .mailbox-item span {
-  color: #b7791f;
+  color: var(--gold);
   font-weight: 1000;
 }
 
 .mailbox-item small {
-  color: #475569;
+  color: #b8c2d2;
   line-height: 1.45;
 }
 
 .mailbox-item .primary-button {
   width: auto;
   margin: 0;
+}
+
+.mailbox-empty {
+  display: grid;
+  min-height: 390px;
+  margin: 0;
+  place-items: center;
+  color: #9aa7ba;
+  background: rgba(7, 12, 20, 0.42);
+  border: 1px dashed rgba(226, 232, 240, 0.16);
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.mailbox-empty.is-hidden {
+  display: none;
 }
 
 .match-overlay {
