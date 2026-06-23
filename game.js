@@ -7,6 +7,7 @@ const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
 const VOID_RIFT_RADIUS = 200;
+const ART_TRAIL_MAX_POINTS = 800;
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
   window.supabase
@@ -46,6 +47,11 @@ const ui = {
   patchNoteButton: document.getElementById("patchNoteButton"),
   patchNoteModal: document.getElementById("patchNoteModal"),
   patchNoteCloseButton: document.getElementById("patchNoteCloseButton"),
+  mailboxButton: document.getElementById("mailboxButton"),
+  mailboxModal: document.getElementById("mailboxModal"),
+  mailboxCloseButton: document.getElementById("mailboxCloseButton"),
+  claimMailboxRewardButton: document.getElementById("claimMailboxRewardButton"),
+  mailboxMessage: document.getElementById("mailboxMessage"),
   openSignupButton: document.getElementById("openSignupButton"),
   signupButton: document.getElementById("signupButton"),
   signupUsername: document.getElementById("signupUsername"),
@@ -161,6 +167,7 @@ const ui = {
   backFromPvpQueueButton: document.getElementById("backFromPvpQueueButton"),
   rankedMatchButton: document.getElementById("rankedMatchButton"),
   casualMatchButton: document.getElementById("casualMatchButton"),
+  pvpQueueMessage: document.getElementById("pvpQueueMessage"),
   matchSoundVolume: document.getElementById("matchSoundVolume"),
   matchSoundVolumeText: document.getElementById("matchSoundVolumeText"),
   testMatchSoundButton: document.getElementById("testMatchSoundButton"),
@@ -476,14 +483,14 @@ const characterGuide = {
     ultimate: ["커져가는신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
   },
   archmage: {
-    attack: ["벼락", "5초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해와 감전 원소를 부착합니다. 원소가 붙은 적에게 다른 원소가 붙으면 원소 반응이 터지고 기존 원소는 모두 사라집니다. 습기+화상은 증발로 2초간 초당 20 피해, 습기+감전은 감전으로 2초간 초당 10 피해, 감전+화상은 과부하로 즉시 20 피해를 줍니다."],
-    normal: ["작열", "10초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 10의 피해와 2초 동안 초당 2의 화상 피해를 주며 화상 원소를 부착합니다."],
-    ultimate: ["창해", "12초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 5의 피해를 주고 습기 원소를 부착합니다."]
+    attack: ["벼락", "5초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해와 감전 원소를 부착합니다. 원소 반응은 부착 순서에 따라 달라집니다. 감전+화상은 독성 가스, 감전+습기는 전이 기절, 습기+감전은 감전 지대, 습기+화상은 자신 회복, 화상+감전은 벽 충돌 과부하, 화상+습기는 60 피해 증발을 일으킵니다."],
+    normal: ["작열", "9초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 10의 피해와 2초 동안 초당 2의 화상 피해를 주며 화상 원소를 부착합니다."],
+    ultimate: ["창해", "10.5초", "맵 전체를 4초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 5의 피해를 주고 습기 원소를 부착합니다."]
   },
   gambler: {
-    attack: ["룰렛", "5초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
-    normal: ["스킬 룰렛", "10초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다. 추격 같은 지속형 스킬은 지속시간 동안 해당 캐릭터처럼 판정됩니다."],
-    ultimate: ["궁극 룰렛", "30초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
+    attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
+    normal: ["스킬 룰렛", "8초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다. 추격 같은 지속형 스킬은 지속시간 동안 해당 캐릭터처럼 판정됩니다."],
+    ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
   }
 };
 
@@ -699,6 +706,7 @@ function normalizePlayer(user) {
     coins: user.coins,
     lp: user.lp ?? 1000,
     pveDamageTotal: Number(user.pveDamageTotal ?? user.pve_damage_total ?? 0),
+    noticeRewardClaimed: Boolean(user.noticeRewardClaimed ?? user.notice_reward_claimed),
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
 }
@@ -877,9 +885,11 @@ function playMatchFoundSound() {
 }
 
 function showScreen(name) {
+  document.body.classList.add("is-screen-switching");
   Object.values(screens).forEach(screen => screen.classList.remove("is-active"));
   screens[name].classList.add("is-active");
   document.body.classList.toggle("is-authenticated", Boolean(currentUser));
+  window.setTimeout(() => document.body.classList.remove("is-screen-switching"), 180);
 }
 
 function switchLobbyTab(tabName) {
@@ -897,6 +907,36 @@ function switchLobbyTab(tabName) {
 function setPatchNotesOpen(open) {
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
+}
+
+function setMailboxOpen(open) {
+  ui.mailboxModal?.classList.toggle("is-active", open);
+  ui.mailboxModal?.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open) updateMailboxUi();
+}
+
+function updateMailboxUi() {
+  if (!ui.claimMailboxRewardButton || !currentUser) return;
+  ui.claimMailboxRewardButton.disabled = Boolean(currentUser.noticeRewardClaimed);
+  ui.claimMailboxRewardButton.textContent = currentUser.noticeRewardClaimed ? "수령 완료" : "받기";
+  if (ui.mailboxMessage) ui.mailboxMessage.textContent = "";
+}
+
+async function claimMailboxReward() {
+  if (!currentUser || !appSessionToken || !ui.claimMailboxRewardButton) return;
+  ui.claimMailboxRewardButton.disabled = true;
+  ui.mailboxMessage.textContent = "수령 중...";
+  try {
+    const data = await rpc("claim_notice_mail_reward", { session_token: appSessionToken });
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    renderLobby();
+    updateMailboxUi();
+    ui.mailboxMessage.textContent = "100C를 받았습니다.";
+  } catch (error) {
+    ui.mailboxMessage.textContent = `수령 실패: ${error.message}`;
+    updateMailboxUi();
+  }
 }
 
 function setRoomPolling(enabled) {
@@ -1061,6 +1101,7 @@ function renderLobby() {
     ui.currentUserTier.className = `tier-label ${tierClass}`;
     ui.currentUserCoins.textContent = currentUser.lp;
     ui.globalCoinAmount.textContent = currentUser.coins;
+    updateMailboxUi();
   }
 
   ui.playerList.innerHTML = "";
@@ -1386,17 +1427,38 @@ function openPvpSetup() {
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
   ui.modeMessage.textContent = "";
+  ui.modeMessage.classList.remove("is-error");
+  if (ui.pvpQueueMessage) {
+    ui.pvpQueueMessage.textContent = "";
+    ui.pvpQueueMessage.classList.remove("is-error");
+  }
   showScreen("pvpQueue");
 }
 
 async function startMatchmaking(type = "ranked") {
   if (!currentUser) return;
   if (matchmakingActive) return;
+  const requestedType = type === "casual" ? "casual" : "ranked";
+  if (requestedType === "ranked" && (currentUser.ownedCharacters?.length || 0) < 5) {
+    const message = "랭크게임을 입장하기 위해선 캐릭터 5개를 보유해야합니다.";
+    ui.modeMessage.textContent = message;
+    ui.modeMessage.classList.add("is-error");
+    if (ui.pvpQueueMessage) {
+      ui.pvpQueueMessage.textContent = message;
+      ui.pvpQueueMessage.classList.add("is-error");
+    }
+    return;
+  }
   selectedMode = "pvp";
   resetLocalMatchState();
-  matchmakingType = type === "casual" ? "casual" : "ranked";
+  matchmakingType = requestedType;
   const generation = matchmakingGeneration;
   renderLobby();
+  ui.modeMessage.classList.remove("is-error");
+  if (ui.pvpQueueMessage) {
+    ui.pvpQueueMessage.textContent = "";
+    ui.pvpQueueMessage.classList.remove("is-error");
+  }
   matchmakingActive = true;
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
@@ -2106,8 +2168,8 @@ function normalSkillCooldown(kind) {
     demon: 540,
     artist: 180,
     believer: 1200,
-    archmage: 600,
-    gambler: 600
+    archmage: 540,
+    gambler: 480
   }[kind] ?? Infinity;
 }
 
@@ -2131,8 +2193,8 @@ function ultimateCooldown(kind) {
     demon: 1800,
     artist: 1200,
     believer: 900,
-    archmage: 720,
-    gambler: 1800
+    archmage: 630,
+    gambler: 1200
   }[kind] ?? Infinity;
 }
 
@@ -2242,9 +2304,17 @@ function makeCharacterCombatState(kind) {
     mageSeaTick: 60,
     mageSeaElementApplied: false,
     mageElements: { wet: 0, fire: 0, electro: 0 },
+    mageLastElement: "",
     mageDots: {},
     mageReaction: null,
-    rouletteAttackTimer: kind === "gambler" ? 300 : Infinity,
+    mageToxicGas: null,
+    mageTransfer: null,
+    mageConductiveField: false,
+    mageConductiveTick: 120,
+    mageVaporHealTime: 0,
+    mageVaporHealTick: 60,
+    overloadWallDamage: 0,
+    rouletteAttackTimer: kind === "gambler" ? 240 : Infinity,
     rouletteFormKind: "",
     rouletteFormTime: 0,
     gamblerBodyDamageTime: 0,
@@ -2427,6 +2497,20 @@ function contactDamagePair(a, b) {
     b.vy = Math.sin(angle) * 10;
     b.slowTime = Math.max(b.slowTime, 45);
     b.chaseBounceTime = 30;
+  }
+  if (a.mageTransfer) {
+    const transfer = a.mageTransfer;
+    if (b !== transfer.owner) damage(b, transfer.damage, transfer.owner);
+    if (!b.owner) b.stunTime = Math.max(b.stunTime || 0, 120);
+    b.mageTransfer = { ...transfer, time: 180 };
+    a.mageTransfer = null;
+  }
+  if (b.mageTransfer) {
+    const transfer = b.mageTransfer;
+    if (a !== transfer.owner) damage(a, transfer.damage, transfer.owner);
+    if (!a.owner) a.stunTime = Math.max(a.stunTime || 0, 120);
+    a.mageTransfer = { ...transfer, time: 180 };
+    b.mageTransfer = null;
   }
   const aDamage = a.gamblerBodyDamageTime > 0 ? a.gamblerBodyDamage : a.kind === "enhancer" ? a.attackPower : a.contactDamage;
   const bDamage = b.gamblerBodyDamageTime > 0 ? b.gamblerBodyDamage : b.kind === "enhancer" ? b.attackPower : b.contactDamage;
@@ -2763,24 +2847,11 @@ function updateRifts(dt) {
       rift.voidDamageTick -= dt;
       const radius = VOID_RIFT_RADIUS;
       const targets = [opponentOf(rift.owner), ...enemySummonsOf(rift.owner)].filter(target => target && target.hp > 0);
-      targets.forEach(target => {
-        const dx = rift.x - target.x;
-        const dy = rift.y - target.y;
-        const distance = Math.hypot(dx, dy) || 1;
-        if (distance > radius + target.radius) return;
-        const pull = target.owner ? 1.8 : 1.15;
-        target.x += dx / distance * pull * dt;
-        target.y += dy / distance * pull * dt;
-        if (!target.owner) {
-          target.vx = target.vx * 0.94 + dx / distance * 0.28;
-          target.vy = target.vy * 0.94 + dy / distance * 0.28;
-        }
-      });
       if (rift.voidDamageTick <= 0) {
         rift.voidDamageTick = 60;
         targets.forEach(target => {
           if (Math.hypot(target.x - rift.x, target.y - rift.y) > radius + target.radius) return;
-          damageCombatTarget(target, 5, rift.owner);
+          damageCombatTarget(target, 7, rift.owner);
         });
       }
     }
@@ -3094,8 +3165,8 @@ function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
   ui.resultText.textContent = `${fighter.ownerName} · ${fighter.name} 승리`;
   if (lpPreview?.casual) {
     ui.resultLpGain.textContent = "+0 LP";
-    ui.resultReward.textContent = "LP 변화 없음";
-    ui.resultRewardLabel.textContent = "일반게임";
+    ui.resultReward.textContent = "+10C";
+    ui.resultRewardLabel.textContent = "일반게임 승리 보상";
   } else {
     ui.resultLpGain.textContent = Number.isFinite(lpPreview?.gain) ? `+${lpPreview.gain} LP` : "정산 중";
     ui.resultReward.textContent = Number.isFinite(lpPreview?.gain) ? `+${lpPreview.gain} LP` : "정산 중";
@@ -3142,16 +3213,21 @@ async function settleMatch(winnerPlayer, loserPlayer) {
     });
     if (currentUser?.id === updatedWinner.id) currentUser = updatedWinner;
     if (currentUser?.id === updatedLoser.id) currentUser = updatedLoser;
+    if (currentUser) {
+      ui.globalCoinAmount.textContent = currentUser.coins;
+      updateMailboxUi();
+    }
     const localWon = currentUser?.id === updatedWinner.id;
     const casualMatch = Boolean(data.casual);
     const lpGain = Number(data.lpGain ?? 14);
     const lpLoss = Number(data.lpLoss ?? 7);
     if (casualMatch && localWon) {
+      const coinReward = Number(data.coinReward ?? 10);
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.remove("is-defeat");
       ui.resultText.textContent = `${updatedWinner.name} 승리 · 일반게임 종료`;
-      ui.resultReward.textContent = "LP 변화 없음";
-      ui.resultRewardLabel.textContent = "일반게임";
+      ui.resultReward.textContent = `+${coinReward}C`;
+      ui.resultRewardLabel.textContent = "일반게임 승리 보상";
     } else if (casualMatch) {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.add("is-defeat");
@@ -3278,51 +3354,75 @@ const mageElementColors = {
 
 function clearMageElements(target) {
   target.mageElements = { wet: 0, fire: 0, electro: 0 };
+  target.mageLastElement = "";
 }
 
 function mageReactionFor(existingElement, nextElement) {
-  const pair = new Set([existingElement, nextElement]);
-  if (pair.has("wet") && pair.has("fire")) return { name: "증발", color: "#fb923c", dotDamage: 20 };
-  if (pair.has("wet") && pair.has("electro")) return { name: "감전", color: "#38bdf8", dotDamage: 10 };
-  if (pair.has("electro") && pair.has("fire")) return { name: "과부하", color: "#f97316", instantDamage: 20 };
+  const key = `${existingElement}+${nextElement}`;
+  if (key === "electro+fire") return { name: "독성 폭발", color: "#a3e635" };
+  if (key === "electro+wet") return { name: "전이 감전", color: "#38bdf8" };
+  if (key === "wet+electro") return { name: "감전 지대", color: "#22d3ee" };
+  if (key === "wet+fire") return { name: "수증기", color: "#7dd3fc" };
+  if (key === "fire+electro") return { name: "과부하", color: "#fb923c" };
+  if (key === "fire+wet") return { name: "증발", color: "#f97316" };
   return null;
+}
+
+function triggerMageReaction(owner, target, existingElement, nextElement, reaction) {
+  addFloatingText(target.x, target.y - target.radius - 40, reaction.name, reaction.color);
+  addVisualEffect({
+    type: "mage-reaction",
+    x: target.x,
+    y: target.y,
+    color: reaction.color,
+    life: 42,
+    maxLife: 42
+  });
+  const key = `${existingElement}+${nextElement}`;
+  if (key === "electro+fire") {
+    damage(target, 10, owner);
+    target.mageToxicGas = { owner, time: 600, tick: 60, damage: 1, color: "#a3e635" };
+  } else if (key === "electro+wet") {
+    damage(target, 5, owner);
+    target.stunTime = Math.max(target.stunTime || 0, 120);
+    target.mageTransfer = { owner, time: 180, damage: 5 };
+  } else if (key === "wet+electro") {
+    owner.mageConductiveField = true;
+    owner.mageConductiveTick = 120;
+    addVisualEffect({ type: "mage-sea", fighter: owner, color: "#22d3ee", life: 180, maxLife: 180 });
+  } else if (key === "wet+fire") {
+    owner.mageVaporHealTime = 600;
+    owner.mageVaporHealTick = 60;
+  } else if (key === "fire+electro") {
+    target.shieldTime = 0;
+    target.shieldBlastPending = false;
+    const speed = Math.hypot(target.vx, target.vy);
+    const fallback = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
+    const dx = speed > 0.2 ? -target.vx / speed : (target.x - owner.x) / fallback;
+    const dy = speed > 0.2 ? -target.vy / speed : (target.y - owner.y) / fallback;
+    target.vx = dx * 18;
+    target.vy = dy * 18;
+    target.overloadWallDamage = 15;
+  } else if (key === "fire+wet") {
+    damage(target, 60, owner);
+  }
 }
 
 function applyMageElement(owner, target, element) {
   if (!target || target.hp <= 0 || target.owner) return;
   const elements = target.mageElements || { wet: 0, fire: 0, electro: 0 };
-  const existing = Object.entries(elements).find(([key, ticks]) => key !== element && ticks > 0);
-  if (existing) {
-    const reaction = mageReactionFor(existing[0], element);
+  const existingElement = target.mageLastElement || Object.entries(elements).find(([key, ticks]) => key !== element && ticks > 0)?.[0] || "";
+  if (existingElement && existingElement !== element) {
+    const reaction = mageReactionFor(existingElement, element);
     clearMageElements(target);
-    if (reaction) {
-      addFloatingText(target.x, target.y - target.radius - 40, reaction.name, reaction.color);
-      addVisualEffect({
-        type: "mage-reaction",
-        x: target.x,
-        y: target.y,
-        color: reaction.color,
-        life: 42,
-        maxLife: 42
-      });
-      if (reaction.instantDamage) damage(target, reaction.instantDamage, owner);
-      if (reaction.dotDamage) {
-        target.mageReaction = {
-          owner,
-          name: reaction.name,
-          color: reaction.color,
-          damage: reaction.dotDamage,
-          time: 120,
-          tick: 60
-        };
-      }
-    }
+    if (reaction) triggerMageReaction(owner, target, existingElement, element, reaction);
     return;
   }
   target.mageElements = {
     ...elements,
     [element]: 300
   };
+  target.mageLastElement = element;
   addFloatingText(target.x, target.y - target.radius - 36, mageElementLabels[element], mageElementColors[element]);
 }
 
@@ -3364,6 +3464,20 @@ function updateMageAilments(target, dt) {
       reaction.tick += 60;
     }
     if (reaction.time <= 0) target.mageReaction = null;
+  }
+  if (target.mageToxicGas) {
+    const gas = target.mageToxicGas;
+    gas.time -= dt;
+    gas.tick -= dt;
+    while (gas.time > 0 && gas.tick <= 0 && !game.over) {
+      damage(target, gas.damage, gas.owner);
+      gas.tick += 60;
+    }
+    if (gas.time <= 0) target.mageToxicGas = null;
+  }
+  if (target.mageTransfer) {
+    target.mageTransfer.time -= dt;
+    if (target.mageTransfer.time <= 0) target.mageTransfer = null;
   }
 }
 
@@ -3440,7 +3554,7 @@ function useRouletteAttack(owner) {
     fireDemonLine(owner, { damage: 5, addMark: 1, markDuration: 300, slowTime: 120, width: 26 });
   } else if (kind === "believer") heal(owner, 10);
   else if (kind === "archmage") castMageLightning(owner);
-  owner.rouletteAttackTimer = 300;
+  owner.rouletteAttackTimer = 240;
 }
 
 function useRouletteNormal(owner) {
@@ -3461,6 +3575,25 @@ function useRouletteNormal(owner) {
     owner.gamblerEnhanceTimer = 120;
     owner.gamblerBodyDamageTime = Math.max(owner.gamblerBodyDamageTime, 420);
     addFloatingText(owner.x, owner.y - owner.radius - 42, "몸빵 강화 준비", "#fdba74");
+  } else if (kind === "thrower") {
+    throwBall(owner, { force: true, rouletteShot: true });
+    const target = nearestEnemyTarget(owner);
+    game.balls.forEach(ball => {
+      if (ball.owner === owner) {
+        ball.homing = true;
+        ball.homeTarget = target;
+        ball.homingTime = 240;
+        ball.color = "#ffe28a";
+      }
+    });
+    target.lockOnTime = 90;
+    target.lockOnPulse = 0;
+  } else if (kind === "grabber") {
+    throwGrapple(owner, true, true);
+  } else if (kind === "poker") {
+    throwDrawCard(owner);
+  } else if (kind === "timekeeper") {
+    skipTime(owner);
   } else if (kind === "riftmaker") {
     const target = nearestEnemyTarget(owner);
     addRift(owner, target.x, target.y, true);
@@ -3471,14 +3604,26 @@ function useRouletteNormal(owner) {
   } else if (kind === "artist") useDrawing(owner);
   else if (kind === "archmage") {
     owner.mageFireDelay = 180;
+    setRouletteForm(owner, "archmage", 180);
     addFloatingText(owner.x, owner.y - owner.radius - 46, "작열 준비", "#fb923c");
+  } else if (kind === "believer") {
+    owner.ceremonyTime = 300;
+    owner.ceremonyTick = 60;
+    setRouletteForm(owner, "believer", 300);
+    addVisualEffect({
+      type: "ceremony-light",
+      fighter: owner,
+      color: owner.accent,
+      life: 300,
+      maxLife: 300
+    });
   } else {
     const previousKind = owner.kind;
     owner.kind = kind;
     triggerNormalSkill(owner);
     owner.kind = previousKind;
   }
-  owner.skillTimer = 600;
+  owner.skillTimer = 480;
 }
 
 function useRouletteUltimate(owner) {
@@ -3490,7 +3635,7 @@ function useRouletteUltimate(owner) {
     owner.hyperStealthActive = true;
     setRouletteForm(owner, "stealth", 240);
     addSkillPulse(owner, "#8d7cff");
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
   if (kind === "riftmaker") {
@@ -3503,31 +3648,33 @@ function useRouletteUltimate(owner) {
       }
     }
     useRiftGate(owner);
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
   if (kind === "thrower") {
     fireStarStrike(owner, { force: true });
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
   if (kind === "poker") {
     dealPokerAttack(owner, { force: true });
     for (let index = 0; index < 3; index += 1) throwDrawCard(owner);
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
   if (kind === "enhancer") {
     for (let index = 0; index < 3; index += 1) launchGodWeapon(owner, 24);
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
   if (kind === "artist") {
     spawnArtOrb(owner);
     owner.artSoulTime = 300;
-    owner.ultimateTimer = 1800;
+    owner.ultimateTimer = 1200;
     return;
   }
+  if (kind === "archmage") setRouletteForm(owner, "archmage", 240);
+  if (kind === "believer") setRouletteForm(owner, "believer", 900);
   if (kind === "beamer") setRouletteForm(owner, "beamer", 180);
   if (kind === "vampire") setRouletteForm(owner, "vampire", 180);
   if (kind === "tank") setRouletteForm(owner, "tank", 180);
@@ -3535,7 +3682,7 @@ function useRouletteUltimate(owner) {
   owner.kind = kind;
   triggerUltimate(owner);
   owner.kind = previousKind;
-  owner.ultimateTimer = 1800;
+  owner.ultimateTimer = 1200;
 }
 
 function triggerNormalSkill(fighter) {
@@ -3665,7 +3812,7 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
-  if (fighter.kind === "believer") {
+  if (fighterActsLike(fighter, "believer")) {
     fighter.ceremonyTime = 300;
     fighter.ceremonyTick = 60;
     fighter.skillTimer = 1200;
@@ -3680,9 +3827,9 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
-  if (fighter.kind === "archmage") {
+  if (fighterActsLike(fighter, "archmage")) {
     fighter.mageFireDelay = 180;
-    fighter.skillTimer = 480;
+    fighter.skillTimer = 540;
     addSkillPulse(fighter, "#fb923c");
     addFloatingText(fighter.x, fighter.y - fighter.radius - 46, "작열 준비", "#fb923c");
     return;
@@ -3829,10 +3976,10 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "archmage") {
-    fighter.mageSeaTime = 300;
+    fighter.mageSeaTime = 240;
     fighter.mageSeaTick = 0;
     fighter.mageSeaElementApplied = false;
-    fighter.ultimateTimer = 600;
+    fighter.ultimateTimer = 630;
     addSkillPulse(fighter, "#38bdf8");
     addVisualEffect({
       type: "mage-sea",
@@ -4025,6 +4172,21 @@ function moveFighter(fighter, dt) {
     }
   }
   if (fighter.kind === "archmage") {
+    if (fighter.mageVaporHealTime > 0) {
+      fighter.mageVaporHealTime -= dt;
+      fighter.mageVaporHealTick -= dt;
+      while (fighter.mageVaporHealTime > 0 && fighter.mageVaporHealTick <= 0 && !game.over) {
+        heal(fighter, 4);
+        fighter.mageVaporHealTick += 60;
+      }
+    }
+    if (fighter.mageConductiveField) {
+      fighter.mageConductiveTick -= dt;
+      while (fighter.mageConductiveTick <= 0 && !game.over) {
+        damage(opponentOf(fighter), 3, fighter);
+        fighter.mageConductiveTick += 120;
+      }
+    }
     fighter.mageLightningTimer -= dt;
     if (fighter.mageLightningTimer <= 0) {
       castMageLightning(fighter);
@@ -4152,8 +4314,6 @@ function moveFighter(fighter, dt) {
   }
   if (fighter.stunTime > 0) {
     fighter.stunTime -= dt;
-    if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
-    if (fighter.ultimateTimer > 0) fighter.ultimateTimer -= dt;
     if (fighter.rageTime > 0) fighter.rageTime -= dt;
     if (fighter.unstoppableTime > 0) fighter.unstoppableTime -= dt;
     if (fighter.slowTime > 0) fighter.slowTime -= dt;
@@ -4236,6 +4396,10 @@ function moveFighter(fighter, dt) {
     fighter.vy = 0;
   }
   const wallHit = bounceOnWalls(fighter);
+  if (wallHit && fighter.overloadWallDamage > 0) {
+    damage(fighter, fighter.overloadWallDamage, opponentOf(fighter));
+    fighter.overloadWallDamage = 0;
+  }
   updateSkills(fighter, dt);
 
   if (fighter.rageTime > 0) fighter.rageTime -= dt;
@@ -4371,8 +4535,20 @@ function moveFighter(fighter, dt) {
     if (fighter.rouletteFormTime > 0) {
       fighter.rouletteFormTime -= dt;
       if (fighter.rouletteFormTime <= 0) {
+        if (fighter.rouletteFormKind === "stealth") {
+          fighter.stealthTime = 0;
+          fighter.hyperStealthActive = false;
+          fighter.stealthDamage = 15;
+        }
         fighter.rouletteFormKind = "";
         fighter.rouletteFormTime = 0;
+      }
+    }
+    if (fighter.stealthTime > 0 && fighter.rouletteFormKind === "stealth") {
+      fighter.stealthTime -= dt;
+      if (fighter.stealthTime <= 0) {
+        fighter.hyperStealthActive = false;
+        fighter.stealthDamage = 15;
       }
     }
     if (fighter.gamblerEnhanceTicks > 0) {
@@ -4753,6 +4929,9 @@ function updateArtOrbs(dt) {
         y: orb.y,
         radius: orb.owner.artSoulTime > 0 ? 30 : 18
       });
+      if (orb.trail.length > ART_TRAIL_MAX_POINTS) {
+        orb.trail = orb.trail.filter((_, index) => index % 2 === 0);
+      }
     }
   });
 }
@@ -4765,8 +4944,8 @@ function useDrawing(owner) {
   targets.forEach(target => {
     let overlapGroups = 0;
     let wasInsideTrail = false;
-    for (let index = 1; index < orb.trail.length; index += 1) {
-      const previous = orb.trail[index - 1];
+    for (let index = 2; index < orb.trail.length; index += 2) {
+      const previous = orb.trail[index - 2];
       const current = orb.trail[index];
       const width = Math.max(previous.radius || 18, current.radius || 18);
       const insideTrail = pointSegmentDistance(target.x, target.y, previous.x, previous.y, current.x, current.y) < target.radius + width;
@@ -6273,8 +6452,9 @@ function drawArtOrbs() {
     const trailColor = "#67e8f9";
     ctx.save();
     ctx.globalCompositeOperation = "source-over";
-    for (let index = 1; index < orb.trail.length; index += 1) {
-      const previous = orb.trail[index - 1];
+    const stride = Math.max(1, Math.ceil(orb.trail.length / 260));
+    for (let index = stride; index < orb.trail.length; index += stride) {
+      const previous = orb.trail[index - stride];
       const current = orb.trail[index];
       ctx.globalAlpha = boosted ? 0.16 : 0.085;
       ctx.strokeStyle = trailColor;
@@ -6318,8 +6498,9 @@ function drawDrawingFlash(effect) {
   ctx.shadowBlur = 6;
   ctx.strokeStyle = trailColor;
   ctx.lineWidth = 5;
-  for (let index = 1; index < trail.length; index += 4) {
-    const previous = trail[index - 1];
+  const boldStride = Math.max(3, Math.ceil(trail.length / 220));
+  for (let index = boldStride; index < trail.length; index += boldStride) {
+    const previous = trail[index - boldStride];
     const current = trail[index];
     ctx.beginPath();
     ctx.moveTo(previous.x, previous.y);
@@ -6329,8 +6510,9 @@ function drawDrawingFlash(effect) {
   ctx.globalAlpha = alpha * 0.18;
   ctx.strokeStyle = trailColor;
   ctx.lineWidth = 2;
-  for (let index = 1; index < trail.length; index += 2) {
-    const previous = trail[index - 1];
+  const fineStride = Math.max(2, Math.ceil(trail.length / 360));
+  for (let index = fineStride; index < trail.length; index += fineStride) {
+    const previous = trail[index - fineStride];
     const current = trail[index];
     ctx.beginPath();
     ctx.moveTo(previous.x, previous.y);
@@ -7512,36 +7694,39 @@ const SURVIVAL_SUBS = [
 const SURVIVAL_DIFFICULTIES = {
   easy: {
     label: "EASY",
-    enemyHp: 0.82,
-    enemyDamage: 0.74,
-    enemySpeed: 0.92,
-    enemyXp: 0.92,
-    spawnCount: 0.82,
-    enemyCap: 0.82,
-    spawnInterval: 1.2,
-    bossPower: 0.78
+    enemyHp: 1,
+    enemyDamage: 1,
+    enemySpeed: 1,
+    enemyXp: 1,
+    spawnCount: 1,
+    enemyCap: 1,
+    spawnInterval: 1,
+    bossPower: 1,
+    rewardMultiplier: 1
   },
   normal: {
     label: "NORMAL",
-    enemyHp: 1.42,
-    enemyDamage: 1.34,
-    enemySpeed: 1.1,
-    enemyXp: 1.15,
-    spawnCount: 1.28,
-    enemyCap: 1.22,
-    spawnInterval: 0.82,
-    bossPower: 1.38
+    enemyHp: 1.5,
+    enemyDamage: 1.2,
+    enemySpeed: 1,
+    enemyXp: 1.1,
+    spawnCount: 1,
+    enemyCap: 1,
+    spawnInterval: 1,
+    bossPower: 1.5,
+    rewardMultiplier: 1.5
   },
   hard: {
     label: "HARD",
-    enemyHp: 2.35,
-    enemyDamage: 2.08,
-    enemySpeed: 1.28,
-    enemyXp: 1.35,
-    spawnCount: 1.9,
-    enemyCap: 1.68,
-    spawnInterval: 0.55,
-    bossPower: 2.3
+    enemyHp: 2,
+    enemyDamage: 1.4,
+    enemySpeed: 1,
+    enemyXp: 1.2,
+    spawnCount: 1,
+    enemyCap: 1,
+    spawnInterval: 1,
+    bossPower: 2,
+    rewardMultiplier: 2
   }
 };
 
@@ -7623,6 +7808,7 @@ async function startPveStage(stage) {
     awakeningPlaying: false,
     activeWeaponId: "",
     reaperActive: false,
+    reaperAfterBoss: false,
     reaperTicks: 0,
     reaper: null,
     player: {
@@ -7644,6 +7830,7 @@ async function startPveStage(stage) {
     enemies: [],
     projectiles: [],
     areaAttacks: [],
+    enemyAreas: [],
     damageTexts: [],
     floatingTexts: []
   };
@@ -8108,7 +8295,8 @@ function triggerPveBossPattern(enemy) {
 
 function stepPve() {
   if (!pveGame || pveGame.over) return;
-  pveGame.tick += 1;
+  const bossTimePaused = activeSurvivalBoss();
+  if (!bossTimePaused) pveGame.tick += 1;
   const player = pveGame.player;
   const playerStunned = player.stunTime > 0;
   if (player.stunTime > 0) player.stunTime -= 1;
@@ -9542,21 +9730,23 @@ function spawnSurvivalBoss() {
   pveGame.bossCount += 1;
   const count = pveGame.bossCount;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
-  const hp = 680 * (1 + (count - 1) * 0.42) * mode.bossPower;
+  const hp = 2400 * (1 + (count - 1) * 0.6) * mode.bossPower;
+  if (count >= 3) pveGame.reaperAfterBoss = true;
   pveGame.enemies.push({
     id: `boss-${count}-${pveGame.tick}`,
     type: "survivalBoss",
+    bossIndex: count,
     name: "균열 파수꾼",
     x: pveCanvas.width / 2,
     y: 65,
     vx: 0,
     vy: 1.25,
-    baseSpeed: (1.08 + count * 0.045) * mode.enemySpeed,
-    radius: 46,
+    baseSpeed: (0.92 + count * 0.06) * mode.enemySpeed,
+    radius: 52 + Math.min(10, count * 2),
     hp,
     maxHp: hp,
-    contactDamage: (14 + count * 2) * mode.enemyDamage,
-    xpValue: (35 + count * 5) * mode.enemyXp,
+    contactDamage: (20 + count * 4) * mode.enemyDamage,
+    xpValue: (280 + count * 120) * mode.enemyXp,
     color: "#f43f5e",
     contactCooldown: 0,
     attackTimer: 120,
@@ -9564,7 +9754,7 @@ function spawnSurvivalBoss() {
     slowTime: 0,
     boss: true
   });
-  addPveFloating("균열 파수꾼 출현!", "#fda4af");
+  addPveFloating(count >= 3 ? "종말 보스 출현!" : "균열 파수꾼 출현! 시간이 멈춥니다", "#fda4af");
 }
 
 function spawnSurvivalMiniBoss() {
@@ -9966,12 +10156,17 @@ function damageSurvivalEnemy(enemy, amount, sourceWeaponId = "") {
     weapon.damageDealt = (weapon.damageDealt || 0) + actual;
   }
   addPveDamage(enemy.x, enemy.y - enemy.radius, Math.round(actual * 10) / 10);
-  if (pveGame.items.chalice) healPvePlayer(actual * 0.12);
-  if (sourceWeaponId === "deathSword" && pveGame.items.demonSigil) healPvePlayer(actual * 0.1);
+  const lifestealScale = enemy.boss ? 0.1 : 1;
+  if (pveGame.items.chalice) healPvePlayer(actual * 0.12 * lifestealScale);
+  if (sourceWeaponId === "deathSword" && pveGame.items.demonSigil) healPvePlayer(actual * 0.1 * lifestealScale);
   if (enemy.hp <= 0 && !enemy.dead) {
     enemy.dead = true;
     pveGame.kills += 1;
     dropSurvivalXp(enemy);
+    if (enemy.boss && pveGame.reaperAfterBoss) {
+      startSurvivalReaper();
+      pveGame.reaperAfterBoss = false;
+    }
     if (enemy.miniBoss) {
       dropSurvivalPickup(enemy.x - 22, enemy.y, "heal");
       dropSurvivalPickup(enemy.x + 22, enemy.y, "heal");
@@ -9980,6 +10175,27 @@ function damageSurvivalEnemy(enemy, amount, sourceWeaponId = "") {
       dropSurvivalPickup(enemy.x, enemy.y, pveRandomIndex(2) === 0 ? "freeze" : "heal");
     }
   }
+}
+
+function activeSurvivalBoss() {
+  return pveGame?.enemies?.some(enemy => enemy.boss && !enemy.dead) || false;
+}
+
+function startSurvivalReaper() {
+  if (!pveGame || pveGame.reaperActive) return;
+  const player = pveGame.player;
+  pveGame.reaperActive = true;
+  pveGame.reaperTicks = 0;
+  pveGame.reaper = {
+    x: player.x < pveCanvas.width / 2 ? pveCanvas.width + 90 : -90,
+    y: -110,
+    radius: 54,
+    attached: false,
+    hitTimer: 0
+  };
+  pveGame.projectiles = [];
+  pveGame.areaAttacks = [];
+  addPveFloating("사신이 도착했습니다", "#ef4444");
 }
 
 function stepSurvivalPve() {
@@ -9993,20 +10209,8 @@ function stepSurvivalPve() {
   if (player.invulnerableTime > 0) player.invulnerableTime -= 1;
 
   const seconds = pveGame.tick / 60;
-  if (pveGame.tick >= 54000) {
-    pveGame.tick = 54000;
-    pveGame.reaperActive = true;
-    pveGame.reaperTicks = 0;
-    pveGame.reaper = {
-      x: player.x < pveCanvas.width / 2 ? pveCanvas.width + 90 : -90,
-      y: -110,
-      radius: 54,
-      attached: false,
-      hitTimer: 0
-    };
-    pveGame.projectiles = [];
-    pveGame.areaAttacks = [];
-    addPveFloating("15:00 · 사신이 도착했습니다", "#ef4444");
+  if (pveGame.tick >= 54000 && pveGame.bossCount >= 3 && !pveGame.reaperAfterBoss) {
+    startSurvivalReaper();
     updateSurvivalHud();
     return;
   }
@@ -10021,29 +10225,29 @@ function stepSurvivalPve() {
   pveGame.spawnTimer -= 1;
   if (pveGame.spawnTimer <= 0) {
     const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
-    const lateRush = seconds >= 420;
-    const endgame = seconds >= 600;
+    const lateRush = pveGame.bossCount >= 1 || seconds >= 420;
+    const endgame = pveGame.bossCount >= 2 || seconds >= 600;
     const baseCount = endgame
       ? 2 + Math.floor((seconds - 600) / 150)
       : lateRush
       ? 5 + Math.floor((seconds - 420) / 90)
       : 1 + Math.floor(Math.max(0, seconds - 210) / 120);
-    const count = Math.ceil(baseCount * mode.spawnCount);
+    const count = bossTimePaused ? 1 : Math.ceil(baseCount * mode.spawnCount);
     const baseEnemyCap = seconds < 90 ? 13
       : seconds < 180 ? 20
         : seconds < 420 ? 32 + Math.floor((seconds - 180) / 90) * 5
           : seconds < 600 ? 76 + Math.floor((seconds - 420) / 60) * 8
             : Math.min(64, 42 + Math.floor((seconds - 600) / 90) * 4);
-    const enemyCap = Math.min(endgame ? 78 : 140, Math.floor(baseEnemyCap * mode.enemyCap));
+    const enemyCap = bossTimePaused ? 12 : Math.min(endgame ? 78 : 140, Math.floor(baseEnemyCap * mode.enemyCap));
     const availableSlots = Math.max(0, enemyCap - pveGame.enemies.filter(enemy => !enemy.dead).length);
-    const waveLimit = Math.ceil((endgame ? 3 : lateRush ? 9 : 4) * mode.spawnCount);
+    const waveLimit = bossTimePaused ? 1 : Math.ceil((endgame ? 3 : lateRush ? 9 : 4) * mode.spawnCount);
     for (let index = 0; index < Math.min(waveLimit, count, availableSlots); index += 1) spawnSurvivalEnemy();
     const baseInterval = seconds < 90 ? 122
       : seconds < 180 ? 102
         : seconds < 420 ? Math.max(38, 82 - (seconds - 180) * 0.06)
           : seconds < 600 ? Math.max(16, 27 - (seconds - 420) * 0.02)
             : Math.max(44, 70 - (seconds - 600) * 0.035);
-    pveGame.spawnTimer = Math.max(10, baseInterval * mode.spawnInterval);
+    pveGame.spawnTimer = bossTimePaused ? 210 : Math.max(10, baseInterval * mode.spawnInterval);
   }
 
   Object.entries(pveGame.weapons).forEach(([id, weapon]) => {
@@ -10081,19 +10285,54 @@ function stepSurvivalPve() {
       if (enemy.attackTimer <= 0) {
         if (enemy.type === "survivalBoss") {
           const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
-          const bulletCount = pveGame.difficultyId === "hard" ? 14 : pveGame.difficultyId === "normal" ? 12 : 10;
-          for (let index = 0; index < bulletCount; index += 1) {
-            const shotAngle = index / bulletCount * Math.PI * 2 + pveGame.tick * 0.006;
-            spawnSurvivalProjectile({
-              x: enemy.x, y: enemy.y,
-              vx: Math.cos(shotAngle) * 4.8,
-              vy: Math.sin(shotAngle) * 4.8,
-              damage: (9 + pveGame.bossCount) * mode.enemyDamage,
-              radius: 9,
-              color: "#fb7185",
-              life: 220
+          const phase = (enemy.bossIndex || pveGame.bossCount) % 3;
+          if (phase === 1) {
+            const bulletCount = pveGame.difficultyId === "hard" ? 18 : pveGame.difficultyId === "normal" ? 15 : 12;
+            for (let index = 0; index < bulletCount; index += 1) {
+              const shotAngle = index / bulletCount * Math.PI * 2 + pveGame.tick * 0.006;
+              spawnSurvivalProjectile({
+                x: enemy.x, y: enemy.y,
+                vx: Math.cos(shotAngle) * 4.8,
+                vy: Math.sin(shotAngle) * 4.8,
+                damage: (10 + pveGame.bossCount * 1.5) * mode.enemyDamage,
+                radius: 9,
+                color: "#fb7185",
+                life: 240
+              });
+              pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
+            }
+          } else if (phase === 2) {
+            [[0, 0], [110, -70], [-110, 70], [0, 135]].forEach(([ox, oy], index) => {
+              pveGame.enemyAreas.push({
+                x: clamp(player.x + ox, 55, pveCanvas.width - 55),
+                y: clamp(player.y + oy, 55, pveCanvas.height - 55),
+                radius: index === 0 ? 88 : 68,
+                damage: (18 + pveGame.bossCount * 2) * mode.enemyDamage,
+                delay: 58 + index * 10,
+                life: 90 + index * 10,
+                color: "#fb7185",
+                stun: 18
+              });
             });
-            pveGame.projectiles[pveGame.projectiles.length - 1].owner = "enemy";
+          } else {
+            for (let index = 0; index < 5; index += 1) {
+              const offset = (index - 2) * 84;
+              pveGame.areaAttacks.push({
+                x1: clamp(player.x + offset, 30, pveCanvas.width - 30),
+                y1: 0,
+                x2: clamp(player.x + offset, 30, pveCanvas.width - 30),
+                y2: pveCanvas.height,
+                radius: 26,
+                damage: (16 + pveGame.bossCount * 2) * mode.enemyDamage,
+                delay: 42 + index * 8,
+                life: 78 + index * 8,
+                hit: false,
+                color: "#fda4af",
+                type: "lineLaser",
+                survival: true,
+                visual: "riftAwakened"
+              });
+            }
           }
           enemy.attackTimer = pveGame.difficultyId === "hard" ? 135 : pveGame.difficultyId === "normal" ? 155 : 180;
         } else if (enemy.type === "survivalMiniBoss") {
@@ -10317,6 +10556,20 @@ function stepSurvivalPve() {
           }
         }
       });
+    }
+    return attack.life > 0;
+  });
+
+  pveGame.enemyAreas = pveGame.enemyAreas.filter(attack => {
+    attack.delay -= 1;
+    attack.life -= 1;
+    if (attack.delay <= 0 && !attack.hit) {
+      attack.hit = true;
+      if (Math.hypot(player.x - attack.x, player.y - attack.y) < player.radius + attack.radius) {
+        if (player.invulnerableTime <= 0) damagePvePlayer(attack.damage);
+        if (attack.stun) player.stunTime = Math.max(player.stunTime || 0, attack.stun);
+        player.invulnerableTime = Math.max(player.invulnerableTime, 18);
+      }
     }
     return attack.life > 0;
   });
@@ -10638,23 +10891,40 @@ function drawSurvivalAreaAttack(attack) {
     return;
   }
 
+  pveCtx.translate(attack.x, attack.y);
   pveCtx.strokeStyle = attack.color;
-  pveCtx.fillStyle = `${attack.color}${attack.awakened ? "38" : "24"}`;
-  pveCtx.lineWidth = warning ? 3 : attack.awakened ? 11 : 7;
+  pveCtx.fillStyle = `${attack.color}${attack.awakened ? "34" : "1f"}`;
+  pveCtx.lineWidth = warning ? 3 : attack.awakened ? 10 : 7;
   pveCtx.setLineDash(warning ? [8, 7] : []);
-  pveCtx.beginPath();
-  pveCtx.arc(attack.x, attack.y, attack.radius * (1 + progress * 0.06), 0, Math.PI * 2);
-  pveCtx.fill();
-  pveCtx.stroke();
+  for (let ring = 0; ring < (warning ? 2 : attack.awakened ? 5 : 4); ring += 1) {
+    const ringRate = ring / (warning ? 2 : attack.awakened ? 5 : 4);
+    pveCtx.globalAlpha = alpha * (0.9 - ringRate * 0.45);
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, attack.radius * (0.48 + ringRate * 0.42 + progress * 0.16), 0, Math.PI * 2);
+    if (ring === 0) pveCtx.fill();
+    pveCtx.stroke();
+  }
   if (!warning) {
-    pveCtx.globalAlpha = alpha * 0.55;
+    pveCtx.globalAlpha = alpha * 0.72;
     pveCtx.strokeStyle = "#f7fbff";
-    pveCtx.lineWidth = 2;
+    pveCtx.lineWidth = attack.awakened ? 3 : 2;
     pveCtx.setLineDash([16, 12]);
     pveCtx.lineDashOffset = -pveGame.tick * 2;
+    for (let spoke = 0; spoke < (attack.awakened ? 18 : 12); spoke += 1) {
+      const angle = spoke * Math.PI * 2 / (attack.awakened ? 18 : 12) + pveGame.tick * 0.018;
+      pveCtx.beginPath();
+      pveCtx.moveTo(Math.cos(angle) * attack.radius * 0.22, Math.sin(angle) * attack.radius * 0.22);
+      pveCtx.lineTo(Math.cos(angle) * attack.radius * (1.02 + progress * 0.16), Math.sin(angle) * attack.radius * (1.02 + progress * 0.16));
+      pveCtx.stroke();
+    }
+    const core = pveCtx.createRadialGradient(0, 0, 0, 0, 0, attack.radius * 0.55);
+    core.addColorStop(0, "rgba(255,255,255,0.9)");
+    core.addColorStop(0.35, `${attack.color}cc`);
+    core.addColorStop(1, "rgba(255,255,255,0)");
+    pveCtx.fillStyle = core;
     pveCtx.beginPath();
-    pveCtx.arc(attack.x, attack.y, attack.radius * 0.72, 0, Math.PI * 2);
-    pveCtx.stroke();
+    pveCtx.arc(0, 0, attack.radius * 0.55, 0, Math.PI * 2);
+    pveCtx.fill();
   }
   pveCtx.restore();
 }
@@ -10765,6 +11035,32 @@ function drawSurvivalPve() {
         pveGame.tick,
         pveCtx.globalAlpha
       );
+    }
+    pveCtx.restore();
+  });
+  pveGame.enemyAreas.forEach(attack => {
+    const warning = attack.delay > 0;
+    pveCtx.save();
+    pveCtx.globalCompositeOperation = "lighter";
+    pveCtx.globalAlpha = warning ? 0.32 + Math.sin(pveGame.tick * 0.28) * 0.1 : Math.min(1, attack.life / 24);
+    pveCtx.strokeStyle = attack.color;
+    pveCtx.fillStyle = `${attack.color}${warning ? "18" : "30"}`;
+    pveCtx.shadowColor = attack.color;
+    pveCtx.shadowBlur = warning ? 16 : 36;
+    pveCtx.lineWidth = warning ? 3 : 10;
+    pveCtx.setLineDash(warning ? [12, 9] : []);
+    pveCtx.beginPath();
+    pveCtx.arc(attack.x, attack.y, attack.radius, 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.stroke();
+    if (!warning) {
+      for (let ray = 0; ray < 12; ray += 1) {
+        const angle = ray * Math.PI * 2 / 12 + pveGame.tick * 0.02;
+        pveCtx.beginPath();
+        pveCtx.moveTo(attack.x + Math.cos(angle) * attack.radius * 0.3, attack.y + Math.sin(angle) * attack.radius * 0.3);
+        pveCtx.lineTo(attack.x + Math.cos(angle) * attack.radius * 1.08, attack.y + Math.sin(angle) * attack.radius * 1.08);
+        pveCtx.stroke();
+      }
     }
     pveCtx.restore();
   });
@@ -11053,9 +11349,11 @@ async function finishSurvivalPve(cleared = false) {
   const earlyIntervals = Math.floor(Math.min(elapsedSeconds, 300) / 30);
   const midIntervals = Math.floor(Math.min(Math.max(elapsedSeconds - 300, 0), 300) / 30);
   const lateIntervals = Math.floor(Math.max(elapsedSeconds - 600, 0) / 30);
-  const expectedReward = Math.min(1000, earlyIntervals * 5 + midIntervals * 12
+  const rewardMultiplier = pveGame.difficulty?.rewardMultiplier || 1;
+  const baseReward = Math.min(1000, earlyIntervals * 5 + midIntervals * 12
     + lateIntervals * 18 + Math.floor(elapsedSeconds / 300) * 50
     + (cleared ? 50 : 0) + pveGame.bonusCoins);
+  const expectedReward = Math.floor(baseReward * rewardMultiplier);
   pveGame.over = true;
   pveGame.pausedForAugment = false;
   ui.pveAugmentOverlay.classList.remove("is-active");
@@ -11093,7 +11391,7 @@ async function finishSurvivalPve(cleared = false) {
         session_token: appSessionToken,
         run_id: pveGame.runId,
         client_seconds: elapsedSeconds,
-        bonus_coins: pveGame.bonusCoins,
+        bonus_coins: Math.floor(pveGame.bonusCoins + baseReward * (rewardMultiplier - 1)),
         damage_dealt: Math.floor(player.damageDealt || 0)
       });
     } catch {
@@ -11182,6 +11480,12 @@ ui.patchNoteCloseButton.addEventListener("click", () => setPatchNotesOpen(false)
 ui.patchNoteModal.addEventListener("click", event => {
   if (event.target === ui.patchNoteModal) setPatchNotesOpen(false);
 });
+ui.mailboxButton?.addEventListener("click", () => setMailboxOpen(true));
+ui.mailboxCloseButton?.addEventListener("click", () => setMailboxOpen(false));
+ui.mailboxModal?.addEventListener("click", event => {
+  if (event.target === ui.mailboxModal) setMailboxOpen(false);
+});
+ui.claimMailboxRewardButton?.addEventListener("click", claimMailboxReward);
 ui.signupButton.addEventListener("click", () => authenticate("signup"));
 ui.openSignupButton.addEventListener("click", () => showScreen("signup"));
 ui.backToLoginButton.addEventListener("click", () => showScreen("auth"));

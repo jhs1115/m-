@@ -54,10 +54,30 @@ button:disabled {
 .screen {
   display: none;
   width: min(1320px, 100%);
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(4px);
 }
 
 .screen.is-active {
   display: block;
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  animation: screen-soft-in 180ms ease both;
+}
+
+@keyframes screen-soft-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
 }
 
 .logout-button {
@@ -119,11 +139,17 @@ button:disabled {
   color: var(--gold);
 }
 
-.patch-note-button {
+.notice-actions {
   position: fixed;
   top: 18px;
   right: 154px;
   z-index: 11;
+  display: flex;
+  gap: 8px;
+}
+
+.patch-note-button,
+.mailbox-button {
   min-height: 40px;
   padding: 0 14px;
   color: var(--text);
@@ -133,7 +159,14 @@ button:disabled {
   font-weight: 900;
 }
 
-.patch-note-button:hover {
+.patch-note-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.patch-note-button:hover,
+.mailbox-button:hover {
   border-color: rgba(242, 193, 78, 0.72);
   box-shadow: 0 0 18px rgba(242, 193, 78, 0.16);
 }
@@ -144,6 +177,10 @@ button:disabled {
 }
 
 body:not(.is-authenticated) .coin-badge {
+  display: none;
+}
+
+body:not(.is-authenticated) .notice-actions {
   display: none;
 }
 
@@ -297,6 +334,56 @@ body:not(.is-authenticated) .coin-badge {
 
 .patch-note-list li::marker {
   color: var(--gold);
+}
+
+.status-message.is-error {
+  color: #ff6b7a;
+}
+
+.mailbox-box {
+  width: min(620px, 100%);
+}
+
+.mailbox-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.mailbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  background: rgba(5, 8, 14, 0.62);
+  border: 1px solid rgba(242, 193, 78, 0.22);
+  border-radius: 8px;
+}
+
+.mailbox-item div {
+  display: grid;
+  gap: 6px;
+}
+
+.mailbox-item strong {
+  color: #f7f4eb;
+  font-size: 1.05rem;
+}
+
+.mailbox-item span {
+  color: var(--gold);
+  font-weight: 1000;
+}
+
+.mailbox-item small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.mailbox-item .primary-button {
+  width: auto;
+  margin: 0;
 }
 
 .match-overlay {

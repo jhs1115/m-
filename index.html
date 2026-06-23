@@ -8,47 +8,71 @@
 </head>
 <body>
   <main class="app">
-    <button id="patchNoteButton" class="patch-note-button" type="button">패치노트</button>
+    <div class="notice-actions">
+      <button id="patchNoteButton" class="patch-note-button" type="button"><span aria-hidden="true">📣</span> 공지사항</button>
+      <button id="mailboxButton" class="mailbox-button" type="button">우편함</button>
+    </div>
     <div id="coinBadge" class="coin-badge">COIN <strong><span id="globalCoinAmount">0</span>C</strong></div>
     <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
       <div class="patch-note-box">
         <button id="patchNoteCloseButton" class="patch-note-close" type="button">닫기</button>
         <div class="patch-note-heading">
-          <span>RECENT UPDATE</span>
-          <h2>패치노트</h2>
-          <p>최근 변경 사항만 짧게 정리했습니다.</p>
+          <span>NOTICE</span>
+          <h2>공지사항</h2>
+          <p>공지사항 안에 최신 패치노트를 짧게 정리했습니다.</p>
         </div>
         <div class="patch-note-list">
           <article>
-            <strong>신규 캐릭터</strong>
+            <strong>패치노트</strong>
             <ul>
-              <li>대마법 쓰는 색히가 추가되었습니다.</li>
-              <li>습기, 화상, 감전 원소와 원소 반응을 사용합니다.</li>
+              <li>도박하는 색히 룰렛 쿨타임과 공격 판정을 정리했습니다.</li>
+              <li>대마법 쓰는 색히 원소 반응이 순서 기반으로 변경되었습니다.</li>
+              <li>PVE 보스, 난이도, 보상 구조를 개편했습니다.</li>
             </ul>
           </article>
           <article>
             <strong>PVP</strong>
             <ul>
-              <li>랭크게임과 일반게임을 분리했습니다.</li>
-              <li>일반게임은 티어 제한 없이 매칭되며 LP가 변하지 않습니다.</li>
+              <li>랭크게임은 캐릭터 5개 이상 보유해야 입장할 수 있습니다.</li>
+              <li>일반게임 승리 보상이 10C로 변경되었습니다.</li>
             </ul>
           </article>
           <article>
             <strong>PVE</strong>
             <ul>
-              <li>후반 적과 난이도 차이를 강화했습니다.</li>
-              <li>신규 캐릭터 계열 무기와 아이템이 추가되었습니다.</li>
-              <li>배속 버튼 UI를 작게 정리했습니다.</li>
+              <li>5분마다 보스가 등장하고 보스 전투 중 시간 흐름이 멈춥니다.</li>
+              <li>보스 처치 후 다음 웨이브 단계로 넘어갑니다.</li>
             </ul>
           </article>
           <article>
-            <strong>편의 기능</strong>
+            <strong>공지</strong>
             <ul>
-              <li>도감에 체력 표시를 추가했습니다.</li>
-              <li>매칭 완료 알림음과 볼륨 설정을 추가했습니다.</li>
+              <li>우편함에서 모든 플레이어가 1회 100C를 받을 수 있습니다.</li>
+              <li>화면 전환이 더 부드럽게 보이도록 조정했습니다.</li>
             </ul>
           </article>
         </div>
+      </div>
+    </div>
+    <div id="mailboxModal" class="patch-note-modal mailbox-modal" aria-hidden="true">
+      <div class="patch-note-box mailbox-box">
+        <button id="mailboxCloseButton" class="patch-note-close" type="button">닫기</button>
+        <div class="patch-note-heading">
+          <span>MAILBOX</span>
+          <h2>우편함</h2>
+          <p>계정당 한 번 받을 수 있는 우편입니다.</p>
+        </div>
+        <div class="mailbox-list">
+          <article class="mailbox-item">
+            <div>
+              <strong>오픈 기념 보상</strong>
+              <small>업데이트 기념 지원 코인입니다.</small>
+              <span>100C</span>
+            </div>
+            <button id="claimMailboxRewardButton" class="primary-button" type="button">받기</button>
+          </article>
+        </div>
+        <p id="mailboxMessage" class="status-message"></p>
       </div>
     </div>
     <div id="matchOverlay" class="match-overlay">
@@ -483,6 +507,7 @@
             <strong>일반</strong>
           </button>
         </div>
+        <p id="pvpQueueMessage" class="status-message"></p>
         <div class="bet-actions">
           <button id="backFromPvpQueueButton" class="ghost-button" type="button">로비로</button>
         </div>

@@ -8,6 +8,7 @@ create table if not exists public.app_users (
   coins integer not null default 0 check (coins >= 0),
   lp integer not null default 1000 check (lp >= 0),
   pve_damage_total numeric not null default 0 check (pve_damage_total >= 0),
+  notice_reward_claimed boolean not null default false,
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
@@ -17,6 +18,9 @@ add column if not exists lp integer not null default 1000 check (lp >= 0);
 
 alter table public.app_users
 add column if not exists pve_damage_total numeric not null default 0 check (pve_damage_total >= 0);
+
+alter table public.app_users
+add column if not exists notice_reward_claimed boolean not null default false;
 
 alter table public.app_users
 alter column coins set default 0;
@@ -140,6 +144,7 @@ as $$
     'coins', target_user.coins,
     'lp', target_user.lp,
     'pveDamageTotal', target_user.pve_damage_total,
+    'noticeRewardClaimed', target_user.notice_reward_claimed,
     'ownedCharacters', target_user.owned_characters
   );
 $$;
@@ -482,6 +487,10 @@ begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
     raise exception 'login required';
+  end if;
+
+  if not is_casual and coalesce(array_length(active_user.owned_characters, 1), 0) < 5 then
+    raise exception 'ranked match requires 5 characters';
   end if;
 
   update public.match_queue
@@ -1097,6 +1106,45 @@ $$;
 
 drop function if exists public.claim_free_coins(text);
 
+create or replace function public.claim_notice_mail_reward(session_token text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select * into active_user
+  from public.app_users
+  where id = active_user.id
+  for update;
+
+  if active_user.notice_reward_claimed then
+    raise exception 'mail reward already claimed';
+  end if;
+
+  update public.app_users
+  set coins = coins + 100,
+      notice_reward_claimed = true
+  where id = active_user.id
+  returning * into active_user;
+
+  return jsonb_build_object(
+    'reward', 100,
+    'user', public.app_user_json(active_user)
+  );
+end;
+$$;
+
+grant execute on function public.claim_notice_mail_reward(text) to anon, authenticated;
+
 create or replace function public.begin_pve_run(session_token text, stage_code text)
 returns jsonb
 language plpgsql
@@ -1571,7 +1619,8 @@ begin
       'promoted', coalesce((room_state->>'promoted')::boolean, false),
       'oldTier', room_state->>'oldTier',
       'newTier', room_state->>'newTier',
-      'promotionReward', coalesce((room_state->>'promotionReward')::integer, 0)
+      'promotionReward', coalesce((room_state->>'promotionReward')::integer, 0),
+      'coinReward', coalesce((room_state->>'coinReward')::integer, 0)
     );
   end if;
 
@@ -1579,6 +1628,11 @@ begin
   select * into winner_user from public.app_users where id = winner_id for update;
 
   if casual_match then
+    update public.app_users
+    set coins = coins + 10
+    where id = winner_id
+    returning * into winner_user;
+
     update public.app_rooms
     set prep_state = room_state || jsonb_build_object(
       'settled', true,
@@ -1589,7 +1643,8 @@ begin
       'promoted', false,
       'oldTier', public.lp_tier(winner_user.lp),
       'newTier', public.lp_tier(winner_user.lp),
-      'promotionReward', 0
+      'promotionReward', 0,
+      'coinReward', 10
     )
     where code = normalized_code;
 
@@ -1605,7 +1660,8 @@ begin
       'promoted', false,
       'oldTier', public.lp_tier(winner_user.lp),
       'newTier', public.lp_tier(winner_user.lp),
-      'promotionReward', 0
+      'promotionReward', 0,
+      'coinReward', 10
     );
   end if;
 
