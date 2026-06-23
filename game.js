@@ -2332,7 +2332,6 @@ function characterBaseSpeed(fighter) {
   if (fighter.stealthTime > 0) return fighter.hyperStealthActive ? 125 : 12.5;
   if (fighter.canThrow) return 5.9;
   if (fighter.canGrab) return 6.2;
-  if (fighter.kind === "riftmaker") return 5.44;
   if (fighter.kind === "tank") return 5.7;
   if (fighter.kind === "brawler") return 7.1;
   return 6.8;
@@ -2847,6 +2846,19 @@ function updateRifts(dt) {
       rift.voidDamageTick -= dt;
       const radius = VOID_RIFT_RADIUS;
       const targets = [opponentOf(rift.owner), ...enemySummonsOf(rift.owner)].filter(target => target && target.hp > 0);
+      targets.forEach(target => {
+        const dx = rift.x - target.x;
+        const dy = rift.y - target.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        if (distance > radius + target.radius) return;
+        const pull = target.owner ? 1.8 : 1.15;
+        target.x += dx / distance * pull * dt;
+        target.y += dy / distance * pull * dt;
+        if (!target.owner) {
+          target.vx = target.vx * 0.94 + dx / distance * 0.28;
+          target.vy = target.vy * 0.94 + dy / distance * 0.28;
+        }
+      });
       if (rift.voidDamageTick <= 0) {
         rift.voidDamageTick = 60;
         targets.forEach(target => {
