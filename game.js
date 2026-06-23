@@ -9759,7 +9759,7 @@ function spawnSurvivalBoss() {
   const count = pveGame.bossCount;
   const mode = pveGame.difficulty || SURVIVAL_DIFFICULTIES.easy;
   const bossScale = count === 1 ? 0.48 : 1;
-  const hp = 2400 * (1 + (count - 1) * 0.6) * mode.bossPower * bossScale;
+  const hp = 700 * (1 + (count - 1) * 0.6) * mode.bossPower * bossScale;
   if (count >= 3) pveGame.reaperAfterBoss = true;
   pveGame.enemies.push({
     id: `boss-${count}-${pveGame.tick}`,
@@ -9774,7 +9774,7 @@ function spawnSurvivalBoss() {
     radius: 52 + Math.min(10, count * 2),
     hp,
     maxHp: hp,
-    contactDamage: (20 + count * 4) * mode.enemyDamage * bossScale,
+    contactDamage: (5 + count * 4) * mode.enemyDamage * bossScale,
     xpValue: (280 + count * 120) * mode.enemyXp,
     color: "#f43f5e",
     contactCooldown: 0,
