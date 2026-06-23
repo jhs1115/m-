@@ -10,16 +10,14 @@
   <main class="app">
     <div class="notice-actions">
       <button id="patchNoteButton" class="patch-note-button" type="button"><span aria-hidden="true">📣</span> 공지사항</button>
-      <button id="mailboxButton" class="mailbox-button" type="button">우편함</button>
+      <button id="mailboxButton" class="mailbox-button" type="button"><span aria-hidden="true">✉</span> 우편함</button>
     </div>
     <div id="coinBadge" class="coin-badge">COIN <strong><span id="globalCoinAmount">0</span>C</strong></div>
     <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
       <div class="patch-note-box">
         <button id="patchNoteCloseButton" class="patch-note-close" type="button">닫기</button>
         <div class="patch-note-heading">
-          <span>NOTICE</span>
           <h2>공지사항</h2>
-          <p>공지사항 안에 최신 패치노트를 짧게 정리했습니다.</p>
         </div>
         <div class="patch-note-list">
           <article>
@@ -47,7 +45,7 @@
           <article>
             <strong>공지</strong>
             <ul>
-              <li>우편함에서 모든 플레이어가 1회 100C를 받을 수 있습니다.</li>
+              <li>우편함에 업데이트 지원 보상이 추가되었습니다.</li>
               <li>화면 전환이 더 부드럽게 보이도록 조정했습니다.</li>
             </ul>
           </article>
@@ -57,15 +55,13 @@
     <div id="mailboxModal" class="patch-note-modal mailbox-modal" aria-hidden="true">
       <div class="patch-note-box mailbox-box">
         <button id="mailboxCloseButton" class="patch-note-close" type="button">닫기</button>
-        <div class="patch-note-heading">
-          <span>MAILBOX</span>
+        <div class="patch-note-heading mailbox-heading">
           <h2>우편함</h2>
-          <p>계정당 한 번 받을 수 있는 우편입니다.</p>
         </div>
         <div class="mailbox-list">
           <article class="mailbox-item">
             <div>
-              <strong>오픈 기념 보상</strong>
+              <strong>업데이트 보상</strong>
               <small>업데이트 기념 지원 코인입니다.</small>
               <span>100C</span>
             </div>

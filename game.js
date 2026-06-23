@@ -10216,7 +10216,8 @@ function stepSurvivalPve() {
     stepSurvivalReaper();
     return;
   }
-  pveGame.tick += 1;
+  const bossTimePaused = activeSurvivalBoss();
+  if (!bossTimePaused) pveGame.tick += 1;
   const player = pveGame.player;
   if (player.invulnerableTime > 0) player.invulnerableTime -= 1;
 
