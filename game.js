@@ -502,8 +502,8 @@ const characterGuide = {
     ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
   },
   cosmic: {
-    attack: ["별가루 수집", "1초", "1초마다 별가루 스택 1을 얻습니다. 스킬을 사용할 때마다 별가루를 소모하며, 기본 50개를 가지고 시작합니다."],
-    normal: ["초신성", "12초", "랜덤한 위치에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 2.5초 동안 기절시킵니다. 별가루 25개를 소모합니다."],
+    attack: ["별가루 수집", "1초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
+    normal: ["초신성", "12초", "자신 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 2.5초 동안 기절시킵니다. 별가루 25개를 소모합니다."],
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 4의 피해와 별가루 1개를 소모합니다."]
   }
 };
@@ -2329,7 +2329,7 @@ function makeCharacterCombatState(kind) {
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
     skillTimer: kind === "vampire" ? 0 : 480,
-    ultimateTimer: kind === "wild" || kind === "cosmic" ? 0 : 480,
+    ultimateTimer: kind === "wild" ? 0 : kind === "cosmic" ? 300 : 480,
     rageTime: 0,
     unstoppableWindup: 0,
     unstoppableDirectionX: 0,
@@ -5212,8 +5212,8 @@ function castSupernova(owner) {
   game.areaAttacks.push({
     type: "supernova",
     owner,
-    x: radius + seededRandom() * (canvas.width - radius * 2),
-    y: radius + seededRandom() * (canvas.height - radius * 2),
+    x: owner.x,
+    y: owner.y,
     radius,
     delay: 34,
     life: 78,
@@ -5233,6 +5233,12 @@ function toggleCosmicBlaster(owner) {
     return;
   }
   if (owner.cosmicDust <= 0) return;
+  const target = nearestEnemyTarget(owner);
+  if (target) {
+    const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+    owner.facingX = Math.cos(angle);
+    owner.facingY = Math.sin(angle);
+  }
   owner.cosmicBlasterCharging = 60;
   owner.cosmicBlasterTick = 0;
   addVisualEffect({
@@ -5251,7 +5257,7 @@ function updateCosmicDusts(dt) {
     fighter.cosmicDustTimer -= dt;
     while (fighter.cosmicDustTimer <= 0) {
       if (!fighter.cosmicBlasterActive && fighter.cosmicBlasterCharging <= 0) {
-        fighter.cosmicDust += 1;
+        spawnCosmicDust(fighter);
       }
       fighter.cosmicDustTimer += 60;
     }
