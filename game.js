@@ -503,8 +503,8 @@ const characterGuide = {
   },
   cosmic: {
     attack: ["별가루 수집", "1초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
-    normal: ["초신성", "12초", "자신 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 2.5초 동안 기절시킵니다. 별가루 20개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 4의 피해와 별가루 1개를 소모합니다."]
+    normal: ["초신성", "12초", "자신 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 20개를 소모합니다."],
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 6의 피해와 별가루 1개를 소모합니다."]
   }
 };
 
@@ -5213,7 +5213,7 @@ function spawnCosmicDust(owner) {
 function castSupernova(owner) {
   if (owner.cosmicDust < 20) return;
   owner.cosmicDust -= 20;
-  const radius = 200;
+  const radius = 230;
   game.areaAttacks.push({
     type: "supernova",
     owner,
@@ -5224,10 +5224,10 @@ function castSupernova(owner) {
     life: 78,
     hit: false,
     damage: 15,
-    stun: 150,
+    stun: 180,
     color: "#93c5fd"
   });
-  owner.skillTimer = 720;
+  owner.skillTimer = 660;
 }
 
 function toggleCosmicBlaster(owner) {
@@ -5328,7 +5328,7 @@ function hitCosmicBlaster(owner) {
     const closestX = line.x1 + lineDx * t;
     const closestY = line.y1 + lineDy * t;
     if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 52) {
-      damageCombatTarget(target, 5, owner);
+      damageCombatTarget(target, 6, owner);
     }
   });
 }
