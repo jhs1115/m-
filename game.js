@@ -453,8 +453,8 @@ const characterGuide = {
   },
   brawler: {
     attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 5의 피해를 주고 직접 닿았다면 3의 추가 피해와 2.5의 몸빵 피해를 추가로 줍니다."],
-    normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 20% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
-    ultimate: ["신룡권", "45초", "6초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
+    normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 25% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
+    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -4101,14 +4101,14 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "brawler") {
-    fighter.dragonFistTime = 360;
+    fighter.dragonFistTime = 480;
     fighter.ultimateTimer = 2700;
     addVisualEffect({
       type: "dragon-fist",
       fighter,
       color: "#facc15",
-      life: 360,
-      maxLife: 360
+      life: 480,
+      maxLife: 480
     });
     return;
   }
@@ -4553,7 +4553,7 @@ function moveFighter(fighter, dt) {
     fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 3, speed);
   }
   const wildInstinct = fighterActsLike(fighter, "wild") && target.hp <= target.maxHp * 0.5 ? 3.5 : 1;
-  const brawlerBoost = fighter.kind === "brawler" ? 1 + fighter.brawlerSpeedStacks * 0.2 : 1;
+  const brawlerBoost = fighter.kind === "brawler" ? 1 + fighter.brawlerSpeedStacks * 0.25 : 1;
   const targetSpeed = baseSpeed
     * (fighter.rageTime > 0 ? 1.55 : 1)
     * (fighter.hasteTime > 0 ? 1.35 : 1)
@@ -5559,7 +5559,7 @@ function createTankBlast(owner) {
 function punchTarget(owner, target) {
   const directContact = Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + owner.radius;
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
-  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
   const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
   const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
   damage(target, baseDamage + extraDamage + bodyDamage, owner);
@@ -5577,7 +5577,7 @@ function punchTarget(owner, target) {
 function punchSummon(owner, summon) {
   const directContact = Math.hypot(summon.x - owner.x, summon.y - owner.y) < summon.radius + owner.radius;
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
-  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
   const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
   const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
   damageSummon(summon, baseDamage + extraDamage + bodyDamage, owner);
