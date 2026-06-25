@@ -4219,9 +4219,26 @@ h2 {
 .skill-button strong {
   min-width: 0;
   overflow: hidden;
+  padding-right: 72px;
   font-size: 1rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.skill-button[data-cost]::after {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  color: #93c5fd;
+  content: attr(data-cost);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-shadow: 0 0 12px rgba(147, 197, 253, 0.7);
+  transform: translateY(-50%);
+}
+
+.skill-button.is-cooling::after {
+  display: none;
 }
 
 .skill-button.ultimate {

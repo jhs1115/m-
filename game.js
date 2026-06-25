@@ -452,9 +452,9 @@ const characterGuide = {
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
   brawler: {
-    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 5의 피해를 주고 직접 닿았다면 3의 추가 피해를 줍니다."],
+    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 5의 피해를 주고 직접 닿았다면 3의 추가 피해와 2.5의 몸빵 피해를 추가로 줍니다."],
     normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 20% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
-    ultimate: ["신룡권", "55초", "6초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
+    ultimate: ["신룡권", "45초", "6초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -502,9 +502,9 @@ const characterGuide = {
     ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
   },
   cosmic: {
-    attack: ["별가루 수집", "0.5초", "맵 밖 화면 끝의 랜덤한 위치에서 작은 십자가 모양 별가루가 천천히 다가옵니다. 별가루를 얻으면 별가루 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
+    attack: ["별가루 수집", "1초", "1초마다 별가루 스택 1을 얻습니다. 스킬을 사용할 때마다 별가루를 소모하며, 기본 50개를 가지고 시작합니다."],
     normal: ["초신성", "12초", "랜덤한 위치에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 2.5초 동안 기절시킵니다. 별가루 25개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3의 피해와 별가루 1개를 소모합니다."]
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 4의 피해와 별가루 1개를 소모합니다."]
   }
 };
 
@@ -2293,6 +2293,7 @@ function characterMaxHp(kind) {
     swordsman: 125,
     archmage: 140,
     believer: 175,
+    brawler: 200,
     charger: 250,
     tank: 250
   }[kind] ?? 200;
@@ -2412,7 +2413,7 @@ function makeCharacterCombatState(kind) {
     gamblerEnhanceTicks: 0,
     gamblerEnhanceTimer: 0,
     cosmicDust: kind === "cosmic" ? 50 : 0,
-    cosmicDustTimer: kind === "cosmic" ? 30 : Infinity,
+    cosmicDustTimer: kind === "cosmic" ? 60 : Infinity,
     cosmicBlasterCharging: 0,
     cosmicBlasterActive: false,
     cosmicBlasterTick: 0,
@@ -2438,6 +2439,7 @@ function fighterActsLike(fighter, kind) {
 
 function makeFighter(kind, label, ownerId, x, y) {
   const velocity = randomVelocity(6.5);
+  const speed = Math.hypot(velocity.vx, velocity.vy) || 1;
   return {
     ...makeCharacterCombatState(kind),
     label,
@@ -2446,7 +2448,9 @@ function makeFighter(kind, label, ownerId, x, y) {
     x,
     y,
     vx: velocity.vx,
-    vy: velocity.vy
+    vy: velocity.vy,
+    facingX: velocity.vx / speed,
+    facingY: velocity.vy / speed
   };
 }
 
@@ -2656,7 +2660,14 @@ function addSkillPulse(fighter, color = fighter.accent) {
 
 function fighterDirection(fighter) {
   const speed = Math.hypot(fighter.vx, fighter.vy);
-  if (speed > 0.001) return { x: fighter.vx / speed, y: fighter.vy / speed };
+  if (speed > 0.001) {
+    fighter.facingX = fighter.vx / speed;
+    fighter.facingY = fighter.vy / speed;
+    return { x: fighter.facingX, y: fighter.facingY };
+  }
+  if (Number.isFinite(fighter.facingX) && Number.isFinite(fighter.facingY)) {
+    return { x: fighter.facingX, y: fighter.facingY };
+  }
   const seed = hashSeed(`${currentRoom?.code || "local"}|${fighter.ownerId}|${game?.tick || 0}`);
   const angle = (seed / 4294967296) * Math.PI * 2;
   return { x: Math.cos(angle), y: Math.sin(angle) };
@@ -4086,7 +4097,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "brawler") {
     fighter.dragonFistTime = 360;
-    fighter.ultimateTimer = 3300;
+    fighter.ultimateTimer = 2700;
     addVisualEffect({
       type: "dragon-fist",
       fighter,
@@ -4245,9 +4256,13 @@ function updateSkillHud() {
 
   ui.normalSkillName.textContent = names.normal;
   ui.ultimateSkillName.textContent = names.ultimate;
+  ui.normalSkillButton.removeAttribute("data-cost");
+  ui.ultimateSkillButton.removeAttribute("data-cost");
   if (fighter.kind === "cosmic") {
-    ui.normalSkillCooldown.textContent = normalCooldown > 0 ? `${normalCooldown}초 · 별가루 25` : "별가루 25";
-    ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "재사용 시 종료" : "초당 별가루 10";
+    ui.normalSkillButton.setAttribute("data-cost", "별가루 25");
+    ui.ultimateSkillButton.setAttribute("data-cost", "초당 10");
+    ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
+    ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "종료" : "";
   } else {
     ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
     ui.ultimateSkillCooldown.textContent = ultimateCooldown > 0 ? ultimateCooldown : "";
@@ -4459,12 +4474,18 @@ function moveFighter(fighter, dt) {
     fighter.cosmicBlasterCharging -= dt;
     fighter.vx = 0;
     fighter.vy = 0;
+    fighter.throwTimer = 180;
     updateSkills(fighter, dt);
     if (fighter.cosmicBlasterCharging <= 0) {
       fighter.cosmicBlasterActive = true;
       fighter.cosmicBlasterTick = 0;
     }
     return;
+  }
+  if (fighter.cosmicBlasterActive) {
+    fighter.vx = 0;
+    fighter.vy = 0;
+    fighter.throwTimer = 180;
   }
   if (fighter.stunTime > 0) {
     fighter.stunTime -= dt;
@@ -4511,17 +4532,17 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
-  if (fighter.shieldTime <= 0 && fighter.kind !== "swordsman") {
+  if (fighter.shieldTime <= 0 && fighter.kind !== "swordsman" && !fighter.cosmicBlasterActive) {
     fighter.x += fighter.vx * dt;
     fighter.y += fighter.vy * dt;
-  } else if (fighter.kind === "swordsman") {
+  } else if (fighter.kind === "swordsman" || fighter.cosmicBlasterActive) {
     fighter.vx = 0;
     fighter.vy = 0;
   }
   const speed = Math.hypot(fighter.vx, fighter.vy);
   const baseSpeed = characterBaseSpeed(fighter);
   const target = nearestEnemyTarget(fighter);
-  if (fighter.chaseTime > 0 && fighter.chaseBounceTime <= 0) {
+  if (!fighter.cosmicBlasterActive && fighter.chaseTime > 0 && fighter.chaseBounceTime <= 0) {
     const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
     fighter.vx = Math.cos(angle) * Math.max(baseSpeed * 3, speed);
     fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 3, speed);
@@ -4537,7 +4558,10 @@ function moveFighter(fighter, dt) {
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
     * wildInstinct
     * brawlerBoost;
-  if (speed !== 0) {
+  if (fighter.cosmicBlasterActive) {
+    fighter.vx = 0;
+    fighter.vy = 0;
+  } else if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
   } else {
@@ -4732,6 +4756,7 @@ function moveFighter(fighter, dt) {
       while (fighter.cosmicBlasterTick <= 0 && fighter.cosmicBlasterActive && !game.over) {
         if (fighter.cosmicDust <= 0) {
           fighter.cosmicBlasterActive = false;
+          fighter.throwTimer = 180;
           break;
         }
         fighter.cosmicDust -= 1;
@@ -5183,7 +5208,7 @@ function spawnCosmicDust(owner) {
 function castSupernova(owner) {
   if (owner.cosmicDust < 25) return;
   owner.cosmicDust -= 25;
-  const radius = 150;
+  const radius = 170;
   game.areaAttacks.push({
     type: "supernova",
     owner,
@@ -5204,6 +5229,7 @@ function toggleCosmicBlaster(owner) {
   if (owner.cosmicBlasterActive) {
     owner.cosmicBlasterActive = false;
     owner.cosmicBlasterTick = 0;
+    owner.throwTimer = 180;
     return;
   }
   if (owner.cosmicDust <= 0) return;
@@ -5223,9 +5249,11 @@ function updateCosmicDusts(dt) {
   game.fighters.forEach(fighter => {
     if (fighter.kind !== "cosmic" || fighter.hp <= 0) return;
     fighter.cosmicDustTimer -= dt;
-    while (fighter.cosmicDustTimer <= 0 && !fighter.cosmicBlasterActive && fighter.cosmicBlasterCharging <= 0) {
-      spawnCosmicDust(fighter);
-      fighter.cosmicDustTimer += 30;
+    while (fighter.cosmicDustTimer <= 0) {
+      if (!fighter.cosmicBlasterActive && fighter.cosmicBlasterCharging <= 0) {
+        fighter.cosmicDust += 1;
+      }
+      fighter.cosmicDustTimer += 60;
     }
   });
   game.cosmicDusts = game.cosmicDusts.filter(dust => {
@@ -5289,7 +5317,7 @@ function hitCosmicBlaster(owner) {
     const closestX = line.x1 + lineDx * t;
     const closestY = line.y1 + lineDy * t;
     if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 52) {
-      damageCombatTarget(target, 3, owner);
+      damageCombatTarget(target, 4, owner);
     }
   });
 }
@@ -5522,7 +5550,8 @@ function punchTarget(owner, target) {
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
   const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
   const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
-  damage(target, baseDamage + extraDamage, owner);
+  const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
+  damage(target, baseDamage + extraDamage + bodyDamage, owner);
   owner.punchTimer = 90;
   owner.idleAttackTime = 0;
   addVisualEffect({
@@ -5539,7 +5568,8 @@ function punchSummon(owner, summon) {
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
   const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
   const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
-  damageSummon(summon, baseDamage + extraDamage, owner);
+  const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
+  damageSummon(summon, baseDamage + extraDamage + bodyDamage, owner);
   owner.punchTimer = 90;
   owner.idleAttackTime = 0;
   addVisualEffect({
@@ -7114,6 +7144,7 @@ function drawFighter(fighter) {
     ctx.arc(0, 0, 10, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    drawCosmicFacingArrow(fighter);
   }
   if (fighter.kind === "demon") {
     ctx.save();
@@ -7224,30 +7255,97 @@ function drawFighter(fighter) {
   }
 }
 
+function drawCosmicFacingArrow(fighter) {
+  const direction = fighterDirection(fighter);
+  const angle = Math.atan2(direction.y, direction.x);
+  const distance = fighter.radius + 27 + Math.sin(game.tick * 0.12) * 3;
+  ctx.save();
+  ctx.rotate(angle);
+  ctx.translate(distance, 0);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = "rgba(219, 234, 254, 0.95)";
+  ctx.strokeStyle = "#7dd3fc";
+  ctx.shadowColor = "#a78bfa";
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(14, 0);
+  ctx.lineTo(-7, -8);
+  ctx.lineTo(-3, 0);
+  ctx.lineTo(-7, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(250, 204, 21, 0.7)";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(-15, 0);
+  ctx.lineTo(-3, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawDragonFistAura(fighter) {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  ctx.strokeStyle = "#facc15";
-  ctx.fillStyle = "rgba(250, 204, 21, 0.16)";
   ctx.shadowColor = "#facc15";
-  ctx.shadowBlur = 26;
-  ctx.lineWidth = 5;
-  const radius = fighter.radius + 28 + Math.sin(game.tick * 0.18) * 5;
+  ctx.shadowBlur = 32;
+  const pulse = Math.sin(game.tick * 0.16) * 4;
+  const rotation = game.tick * 0.055;
+
+  ctx.strokeStyle = "rgba(250, 204, 21, 0.9)";
+  ctx.fillStyle = "rgba(250, 204, 21, 0.13)";
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.arc(0, 0, radius, Math.PI * 0.2, Math.PI * 1.75);
+  ctx.arc(0, 0, fighter.radius + 34 + pulse, Math.PI * 0.15, Math.PI * 1.9);
   ctx.stroke();
-  ctx.lineWidth = 3;
-  for (let i = 0; i < 3; i += 1) {
-    const angle = game.tick * 0.05 + i * Math.PI * 2 / 3;
+
+  for (let i = 0; i < 2; i += 1) {
+    const angle = rotation + i * Math.PI;
+    const startX = Math.cos(angle) * (fighter.radius + 7);
+    const startY = Math.sin(angle) * (fighter.radius + 7);
+    const midX = Math.cos(angle + 0.95) * (fighter.radius + 72);
+    const midY = Math.sin(angle + 0.95) * (fighter.radius + 72);
+    const endX = Math.cos(angle + 1.75) * (fighter.radius + 38);
+    const endY = Math.sin(angle + 1.75) * (fighter.radius + 38);
+    ctx.strokeStyle = i === 0 ? "#fde68a" : "#f59e0b";
+    ctx.lineWidth = 8 - i * 2;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(angle) * (fighter.radius + 8), Math.sin(angle) * (fighter.radius + 8));
-    ctx.quadraticCurveTo(
-      Math.cos(angle + 0.45) * (fighter.radius + 44),
-      Math.sin(angle + 0.45) * (fighter.radius + 44),
-      Math.cos(angle + 0.95) * (fighter.radius + 18),
-      Math.sin(angle + 0.95) * (fighter.radius + 18)
-    );
+    ctx.moveTo(startX, startY);
+    ctx.quadraticCurveTo(midX, midY, endX, endY);
     ctx.stroke();
+
+    ctx.save();
+    ctx.translate(endX, endY);
+    ctx.rotate(angle + 1.75);
+    ctx.fillStyle = "#fff7ad";
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(-8, -11);
+    ctx.lineTo(-3, 0);
+    ctx.lineTo(-8, 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "#fff7ad";
+    ctx.beginPath();
+    ctx.moveTo(5, -9);
+    ctx.lineTo(12, -18);
+    ctx.moveTo(5, 9);
+    ctx.lineTo(12, 18);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.fillStyle = "rgba(255, 247, 173, 0.9)";
+  for (let i = 0; i < 7; i += 1) {
+    const angle = rotation * 1.7 + i * Math.PI * 2 / 7;
+    const orbit = fighter.radius + 42 + Math.sin(game.tick * 0.12 + i) * 8;
+    ctx.beginPath();
+    ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, i % 2 ? 3 : 4.5, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
