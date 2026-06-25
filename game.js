@@ -1097,11 +1097,19 @@ function syncSelectTimerFromPrep(force = false) {
   selectTimerPhase = phase;
   selectTimerDuration = banPhase ? 15000 : 30000;
   const createdAt = Number(prep.createdAt || prep.created_at || 0);
+  const banTurnStartedAt = Number(prep.banTurnStartedAt || prep.ban_turn_started_at || 0);
   const bansCompleteAt = Number(prep.bansCompleteAt || prep.bans_complete_at || 0);
   const deadlineSeconds = banPhase
-    ? (createdAt ? createdAt + (totalBans + 1) * 15 : 0)
+    ? ((banTurnStartedAt || createdAt) ? (banTurnStartedAt || createdAt) + 15 : 0)
     : (bansCompleteAt ? bansCompleteAt + 30 : createdAt ? createdAt + (prep.casual ? 30 : 90) : 0);
   selectDeadline = deadlineSeconds ? deadlineSeconds * 1000 - serverClockOffsetMs : Date.now() + selectTimerDuration;
+}
+
+function ensureSelectTimerRunning() {
+  if (selectCountdownId || !screens.select.classList.contains("is-active") || game) return;
+  const prep = matchPrepState();
+  if (prep.started || selectedCharacterReady) return;
+  startSelectTimer();
 }
 
 function updateSelectTimer() {
@@ -2080,10 +2088,12 @@ function refreshCharacterSelectState() {
     const isMyTurn = turnSlot === myMatchSlot();
     ui.toBetButton.textContent = isMyTurn ? "밴 확정" : "상대 밴 대기중";
     ui.toBetButton.disabled = !isMyTurn || !pendingBanKind;
+    ensureSelectTimerRunning();
     return;
   }
   ui.toBetButton.textContent = selectedCharacterReady ? "상대 준비 대기중" : "준비 완료";
   ui.toBetButton.disabled = selectedCharacterReady;
+  ensureSelectTimerRunning();
 }
 
 async function submitCharacterBan(characterKind) {

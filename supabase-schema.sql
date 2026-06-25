@@ -595,6 +595,7 @@ begin
       'matchPlayers', jsonb_build_object('p1', active_user.id, 'p2', opponent.id),
       'characterSelections', '{}'::jsonb,
       'bans', jsonb_build_object('p1', '[]'::jsonb, 'p2', '[]'::jsonb),
+      'banTurnStartedAt', extract(epoch from now()),
       'ready', '{}'::jsonb,
       'started', false,
       'createdAt', extract(epoch from now())
@@ -763,6 +764,8 @@ begin
   if total_bans + 1 >= 4 then
     next_state := jsonb_set(next_state, array['bansComplete'], 'true'::jsonb, true);
     next_state := jsonb_set(next_state, array['bansCompleteAt'], to_jsonb(extract(epoch from now())), true);
+  else
+    next_state := jsonb_set(next_state, array['banTurnStartedAt'], to_jsonb(extract(epoch from now())), true);
   end if;
 
   update public.app_rooms
