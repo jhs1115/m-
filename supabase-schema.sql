@@ -703,7 +703,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
     'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
-    'believer', 'archmage', 'gambler'
+    'believer', 'archmage', 'gambler', 'cosmic'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
@@ -762,6 +762,7 @@ begin
 
   if total_bans + 1 >= 4 then
     next_state := jsonb_set(next_state, array['bansComplete'], 'true'::jsonb, true);
+    next_state := jsonb_set(next_state, array['bansCompleteAt'], to_jsonb(extract(epoch from now())), true);
   end if;
 
   update public.app_rooms
@@ -1081,7 +1082,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gambler'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gambler', 'cosmic'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 

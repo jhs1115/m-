@@ -365,10 +365,16 @@ const characters = {
     color: "#f2c14e",
     accent: "#ef476f",
     contactDamage: 0
+  },
+  cosmic: {
+    name: "우주의 힘쓰는 색히",
+    color: "#1e1b4b",
+    accent: "#93c5fd",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gambler"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gambler", "cosmic"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -381,7 +387,7 @@ const skillNames = {
   beamer: { normal: "슬로우 빔", ultimate: "절멸자" },
   wild: { normal: "추격", ultimate: "야생의 본능" },
   vampire: { normal: "흡혈", ultimate: "핏빛 서곡" },
-  brawler: { normal: "투지", ultimate: "야수성" },
+  brawler: { normal: "투지", ultimate: "신룡권" },
   timekeeper: { normal: "건너뛰기", ultimate: "리플레이" },
   riftmaker: { normal: "보이드", ultimate: "게이트" },
   summoner: { normal: "체제 전환", ultimate: "강림" },
@@ -390,7 +396,8 @@ const skillNames = {
   artist: { normal: "드로잉", ultimate: "예술의 혼" },
   believer: { normal: "주신을 위해", ultimate: "커져가는신앙" },
   archmage: { normal: "작열", ultimate: "창해" },
-  gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" }
+  gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" },
+  cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" }
 };
 
 const characterGuide = {
@@ -445,9 +452,9 @@ const characterGuide = {
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
   brawler: {
-    attack: ["맨몸 격투", "1초", "적이 가까이 들어오면 주먹을 날려 7의 피해를 줍니다."],
-    normal: ["투지", "패시브", "체력이 50% 이하가 될 때 경기당 한 번 체력을 30% 회복하고 기본 공격력이 8 증가합니다."],
-    ultimate: ["야수성", "패시브", "공격하지 못한 시간 동안 이동속도가 매초 6%씩 증가합니다."]
+    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 5의 피해를 주고 직접 닿았다면 3의 추가 피해를 줍니다."],
+    normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 20% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
+    ultimate: ["신룡권", "55초", "6초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -476,8 +483,8 @@ const characterGuide = {
   },
   artist: {
     attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 60.5%입니다."],
-    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 35의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
-    ultimate: ["예술의 혼", "20초", "5초 동안 공의 속도가 2배가 되고 궤도 크기가 증가합니다."]
+    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 30의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
+    ultimate: ["내면의 평화", "20초", "현재 궤도 안에 있는 모든 캐릭터의 체력을 30 회복시킵니다. 이후 현재 그려진 궤도가 삭제됩니다."]
   },
   believer: {
     attack: ["기도", "10초", "자신의 체력을 10 회복합니다."],
@@ -493,6 +500,11 @@ const characterGuide = {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
     normal: ["스킬 룰렛", "8초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다. 추격 같은 지속형 스킬은 지속시간 동안 해당 캐릭터처럼 판정됩니다."],
     ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
+  },
+  cosmic: {
+    attack: ["별가루 수집", "0.5초", "맵 밖 화면 끝의 랜덤한 위치에서 작은 십자가 모양 별가루가 천천히 다가옵니다. 별가루를 얻으면 별가루 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
+    normal: ["초신성", "12초", "랜덤한 위치에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 2.5초 동안 기절시킵니다. 별가루 25개를 소모합니다."],
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3의 피해와 별가루 1개를 소모합니다."]
   }
 };
 
@@ -610,6 +622,8 @@ let selectedCharacterReady = false;
 let pendingBanKind = "";
 let selectCountdownId = null;
 let selectDeadline = 0;
+let selectTimerDuration = 30000;
+let selectTimerPhase = "";
 let matchmakingActive = false;
 let matchmakingType = "ranked";
 let matchmakingGeneration = 0;
@@ -1040,6 +1054,7 @@ function resetLocalMatchState() {
   currentRoom = null;
   matchmakingType = "ranked";
   selectedCharacterReady = false;
+  selectTimerPhase = "";
   stopSelectTimer();
   setRoomRealtime(null);
   setRoomPolling(false);
@@ -1068,21 +1083,39 @@ function stopSelectTimer() {
 
 function startSelectTimer() {
   stopSelectTimer();
-  selectDeadline = Date.now() + 30000;
+  syncSelectTimerFromPrep(true);
   updateSelectTimer();
   selectCountdownId = setInterval(updateSelectTimer, 100);
 }
 
+function syncSelectTimerFromPrep(force = false) {
+  const prep = matchPrepState();
+  const banPhase = isRankedBanPhase(prep);
+  const totalBans = totalBanCount(prep);
+  const phase = banPhase ? `ban-${totalBans}` : "pick";
+  if (!force && selectTimerPhase === phase) return;
+  selectTimerPhase = phase;
+  selectTimerDuration = banPhase ? 15000 : 30000;
+  const createdAt = Number(prep.createdAt || prep.created_at || 0);
+  const bansCompleteAt = Number(prep.bansCompleteAt || prep.bans_complete_at || 0);
+  const deadlineSeconds = banPhase
+    ? (createdAt ? createdAt + (totalBans + 1) * 15 : 0)
+    : (bansCompleteAt ? bansCompleteAt + 30 : createdAt ? createdAt + (prep.casual ? 30 : 90) : 0);
+  selectDeadline = deadlineSeconds ? deadlineSeconds * 1000 - serverClockOffsetMs : Date.now() + selectTimerDuration;
+}
+
 function updateSelectTimer() {
+  syncSelectTimerFromPrep(false);
   const remainingMs = Math.max(0, selectDeadline - Date.now());
   const remainingSeconds = Math.ceil(remainingMs / 1000);
-  const progress = remainingMs / 30000;
+  const progress = clamp(remainingMs / selectTimerDuration, 0, 1);
   ui.selectTimerText.textContent = remainingSeconds;
   ui.timerLeftBar.style.transform = `scaleX(${progress})`;
   ui.timerRightBar.style.transform = `scaleX(${progress})`;
   if (remainingMs <= 0) {
     stopSelectTimer();
-    submitCharacterReady();
+    if (isRankedBanPhase(matchPrepState())) submitCharacterBan(pendingBanKind || "none");
+    else submitCharacterReady();
   }
 }
 
@@ -1127,7 +1160,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gambler: "?"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gambler: "?", cosmic: "U"
   })[kind] || "?";
 }
 
@@ -2037,6 +2070,7 @@ function refreshCharacterSelectState() {
   const p2 = getPlayer(matchPlayers.p2);
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
+  syncSelectTimerFromPrep(false);
   if (pendingBanKind && pendingBanKind !== "none" && bannedCharacterSet(prep).has(pendingBanKind)) pendingBanKind = "";
   renderBanPickStatus();
   if (p1) updateCharacterCards("p1", p1);
@@ -2178,7 +2212,8 @@ function normalSkillCooldown(kind) {
     artist: 180,
     believer: 1200,
     archmage: 540,
-    gambler: 480
+    gambler: 480,
+    cosmic: 720
   }[kind] ?? Infinity;
 }
 
@@ -2203,7 +2238,8 @@ function ultimateCooldown(kind) {
     artist: 1200,
     believer: 900,
     archmage: 630,
-    gambler: 1200
+    gambler: 1200,
+    cosmic: 0
   }[kind] ?? Infinity;
 }
 
@@ -2246,8 +2282,8 @@ function makeCharacterCombatState(kind) {
     hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
-    skillTimer: kind === "vampire" || kind === "brawler" ? 0 : 480,
-    ultimateTimer: kind === "wild" || kind === "brawler" ? 0 : 480,
+    skillTimer: kind === "vampire" ? 0 : 480,
+    ultimateTimer: kind === "wild" || kind === "cosmic" ? 0 : 480,
     rageTime: 0,
     unstoppableWindup: 0,
     unstoppableDirectionX: 0,
@@ -2278,8 +2314,8 @@ function makeCharacterCombatState(kind) {
     bloodTimer: kind === "vampire" ? 180 : Infinity,
     bloodPreludeTime: 0,
     punchTimer: 0,
-    gritUsed: false,
-    gritActive: false,
+    brawlerSpeedStacks: 0,
+    dragonFistTime: 0,
     idleAttackTime: 0,
     clockHandTimer: kind === "timekeeper" ? 240 : Infinity,
     clockDamageOverride: 0,
@@ -2330,6 +2366,11 @@ function makeCharacterCombatState(kind) {
     gamblerBodyDamage: 0,
     gamblerEnhanceTicks: 0,
     gamblerEnhanceTimer: 0,
+    cosmicDust: kind === "cosmic" ? 50 : 0,
+    cosmicDustTimer: kind === "cosmic" ? 30 : Infinity,
+    cosmicBlasterCharging: 0,
+    cosmicBlasterActive: false,
+    cosmicBlasterTick: 0,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -2392,6 +2433,7 @@ function resetGame() {
     rifts: [],
     summons: [],
     artOrbs: [],
+    cosmicDusts: [],
     damageTexts: [],
     visualEffects: [],
     contactLock: false,
@@ -2466,12 +2508,6 @@ function damage(fighter, amount, attacker = null) {
   addDamageText(fighter.x, fighter.y - fighter.radius, Math.round(finalAmount * 10) / 10);
   if (fighterActsLike(attacker, "vampire")) {
     heal(attacker, finalAmount * 0.3);
-  }
-  if (fighter.kind === "brawler" && !fighter.gritUsed && fighter.hp <= fighter.maxHp * 0.5 && fighter.hp > 0) {
-    fighter.gritUsed = true;
-    fighter.gritActive = true;
-    heal(fighter, fighter.maxHp * 0.3);
-    addSkillPulse(fighter, fighter.accent);
   }
   updateHud();
   if (fighter.hp <= 0) finishGame(fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0]);
@@ -3798,6 +3834,19 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
+  if (fighter.kind === "brawler") {
+    if (fighter.hp <= fighter.maxHp * 0.5) {
+      const missingFromHalf = Math.max(0, fighter.maxHp * 0.5 - fighter.hp);
+      const healAmount = 10 + Math.min(10, missingFromHalf / (fighter.maxHp * 0.5) * 10);
+      heal(fighter, healAmount);
+    } else {
+      fighter.brawlerSpeedStacks += 1;
+      addSkillPulse(fighter, fighter.accent);
+    }
+    fighter.skillTimer = 840;
+    return;
+  }
+
   if (fighter.kind === "timekeeper") {
     skipTime(fighter);
     fighter.skillTimer = 540;
@@ -3830,6 +3879,11 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "artist") {
     useDrawing(fighter);
+    return;
+  }
+
+  if (fighter.kind === "cosmic") {
+    castSupernova(fighter);
     return;
   }
 
@@ -3981,9 +4035,25 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "artist") {
-    fighter.artSoulTime = 300;
-    fighter.ultimateTimer = 1200;
-    addSkillPulse(fighter, fighter.accent);
+    useInnerPeace(fighter);
+    return;
+  }
+
+  if (fighter.kind === "brawler") {
+    fighter.dragonFistTime = 360;
+    fighter.ultimateTimer = 3300;
+    addVisualEffect({
+      type: "dragon-fist",
+      fighter,
+      color: "#facc15",
+      life: 360,
+      maxLife: 360
+    });
+    return;
+  }
+
+  if (fighter.kind === "cosmic") {
+    toggleCosmicBlaster(fighter);
     return;
   }
 
@@ -4025,16 +4095,18 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
-  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0) return false;
   if (type === "normal") {
-    if (fighter.kind === "vampire" || fighter.kind === "brawler") return false;
+    if (fighter.kind === "vampire") return false;
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
+    if (fighter.kind === "cosmic" && fighter.cosmicDust < 25) return false;
     return true;
   }
-  if (fighter.kind === "wild" || fighter.kind === "brawler") return false;
+  if (fighter.kind === "wild") return false;
   if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
+  if (fighter.kind === "cosmic" && !fighter.cosmicBlasterActive && fighter.cosmicDust <= 0) return false;
   return fighter.ultimateTimer <= 0;
 }
 
@@ -4128,8 +4200,13 @@ function updateSkillHud() {
 
   ui.normalSkillName.textContent = names.normal;
   ui.ultimateSkillName.textContent = names.ultimate;
-  ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
-  ui.ultimateSkillCooldown.textContent = ultimateCooldown > 0 ? ultimateCooldown : "";
+  if (fighter.kind === "cosmic") {
+    ui.normalSkillCooldown.textContent = normalCooldown > 0 ? `${normalCooldown}초 · 별가루 25` : "별가루 25";
+    ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "재사용 시 종료" : "초당 별가루 10";
+  } else {
+    ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
+    ui.ultimateSkillCooldown.textContent = ultimateCooldown > 0 ? ultimateCooldown : "";
+  }
   ui.normalSkillButton.classList.toggle("is-cooling", normalCooldown > 0);
   ui.ultimateSkillButton.classList.toggle("is-cooling", ultimateCooldown > 0);
   ui.normalSkillButton.classList.toggle("is-locked", normalLocked);
@@ -4333,6 +4410,17 @@ function moveFighter(fighter, dt) {
     if (fighter.demonBurstWindup <= 0) launchDemonMissile(fighter);
     return;
   }
+  if (fighter.cosmicBlasterCharging > 0) {
+    fighter.cosmicBlasterCharging -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.cosmicBlasterCharging <= 0) {
+      fighter.cosmicBlasterActive = true;
+      fighter.cosmicBlasterTick = 0;
+    }
+    return;
+  }
   if (fighter.stunTime > 0) {
     fighter.stunTime -= dt;
     if (fighter.rageTime > 0) fighter.rageTime -= dt;
@@ -4394,7 +4482,7 @@ function moveFighter(fighter, dt) {
     fighter.vy = Math.sin(angle) * Math.max(baseSpeed * 3, speed);
   }
   const wildInstinct = fighterActsLike(fighter, "wild") && target.hp <= target.maxHp * 0.5 ? 3.5 : 1;
-  const brawlerRamp = fighter.kind === "brawler" ? 1 + fighter.idleAttackTime / 60 * 0.06 : 1;
+  const brawlerBoost = fighter.kind === "brawler" ? 1 + fighter.brawlerSpeedStacks * 0.2 : 1;
   const targetSpeed = baseSpeed
     * (fighter.rageTime > 0 ? 1.55 : 1)
     * (fighter.hasteTime > 0 ? 1.35 : 1)
@@ -4403,7 +4491,7 @@ function moveFighter(fighter, dt) {
     * (fighter.chaseTime > 0 ? 3 : 1)
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
     * wildInstinct
-    * brawlerRamp;
+    * brawlerBoost;
   if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
@@ -4439,6 +4527,7 @@ function moveFighter(fighter, dt) {
   if (fighter.chaseTime > 0) fighter.chaseTime -= dt;
   if (fighter.chaseBounceTime > 0) fighter.chaseBounceTime -= dt;
   if (fighter.bloodPreludeTime > 0) fighter.bloodPreludeTime -= dt;
+  if (fighter.dragonFistTime > 0) fighter.dragonFistTime -= dt;
   if (fighter.riftWallCooldown > 0) fighter.riftWallCooldown -= dt;
   if (fighter.kind === "riftmaker" && wallHit && fighter.riftWallCooldown <= 0) {
     addRift(fighter, fighter.x, fighter.y, false, wallHit);
@@ -4498,7 +4587,6 @@ function moveFighter(fighter, dt) {
 
   if (fighter.kind === "brawler") {
     if (fighter.punchTimer > 0) fighter.punchTimer -= dt;
-    fighter.idleAttackTime += dt;
     const summonTarget = enemySummonsOf(fighter).find(summon => (
       Math.hypot(summon.x - fighter.x, summon.y - fighter.y) < fighter.radius + summon.radius + 52
     ));
@@ -4593,7 +4681,22 @@ function moveFighter(fighter, dt) {
     }
   }
 
-  if (fighter.canThrow) {
+  if (fighter.kind === "cosmic") {
+    if (fighter.cosmicBlasterActive) {
+      fighter.cosmicBlasterTick -= dt;
+      while (fighter.cosmicBlasterTick <= 0 && fighter.cosmicBlasterActive && !game.over) {
+        if (fighter.cosmicDust <= 0) {
+          fighter.cosmicBlasterActive = false;
+          break;
+        }
+        fighter.cosmicDust -= 1;
+        hitCosmicBlaster(fighter);
+        fighter.cosmicBlasterTick += 6;
+      }
+    }
+  }
+
+  if (fighter.canThrow && !fighter.cosmicBlasterActive) {
     fighter.throwTimer -= dt;
     if (fighter.throwTimer <= 0) {
       throwBall(fighter);
@@ -4824,7 +4927,6 @@ function beginSwordUltimate(owner) {
 function addDemonMark(target, count, duration) {
   target.demonMarkCount = Math.min(9, (target.demonMarkCount || 0) + count);
   target.demonMarkTime = Math.max(target.demonMarkTime || 0, duration);
-  addFloatingText(target.x, target.y - target.radius - 22, `표식 x${target.demonMarkCount}`, "#38bdf8");
 }
 
 function consumeDemonMarks(target, count = 1) {
@@ -4974,7 +5076,7 @@ function useDrawing(owner) {
       wasInsideTrail = insideTrail;
     }
     if (overlapGroups > 0) {
-      damageCombatTarget(target, 35, owner);
+      damageCombatTarget(target, 30, owner);
       hits += 1;
     }
   });
@@ -4987,7 +5089,190 @@ function useDrawing(owner) {
     maxLife: 34
   });
   orb.trail = [];
-  addFloatingText(owner.x, owner.y - owner.radius - 38, hits ? `드로잉 x${hits}` : "드로잉", owner.accent);
+}
+
+function useInnerPeace(owner) {
+  const orb = game.artOrbs?.find(item => item.owner === owner);
+  if (!orb) return;
+  const targets = [owner, opponentOf(owner), ...game.summons].filter(target => target?.hp > 0);
+  targets.forEach(target => {
+    const inTrail = orb.trail.some((point, index) => {
+      if (index < 1) return false;
+      const previous = orb.trail[index - 1];
+      const width = Math.max(previous.radius || 18, point.radius || 18);
+      return pointSegmentDistance(target.x, target.y, previous.x, previous.y, point.x, point.y) < target.radius + width;
+    });
+    if (inTrail) {
+      const before = target.hp;
+      target.hp = clamp(target.hp + 30, 0, target.maxHp);
+      target.healingDone = (target.healingDone || 0) + Math.max(0, target.hp - before);
+    }
+  });
+  updateHud();
+  addVisualEffect({
+    type: "drawing-flash",
+    trail: orb.trail.map(point => ({ ...point })),
+    color: "#e0f2fe",
+    life: 42,
+    maxLife: 42
+  });
+  orb.trail = [];
+  owner.ultimateTimer = 1200;
+}
+
+function spawnCosmicDust(owner) {
+  if (!game || owner.cosmicBlasterActive || owner.cosmicBlasterCharging > 0) return;
+  const edge = Math.floor(seededRandom() * 4);
+  const x = edge === 0 ? -28 : edge === 1 ? canvas.width + 28 : seededRandom() * canvas.width;
+  const y = edge === 2 ? -28 : edge === 3 ? canvas.height + 28 : seededRandom() * canvas.height;
+  game.cosmicDusts.push({
+    owner,
+    x,
+    y,
+    radius: 7,
+    life: 720,
+    color: owner.accent
+  });
+}
+
+function castSupernova(owner) {
+  if (owner.cosmicDust < 25) return;
+  owner.cosmicDust -= 25;
+  const radius = 150;
+  game.areaAttacks.push({
+    type: "supernova",
+    owner,
+    x: radius + seededRandom() * (canvas.width - radius * 2),
+    y: radius + seededRandom() * (canvas.height - radius * 2),
+    radius,
+    delay: 34,
+    life: 78,
+    hit: false,
+    damage: 15,
+    stun: 150,
+    color: "#93c5fd"
+  });
+  owner.skillTimer = 720;
+}
+
+function toggleCosmicBlaster(owner) {
+  if (owner.cosmicBlasterActive) {
+    owner.cosmicBlasterActive = false;
+    owner.cosmicBlasterTick = 0;
+    return;
+  }
+  if (owner.cosmicDust <= 0) return;
+  owner.cosmicBlasterCharging = 60;
+  owner.cosmicBlasterTick = 0;
+  addVisualEffect({
+    type: "cosmic-charge",
+    fighter: owner,
+    color: owner.accent,
+    life: 60,
+    maxLife: 60
+  });
+}
+
+function updateCosmicDusts(dt) {
+  if (!game.cosmicDusts) game.cosmicDusts = [];
+  game.fighters.forEach(fighter => {
+    if (fighter.kind !== "cosmic" || fighter.hp <= 0) return;
+    fighter.cosmicDustTimer -= dt;
+    while (fighter.cosmicDustTimer <= 0 && !fighter.cosmicBlasterActive && fighter.cosmicBlasterCharging <= 0) {
+      spawnCosmicDust(fighter);
+      fighter.cosmicDustTimer += 30;
+    }
+  });
+  game.cosmicDusts = game.cosmicDusts.filter(dust => {
+    if (dust.owner.hp <= 0) return false;
+    dust.life -= dt;
+    const angle = Math.atan2(dust.owner.y - dust.y, dust.owner.x - dust.x);
+    const speed = 1.75;
+    dust.x += Math.cos(angle) * speed * dt;
+    dust.y += Math.sin(angle) * speed * dt;
+    if (Math.hypot(dust.owner.x - dust.x, dust.owner.y - dust.y) < dust.owner.radius + dust.radius + 4) {
+      dust.owner.cosmicDust += 1;
+      return false;
+    }
+    return dust.life > 0;
+  });
+}
+
+function drawCosmicDusts() {
+  if (!game.cosmicDusts?.length) return;
+  game.cosmicDusts.forEach(dust => {
+    ctx.save();
+    ctx.translate(dust.x, dust.y);
+    ctx.rotate(game.tick * 0.08);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = dust.color;
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = "#f8fbff";
+    ctx.fillStyle = dust.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.lineTo(0, 9);
+    ctx.moveTo(-9, 0);
+    ctx.lineTo(9, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function cosmicBlasterLine(owner) {
+  const direction = fighterDirection(owner);
+  return {
+    x1: owner.x + direction.x * (owner.radius + 8),
+    y1: owner.y + direction.y * (owner.radius + 8),
+    x2: owner.x + direction.x * 900,
+    y2: owner.y + direction.y * 900
+  };
+}
+
+function hitCosmicBlaster(owner) {
+  const line = cosmicBlasterLine(owner);
+  [opponentOf(owner), ...enemySummonsOf(owner)].forEach(target => {
+    if (!target?.hp) return;
+    const lineDx = line.x2 - line.x1;
+    const lineDy = line.y2 - line.y1;
+    const lengthSquared = lineDx * lineDx + lineDy * lineDy || 1;
+    const t = clamp(((target.x - line.x1) * lineDx + (target.y - line.y1) * lineDy) / lengthSquared, 0, 1);
+    const closestX = line.x1 + lineDx * t;
+    const closestY = line.y1 + lineDy * t;
+    if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 52) {
+      damageCombatTarget(target, 3, owner);
+    }
+  });
+}
+
+function drawCosmicBlasters() {
+  game.fighters.filter(fighter => fighter.cosmicBlasterActive || fighter.cosmicBlasterCharging > 0).forEach(fighter => {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    if (fighter.cosmicBlasterCharging > 0) {
+      const progress = 1 - fighter.cosmicBlasterCharging / 60;
+      ctx.translate(fighter.x, fighter.y);
+      ctx.strokeStyle = "#93c5fd";
+      ctx.shadowColor = "#c4b5fd";
+      ctx.shadowBlur = 30 + progress * 24;
+      ctx.lineWidth = 3 + progress * 6;
+      for (let ring = 0; ring < 3; ring += 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, fighter.radius + 18 + ring * 14 + progress * 18, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
+    const line = cosmicBlasterLine(fighter);
+    drawPrismaticBeam(ctx, line.x1, line.y1, line.x2, line.y2, 74, "#93c5fd", game.tick, 0.92);
+    drawPrismaticBeam(ctx, line.x1, line.y1, line.x2, line.y2, 38, "#f8fbff", game.tick + 30, 0.7);
+    ctx.restore();
+  });
 }
 
 function throwBall(owner, options = {}) {
@@ -5188,9 +5473,12 @@ function createTankBlast(owner) {
 }
 
 function punchTarget(owner, target) {
-  const damageAmount = 7 + (owner.gritActive ? 8 : 0);
-  damage(target, damageAmount, owner);
-  owner.punchTimer = 60;
+  const directContact = Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + owner.radius;
+  const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
+  const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
+  damage(target, baseDamage + extraDamage, owner);
+  owner.punchTimer = 90;
   owner.idleAttackTime = 0;
   addVisualEffect({
     type: "rage-burst",
@@ -5202,9 +5490,12 @@ function punchTarget(owner, target) {
 }
 
 function punchSummon(owner, summon) {
-  const damageAmount = 7 + (owner.gritActive ? 8 : 0);
-  damageSummon(summon, damageAmount, owner);
-  owner.punchTimer = 60;
+  const directContact = Math.hypot(summon.x - owner.x, summon.y - owner.y) < summon.radius + owner.radius;
+  const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 5;
+  const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
+  damageSummon(summon, baseDamage + extraDamage, owner);
+  owner.punchTimer = 90;
   owner.idleAttackTime = 0;
   addVisualEffect({
     type: "rage-burst",
@@ -5521,6 +5812,15 @@ function updateAreaAttacks(dt) {
     if (attack.delay <= 0 && !attack.hit) {
       attack.hit = true;
       const target = opponentOf(attack.owner);
+      if (attack.type === "supernova") {
+        [target, ...enemySummonsOf(attack.owner)].forEach(hitTarget => {
+          if (hitTarget?.hp > 0 && Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y) < hitTarget.radius + attack.radius) {
+            damageCombatTarget(hitTarget, attack.damage, attack.owner);
+            if (!hitTarget.owner && attack.stun) hitTarget.stunTime = Math.max(hitTarget.stunTime || 0, attack.stun);
+          }
+        });
+        return attack.life > 0;
+      }
       if (attack.type === "sword-circle") {
         [target, ...enemySummonsOf(attack.owner)].forEach(hitTarget => {
           if (hitTarget?.hp > 0 && Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y) < hitTarget.radius + attack.radius) {
@@ -5541,6 +5841,7 @@ function updateAreaAttacks(dt) {
         && Math.abs(target.x - attack.x) < target.radius + 18;
       if (hitsImpactArea || hitsLaserColumn) {
         damage(target, attack.damage, attack.owner);
+        if (attack.stun) target.stunTime = Math.max(target.stunTime || 0, attack.stun);
       }
     }
     return attack.life > 0;
@@ -5802,9 +6103,11 @@ function drawArena() {
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
   game.beams.forEach(drawBeam);
+  drawCosmicBlasters();
   game.weapons.forEach(drawWeapon);
   drawRifts();
   drawArtOrbs();
+  drawCosmicDusts();
   game.balls.forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
@@ -6746,6 +7049,27 @@ function drawFighter(fighter) {
     ctx.stroke();
     ctx.restore();
   }
+  if (fighter.kind === "cosmic") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#93c5fd";
+    ctx.fillStyle = "#f8fbff";
+    ctx.shadowColor = "#93c5fd";
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3;
+    ctx.rotate(game.tick * 0.025);
+    for (let index = 0; index < 4; index += 1) {
+      const angle = index * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
+      ctx.lineTo(Math.cos(angle) * 24, Math.sin(angle) * 24);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   if (fighter.kind === "demon") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -6814,6 +7138,9 @@ function drawFighter(fighter) {
   if (fighter.stealthTime > 0) {
     drawStealthAura(fighter);
   }
+  if (fighter.dragonFistTime > 0) {
+    drawDragonFistAura(fighter);
+  }
   if (fighter.lockOnTime > 0) drawLockOnMark(fighter);
   if (fighter.shieldTime > 0) {
     ctx.strokeStyle = "#d5dde8";
@@ -6847,6 +7174,37 @@ function drawFighter(fighter) {
   if (fighter.kind === "summoner") {
     addFighterStatLabel(fighter, fighter.summonMode === "warrior" ? "전사 체제" : "궁수 체제", fighter.accent);
   }
+  if (fighter.kind === "cosmic") {
+    addFighterStatLabel(fighter, `별가루 ${Math.floor(fighter.cosmicDust)}`, fighter.accent);
+  }
+}
+
+function drawDragonFistAura(fighter) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "#facc15";
+  ctx.fillStyle = "rgba(250, 204, 21, 0.16)";
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 26;
+  ctx.lineWidth = 5;
+  const radius = fighter.radius + 28 + Math.sin(game.tick * 0.18) * 5;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, Math.PI * 0.2, Math.PI * 1.75);
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 3; i += 1) {
+    const angle = game.tick * 0.05 + i * Math.PI * 2 / 3;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * (fighter.radius + 8), Math.sin(angle) * (fighter.radius + 8));
+    ctx.quadraticCurveTo(
+      Math.cos(angle + 0.45) * (fighter.radius + 44),
+      Math.sin(angle + 0.45) * (fighter.radius + 44),
+      Math.cos(angle + 0.95) * (fighter.radius + 18),
+      Math.sin(angle + 0.95) * (fighter.radius + 18)
+    );
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawDemonMark(target) {
@@ -6874,32 +7232,19 @@ function drawDemonMark(target) {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = alpha;
-  ctx.translate(target.x, target.y - target.radius - 16);
+  ctx.translate(target.x, target.y);
   for (let index = 0; index < count; index += 1) {
-    const angle = index / Math.max(1, count) * Math.PI * 2 + game.tick * 0.04;
-    const x = Math.cos(angle) * 17;
-    const y = Math.sin(angle) * 7;
-    ctx.fillStyle = index % 2 ? "#6b3f24" : "#38bdf8";
+    const angle = index / Math.max(1, count) * Math.PI * 2 + game.tick * 0.055;
+    const orbit = target.radius + 22 + (index % 2) * 5;
+    const x = Math.cos(angle) * orbit;
+    const y = Math.sin(angle) * orbit;
+    ctx.fillStyle = index % 2 ? "#173b6c" : "#38bdf8";
     ctx.shadowColor = ctx.fillStyle;
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 20;
     ctx.beginPath();
-    ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+    ctx.arc(x, y, 6.5, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = "rgba(5, 5, 5, 0.72)";
-  ctx.shadowColor = "#38bdf8";
-  ctx.shadowBlur = 16;
-  ctx.beginPath();
-  ctx.roundRect(-15, -12, 30, 24, 8);
-  ctx.fill();
-  ctx.fillStyle = "#dff8ff";
-  ctx.strokeStyle = "#050505";
-  ctx.lineWidth = 4;
-  ctx.font = "900 15px Segoe UI, Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.strokeText(String(count), 0, 0);
-  ctx.fillText(String(count), 0, 0);
   ctx.restore();
 }
 
@@ -7273,6 +7618,37 @@ function drawAreaAttack(attack) {
     ctx.restore();
     return;
   }
+  if (attack.type === "supernova") {
+    const progress = attack.delay > 0
+      ? 1 - attack.delay / 34
+      : 1 - clamp(attack.life / 44, 0, 1);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = attack.delay > 0 ? 0.32 + progress * 0.24 : clamp(attack.life / 42, 0, 1);
+    ctx.translate(attack.x, attack.y);
+    ctx.shadowColor = "#93c5fd";
+    ctx.shadowBlur = attack.delay > 0 ? 22 : 48;
+    for (let ring = 0; ring < 4; ring += 1) {
+      ctx.strokeStyle = ring % 2 ? "#c4b5fd" : "#f8fbff";
+      ctx.lineWidth = ring === 0 ? 7 : 3;
+      ctx.setLineDash(ring % 2 ? [18, 12] : []);
+      ctx.lineDashOffset = -game.tick * (ring + 1);
+      ctx.beginPath();
+      ctx.arc(0, 0, attack.radius * (0.35 + progress * 0.65) - ring * 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (attack.delay <= 0) {
+      const core = ctx.createRadialGradient(0, 0, 0, 0, 0, attack.radius * 0.72);
+      core.addColorStop(0, "rgba(248,251,255,0.72)");
+      core.addColorStop(0.38, "rgba(147,197,253,0.32)");
+      core.addColorStop(1, "rgba(67,56,202,0)");
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(0, 0, attack.radius * 0.72, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
   ctx.globalAlpha = warning ? 0.42 + Math.sin(game.tick * 0.32) * 0.12 : clamp(attack.life / 24, 0, 1);
   ctx.strokeStyle = isAnnihilator ? "#ff304f" : attack.type === "laser" ? "#62dfff" : attack.color;
   ctx.fillStyle = isAnnihilator ? "rgba(255,48,79,0.18)" : attack.type === "laser" ? "rgba(66,165,255,0.16)" : "rgba(216,255,117,0.12)";
@@ -7504,6 +7880,7 @@ function stepGame(dt) {
     updateRifts(dt);
     updateSummons(dt);
     updateArtOrbs(dt);
+    updateCosmicDusts(dt);
     updateDamageTexts(dt);
     updateVisualEffects(dt);
     updateSkillHud();
@@ -7936,12 +8313,6 @@ function damagePvePlayer(amount) {
   player.damageTaken += actualDamage;
   pveGame.player.hitFlash = 10;
   addPveDamage(player.x, player.y - 36, Math.round(amount * 10) / 10);
-  if (player.kind === "brawler" && !player.gritUsed && player.hp <= player.maxHp * 0.5) {
-    player.gritUsed = true;
-    player.gritActive = true;
-    healPvePlayer(player.maxHp * 0.3);
-    addPveFloating("투지!", player.accent);
-  }
   if (player.hp <= 0) finishPve(false);
 }
 
@@ -8446,10 +8817,11 @@ function stepPve() {
       player.shotTimer = player.bloodPreludeTime > 0 ? 60 : 180;
     } else if (player.kind === "brawler") {
       if (closest && Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius + 52) {
-        damagePveEnemy(closest, 7 + (player.gritActive ? 8 : 0));
+        const directContact = Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius;
+        damagePveEnemy(closest, directContact ? 8 : 5);
         player.idleAttackTime = 0;
       }
-      player.shotTimer = 60;
+      player.shotTimer = 90;
     } else {
       player.shotTimer = 60;
     }
@@ -11692,4 +12064,3 @@ async function boot() {
 }
 
 boot();
-
