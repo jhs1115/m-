@@ -34,8 +34,8 @@ const screens = {
   game: document.getElementById("gameScreen")
 };
 
-const canvas = document.getElementById("arena");
-const ctx = canvas.getContext("2d");
+let canvas = document.getElementById("arena");
+let ctx = canvas.getContext("2d");
 const pveCanvas = document.getElementById("pveArena");
 const pveCtx = pveCanvas.getContext("2d");
 
@@ -611,6 +611,7 @@ let selections = {
 let game = null;
 let animationId = null;
 let gameSpeed = 1;
+let codexPreviewMode = false;
 let selectedMode = "";
 let roomPollId = null;
 let roomRefreshPending = false;
@@ -743,7 +744,7 @@ function startCodexPreview(kind, skillIndex = 0, mode = "character") {
   const canvas = ui.codexDetail?.querySelector("#codexPreviewCanvas");
   if (!canvas) return;
   stopCodexPreview();
-  codexPreviewState = { canvas, kind, skillIndex, mode, startedAt: performance.now() };
+  codexPreviewState = { canvas, kind, skillIndex, mode, startedAt: performance.now(), previewGame: null, previewTick: -1 };
   const loop = now => {
     if (!codexPreviewState || codexPreviewState.canvas !== canvas) return;
     drawCodexPreviewFrame(codexPreviewState, now);
@@ -754,56 +755,208 @@ function startCodexPreview(kind, skillIndex = 0, mode = "character") {
 
 function drawCodexPreviewFrame(state, now) {
   const { canvas, kind, skillIndex, mode, startedAt } = state;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  const previewCtx = canvas.getContext("2d");
+  if (!previewCtx) return;
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const width = Math.max(560, Math.floor(rect.width * dpr));
-  const height = Math.max(260, Math.floor(rect.height * dpr));
+  const width = Math.max(760, Math.floor(rect.width * dpr));
+  const height = Math.max(320, Math.floor(rect.height * dpr));
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
+    state.previewGame = null;
+    state.previewTick = -1;
   }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const w = width / dpr;
-  const h = height / dpr;
-  const t = ((now - startedAt) % 2800) / 2800;
-  const info = mode === "enemy" ? enemyGuide[kind] : characters[kind] || characters[DEFAULT_CHARACTER];
-  const color = info?.color || "#3dd6d0";
-  const accent = info?.accent || "#f2c14e";
-  const label = mode === "enemy" ? info?.initial || "E" : characterInitial(kind);
-  const caster = { x: w * 0.24, y: h * 0.56, r: 28 };
-  const dummy = { x: w * 0.76, y: h * 0.56, r: 25 };
+  const cycleMs = 5200;
+  const tick = Math.floor(((now - startedAt) % cycleMs) / FIXED_STEP_MS);
+  withCodexPreviewContext(state, previewCtx, () => {
+    if (!state.previewGame || tick < state.previewTick) {
+      state.previewGame = createCodexActualPreviewGame(kind, skillIndex, width, height);
+      game = state.previewGame;
+      state.previewTick = 0;
+      setupCodexActualPreviewSkill(state.previewGame, kind, skillIndex);
+    }
+    while (state.previewTick < tick && !state.previewGame.over) {
+      stepGame(1);
+      state.previewTick += 1;
+    }
+    drawArena();
+  });
+}
 
-  drawCodexPreviewBackground(ctx, w, h, color, accent);
-  const scene = drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent) || {};
-  const casterPose = scene.caster || caster;
-  const dummyPose = scene.dummy || dummy;
-  if (!scene.hideCaster) {
-    drawCodexActualFighter(ctx, {
-      kind,
-      x: casterPose.x,
-      y: casterPose.y,
-      radius: casterPose.r || caster.r,
-      color,
-      accent,
-      label,
-      state: scene.casterState || {}
-    }, t);
+function withCodexPreviewContext(state, previewCtx, callback) {
+  const originalCanvas = canvas;
+  const originalCtx = ctx;
+  const originalGame = game;
+  const originalRoom = currentRoom;
+  const originalPreviewMode = codexPreviewMode;
+  canvas = state.canvas;
+  ctx = previewCtx;
+  game = state.previewGame;
+  currentRoom = { prepState: {}, prep_state: {} };
+  codexPreviewMode = true;
+  try {
+    callback();
+    state.previewGame = game;
+  } finally {
+    canvas = originalCanvas;
+    ctx = originalCtx;
+    game = originalGame;
+    currentRoom = originalRoom;
+    codexPreviewMode = originalPreviewMode;
   }
-  if (!scene.hideDummy) {
-    drawCodexActualFighter(ctx, {
-      kind: "dummy",
-      x: dummyPose.x,
-      y: dummyPose.y,
-      radius: dummyPose.r || dummy.r,
-      color: "#8b95a7",
-      accent: "#e5e7eb",
-      label: "D",
-      state: scene.dummyState || {}
-    }, t);
+}
+
+function makeCodexPreviewFighter(kind, label, ownerId, x, y) {
+  const state = makeCharacterCombatState(kind);
+  return {
+    ...state,
+    label,
+    ownerId,
+    ownerName: label,
+    x,
+    y,
+    vx: ownerId === "codex-1" ? 1.8 : -1.2,
+    vy: ownerId === "codex-1" ? 0.35 : -0.25,
+    facingX: ownerId === "codex-1" ? 1 : -1,
+    facingY: 0,
+    hp: 999,
+    maxHp: 999
+  };
+}
+
+function createCodexActualPreviewGame(kind, skillIndex, width, height) {
+  const caster = makeCodexPreviewFighter(kind, characters[kind]?.name || "캐릭터", "codex-1", width * 0.24, height * 0.55);
+  const dummy = makeCodexPreviewFighter("tank", "더미", "codex-2", width * 0.76, height * 0.55);
+  dummy.color = "#8b95a7";
+  dummy.accent = "#e5e7eb";
+  dummy.damageReduction = 0;
+  dummy.contactDamage = 0;
+  dummy.vx = -0.5;
+  dummy.vy = 0.15;
+  primeCodexPreviewTimers(caster);
+  primeCodexPreviewTimers(dummy);
+  return {
+    fighters: [caster, dummy],
+    balls: [],
+    grapples: [],
+    pokerShots: [],
+    shockwaves: [],
+    areaAttacks: [],
+    beams: [],
+    weapons: [],
+    rifts: [],
+    summons: [],
+    artOrbs: [],
+    cosmicDusts: [],
+    damageTexts: [],
+    visualEffects: [],
+    contactLock: false,
+    over: false,
+    tick: 0,
+    easterEgg: null,
+    startTimeMs: 0,
+    lastCanonicalTick: 0
+  };
+}
+
+function primeCodexPreviewTimers(fighter) {
+  fighter.throwTimer = Infinity;
+  fighter.grabTimer = Infinity;
+  fighter.pokerTimer = Infinity;
+  fighter.beamTimer = Infinity;
+  fighter.wildTimer = Infinity;
+  fighter.bloodTimer = Infinity;
+  fighter.clockHandTimer = Infinity;
+  fighter.summonTimer = Infinity;
+  fighter.swordTimer = Infinity;
+  fighter.demonSwordTimer = Infinity;
+  fighter.rouletteAttackTimer = Infinity;
+  fighter.mageLightningTimer = Infinity;
+  fighter.cosmicDustTimer = Infinity;
+  fighter.prayerTimer = Infinity;
+  fighter.skillTimer = 0;
+  fighter.ultimateTimer = 0;
+}
+
+function setupCodexActualPreviewSkill(previewGame, kind, skillIndex) {
+  const caster = previewGame.fighters[0];
+  const dummy = previewGame.fighters[1];
+  const aim = Math.atan2(dummy.y - caster.y, dummy.x - caster.x);
+  caster.facingX = Math.cos(aim);
+  caster.facingY = Math.sin(aim);
+  caster.vx = Math.cos(aim) * 1.2;
+  caster.vy = Math.sin(aim) * 0.4;
+  if (kind === "artist") {
+    spawnArtOrb(caster);
+    const orb = previewGame.artOrbs[0];
+    if (orb) {
+      orb.x = (caster.x + dummy.x) / 2;
+      orb.y = caster.y - 40;
+      orb.vx = 4.2;
+      orb.vy = 2.4;
+      orb.trail = Array.from({ length: 120 }, (_, index) => {
+        const angle = index / 120 * Math.PI * 2;
+        return {
+          x: (caster.x + dummy.x) / 2 + Math.cos(angle) * 145,
+          y: caster.y + Math.sin(angle) * 58,
+          radius: 18
+        };
+      });
+    }
   }
-  drawCodexHitSpark(ctx, dummy, t, accent);
+  if (kind === "riftmaker") {
+    addRift(caster, caster.x + 82, caster.y - 58);
+    addRift(caster, dummy.x - 88, dummy.y + 64);
+  }
+  if (kind === "stealth") {
+    caster.stealthTime = skillIndex === 1 ? 180 : 0;
+  }
+  if (skillIndex === 0) {
+    setupCodexActualBasic(caster, dummy, kind);
+  } else if (skillIndex === 1) {
+    triggerNormalSkill(caster);
+  } else {
+    triggerUltimate(caster);
+  }
+  caster.skillTimer = Infinity;
+  caster.ultimateTimer = Infinity;
+}
+
+function setupCodexActualBasic(caster, dummy, kind) {
+  if (kind === "thrower") throwBall(caster, { force: true });
+  else if (kind === "charger" || kind === "tank") {
+    const angle = Math.atan2(dummy.y - caster.y, dummy.x - caster.x);
+    caster.vx = Math.cos(angle) * 6.8;
+    caster.vy = Math.sin(angle) * 6.8;
+  } else if (kind === "grabber") throwGrapple(caster, false, true);
+  else if (kind === "poker") dealPokerAttack(caster, { force: true });
+  else if (kind === "stealth") startStealth(caster);
+  else if (kind === "enhancer") {
+    caster.attackPower = 18;
+    launchGodWeapon(caster, caster.attackPower);
+  } else if (kind === "beamer") createSkyLaser(caster);
+  else if (kind === "wild") createWildSlashes(caster, dummy.x, dummy.y);
+  else if (kind === "vampire") fireBloodBullet(caster);
+  else if (kind === "brawler") punchTarget(caster, dummy);
+  else if (kind === "timekeeper") swingClockHand(caster);
+  else if (kind === "riftmaker") {
+    addRift(caster, caster.x + 76, caster.y - 54);
+    addRift(caster, dummy.x - 82, dummy.y + 58);
+  } else if (kind === "summoner") summonUnit(caster, false);
+  else if (kind === "swordsman") useSwordBasic(caster);
+  else if (kind === "demon") fireDemonLine(caster, { damage: 5, addMark: 1, markDuration: 300, slowTime: 120, width: 26 });
+  else if (kind === "artist") {
+    spawnArtOrb(caster);
+  } else if (kind === "believer") {
+    heal(caster, 10);
+    addVisualEffect({ type: "prayer-heal", fighter: caster, color: caster.accent, life: 38, maxLife: 38 });
+  } else if (kind === "archmage") castMageLightning(caster);
+  else if (kind === "gambler") useRouletteAttack(caster);
+  else if (kind === "cosmic") {
+    caster.cosmicDustTimer = 1;
+    updateCosmicDusts(1);
+  }
 }
 
 function drawCodexPreviewBackground(ctx, w, h, color, accent) {
@@ -3764,6 +3917,7 @@ function startGame() {
 }
 
 function updateHud() {
+  if (codexPreviewMode) return;
   if (resimulatingGame) return;
   const p1Hp = clamp(game.fighters[0].hp, 0, game.fighters[0].maxHp);
   const p2Hp = clamp(game.fighters[1].hp, 0, game.fighters[1].maxHp);
@@ -4449,6 +4603,7 @@ function finishGame(winner) {
   if (game.over) return;
   game.over = true;
   game.winner = winner;
+  if (codexPreviewMode) return;
   if (resimulatingGame) return;
   presentGameWinner(winner);
 }
@@ -5533,6 +5688,7 @@ function cooldownSeconds(ticks) {
 }
 
 function updateSkillHud() {
+  if (codexPreviewMode) return;
   if (resimulatingGame) return;
   const fighter = myFighter();
   if (!fighter) return;
