@@ -2547,11 +2547,11 @@ h2 {
 .codex-shell {
   grid-template-columns: 104px minmax(0, 1fr);
   gap: 16px;
-  min-height: min(720px, calc(100vh - 178px));
+  min-height: min(650px, calc(100vh - 178px));
 }
 
 .panel.codex-panel {
-  min-height: min(720px, calc(100vh - 178px));
+  min-height: min(650px, calc(100vh - 178px));
   padding: 16px;
   overflow: hidden;
   background:
@@ -2612,24 +2612,24 @@ h2 {
 }
 
 .codex-layout {
-  grid-template-columns: 310px minmax(0, 1fr);
-  gap: 16px;
-  height: 100%;
+  grid-template-columns: 286px minmax(0, 1fr);
+  gap: 14px;
+  height: min(620px, calc(100vh - 230px));
   min-height: 0;
 }
 
 .codex-character-list {
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 9px;
   background: rgba(8, 17, 31, 0.68);
   border: 1px solid rgba(242, 193, 78, 0.18);
   border-radius: 14px;
 }
 
 .codex-character-button {
-  grid-template-columns: 46px minmax(0, 1fr);
-  min-height: 64px;
-  padding: 9px 11px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  min-height: 54px;
+  padding: 7px 10px;
   background: rgba(7, 13, 24, 0.78);
   border-color: rgba(242, 193, 78, 0.14);
   border-radius: 12px;
@@ -2652,20 +2652,20 @@ h2 {
 }
 
 .codex-list-orb {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   box-shadow: 0 0 18px color-mix(in srgb, var(--char-color) 42%, transparent);
 }
 
 .codex-character-button strong {
-  font-size: 0.96rem;
+  font-size: 0.9rem;
 }
 
 .codex-detail {
-  grid-template-rows: auto minmax(260px, 1fr) auto;
+  grid-template-rows: auto minmax(230px, 1fr) auto;
   grid-template-columns: 1fr;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
   background:
     radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--char-color) 12%, transparent), transparent 34%),
     linear-gradient(150deg, rgba(8, 17, 31, 0.92), rgba(7, 13, 24, 0.96));
@@ -2676,12 +2676,12 @@ h2 {
 .codex-skill-tabs {
   order: 1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .codex-skill-tab {
-  min-height: 48px;
-  padding: 10px 12px;
+  min-height: 42px;
+  padding: 8px 10px;
   place-items: center;
   text-align: center;
   background: rgba(7, 13, 24, 0.76);
@@ -2714,8 +2714,8 @@ h2 {
   order: 2;
   display: grid;
   place-items: center;
-  min-height: 310px;
-  padding: 18px;
+  min-height: 245px;
+  padding: 10px;
   text-align: center;
   background:
     linear-gradient(rgba(31, 162, 181, 0.045) 1px, transparent 1px),
@@ -2729,51 +2729,74 @@ h2 {
 }
 
 .codex-preview-card {
+  position: relative;
   display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 230px;
   justify-items: center;
-  gap: 16px;
+  gap: 0;
 }
 
-.codex-preview {
-  width: 156px;
-  height: 156px;
-  font-size: 4.4rem;
-  border-width: 3px;
+.codex-preview-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 230px;
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  border-radius: 12px;
+  background: #040a13;
+  box-shadow: inset 0 0 32px rgba(45, 212, 191, 0.06), 0 0 22px rgba(45, 212, 191, 0.06);
+}
+
+.codex-preview-copy {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: rgba(4, 10, 19, 0.72);
+  border: 1px solid rgba(242, 193, 78, 0.22);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
 }
 
 .codex-preview-copy h3 {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--text);
-  font-size: 1.35rem;
+  font-size: 0.92rem;
   line-height: 1.25;
 }
 
 .codex-preview-copy small {
   display: block;
-  margin-top: 7px;
+  margin-top: 0;
   color: var(--gold);
+  font-size: 0.78rem;
   font-weight: 1000;
 }
 
 .codex-skill-list {
   order: 3;
   display: grid;
-  grid-template-rows: minmax(132px, auto) auto;
-  gap: 12px;
+  grid-template-rows: minmax(118px, auto) auto;
+  gap: 10px;
   padding: 0;
   overflow: visible;
 }
 
 .codex-skill-focus {
-  min-height: 154px;
-  padding: 16px;
+  min-height: 132px;
+  padding: 14px;
   background: rgba(7, 13, 24, 0.78);
   border-color: rgba(242, 193, 78, 0.2);
   border-radius: 12px;
 }
 
 .codex-skill-focus h4 {
-  font-size: 1.25rem;
+  font-size: 1.12rem;
 }
 
 .codex-skill-focus em {
@@ -2782,15 +2805,15 @@ h2 {
 }
 
 .codex-skill-focus p {
-  max-height: 96px;
-  font-size: 0.94rem;
+  max-height: 78px;
+  font-size: 0.9rem;
 }
 
 .codex-gauge-panel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   background: rgba(7, 13, 24, 0.68);
   border: 1px solid rgba(242, 193, 78, 0.18);
   border-radius: 12px;
@@ -2818,7 +2841,7 @@ h2 {
 }
 
 .codex-gauge i {
-  height: 18px;
+  height: 15px;
   background: rgba(75, 85, 99, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 5px;
@@ -2828,6 +2851,18 @@ h2 {
   background: linear-gradient(180deg, #ffe28a, #d89b2d);
   border-color: rgba(255, 226, 138, 0.82);
   box-shadow: 0 0 14px rgba(242, 193, 78, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.codex-gauge-unknown i {
+  display: grid;
+  place-items: center;
+  color: #ffe28a;
+  background: rgba(242, 193, 78, 0.1);
+  border-color: rgba(242, 193, 78, 0.35);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 1000;
+  box-shadow: 0 0 12px rgba(242, 193, 78, 0.18);
 }
 
 .inventory-grid {

@@ -654,28 +654,30 @@ let selectedPveDifficulty = "easy";
 let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
 let codexType = "character";
 let rankingMode = "pvp";
+let codexPreviewAnimationId = null;
+let codexPreviewState = null;
 
 const codexRatings = {
-  thrower: { difficulty: 1, damage: 2, mobility: 2 },
-  charger: { difficulty: 1, damage: 2, mobility: 3 },
+  thrower: { difficulty: 1, damage: 3, mobility: 1 },
+  charger: { difficulty: 2, damage: 1, mobility: 3 },
   grabber: { difficulty: 2, damage: 2, mobility: 1 },
-  poker: { difficulty: 3, damage: 3, mobility: 1 },
-  stealth: { difficulty: 2, damage: 2, mobility: 3 },
-  enhancer: { difficulty: 2, damage: 3, mobility: 1 },
+  poker: { difficulty: 1, damage: 3, mobility: 1 },
+  stealth: { difficulty: 1, damage: 1, mobility: 3 },
+  enhancer: { difficulty: 1, damage: 3, mobility: 1 },
   tank: { difficulty: 1, damage: 1, mobility: 1 },
   beamer: { difficulty: 2, damage: 3, mobility: 1 },
-  wild: { difficulty: 2, damage: 2, mobility: 3 },
-  vampire: { difficulty: 2, damage: 3, mobility: 2 },
-  brawler: { difficulty: 2, damage: 3, mobility: 3 },
-  timekeeper: { difficulty: 2, damage: 2, mobility: 3 },
-  riftmaker: { difficulty: 3, damage: 3, mobility: 2 },
-  summoner: { difficulty: 2, damage: 2, mobility: 1 },
+  wild: { difficulty: 1, damage: 2, mobility: 3 },
+  vampire: { difficulty: 1, damage: 2, mobility: 2 },
+  brawler: { difficulty: 1, damage: 2, mobility: 3 },
+  timekeeper: { difficulty: 3, damage: 1, mobility: 3 },
+  riftmaker: { difficulty: 1, damage: 2, mobility: 1 },
+  summoner: { difficulty: 1, damage: 2, mobility: 1 },
   swordsman: { difficulty: 2, damage: 3, mobility: 3 },
-  demon: { difficulty: 2, damage: 3, mobility: 2 },
-  artist: { difficulty: 3, damage: 2, mobility: 2 },
-  believer: { difficulty: 2, damage: 1, mobility: 1 },
+  demon: { difficulty: 3, damage: 2, mobility: 2 },
+  artist: { difficulty: 2, damage: 2, mobility: 1 },
+  believer: { difficulty: 1, damage: 1, mobility: 1 },
   archmage: { difficulty: 3, damage: 3, mobility: 1 },
-  gambler: { difficulty: 3, damage: 3, mobility: 2 },
+  gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
 };
 
@@ -698,6 +700,16 @@ const enemyCodexRatings = {
 };
 
 function renderCodexGauge(label, value) {
+  if (value === "???") {
+    return `
+      <div class="codex-gauge-row">
+        <span>${label}</span>
+        <div class="codex-gauge codex-gauge-unknown" aria-label="${label} 미정">
+          <i>?</i><i>?</i><i>?</i>
+        </div>
+      </div>
+    `;
+  }
   const filled = clamp(Number(value) || 0, 0, 3);
   return `
     <div class="codex-gauge-row">
@@ -717,6 +729,369 @@ function renderCodexGaugeStats(ratings) {
       ${renderCodexGauge("기동성", ratings.mobility)}
     </section>
   `;
+}
+
+function stopCodexPreview() {
+  if (codexPreviewAnimationId) {
+    cancelAnimationFrame(codexPreviewAnimationId);
+    codexPreviewAnimationId = null;
+  }
+  codexPreviewState = null;
+}
+
+function startCodexPreview(kind, skillIndex = 0, mode = "character") {
+  const canvas = ui.codexDetail?.querySelector("#codexPreviewCanvas");
+  if (!canvas) return;
+  stopCodexPreview();
+  codexPreviewState = { canvas, kind, skillIndex, mode, startedAt: performance.now() };
+  const loop = now => {
+    if (!codexPreviewState || codexPreviewState.canvas !== canvas) return;
+    drawCodexPreviewFrame(codexPreviewState, now);
+    codexPreviewAnimationId = requestAnimationFrame(loop);
+  };
+  codexPreviewAnimationId = requestAnimationFrame(loop);
+}
+
+function drawCodexPreviewFrame(state, now) {
+  const { canvas, kind, skillIndex, mode, startedAt } = state;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(560, Math.floor(rect.width * dpr));
+  const height = Math.max(260, Math.floor(rect.height * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = width / dpr;
+  const h = height / dpr;
+  const t = ((now - startedAt) % 2800) / 2800;
+  const info = mode === "enemy" ? enemyGuide[kind] : characters[kind] || characters[DEFAULT_CHARACTER];
+  const color = info?.color || "#3dd6d0";
+  const accent = info?.accent || "#f2c14e";
+  const label = mode === "enemy" ? info?.initial || "E" : characterInitial(kind);
+  const caster = { x: w * 0.24, y: h * 0.56, r: 28 };
+  const dummy = { x: w * 0.76, y: h * 0.56, r: 25 };
+
+  drawCodexPreviewBackground(ctx, w, h, color, accent);
+  drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent);
+  drawCodexUnit(ctx, caster.x, caster.y, caster.r, color, accent, label, false);
+  drawCodexUnit(ctx, dummy.x, dummy.y, dummy.r, "#8b95a7", "#e5e7eb", "D", true);
+  drawCodexHitSpark(ctx, dummy, t, accent);
+}
+
+function drawCodexPreviewBackground(ctx, w, h, color, accent) {
+  ctx.clearRect(0, 0, w, h);
+  const glow = ctx.createRadialGradient(w * 0.5, h * 0.46, 20, w * 0.5, h * 0.46, w * 0.58);
+  glow.addColorStop(0, `${accent}24`);
+  glow.addColorStop(0.5, `${color}10`);
+  glow.addColorStop(1, "rgba(3, 8, 16, 0)");
+  ctx.fillStyle = "#040a13";
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "rgba(45, 212, 191, 0.06)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 42) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += 42) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+}
+
+function drawCodexUnit(ctx, x, y, r, color, accent, label, isDummy = false) {
+  ctx.save();
+  ctx.shadowColor = isDummy ? "rgba(226, 232, 240, 0.24)" : accent;
+  ctx.shadowBlur = isDummy ? 12 : 24;
+  const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.2, x, y, r * 1.15);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(0.22, isDummy ? "#d7dde8" : color);
+  grad.addColorStop(1, isDummy ? "#475569" : accent);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = isDummy ? "rgba(226, 232, 240, 0.58)" : "rgba(255, 226, 138, 0.76)";
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#020617";
+  ctx.font = "900 22px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x, y + 1);
+  ctx.restore();
+}
+
+function drawCodexProjectile(ctx, caster, dummy, t, color, accent, size = 11) {
+  const p = Math.min(1, Math.max(0, (t - 0.12) / 0.54));
+  const ease = 1 - Math.pow(1 - p, 3);
+  const x = caster.x + (dummy.x - caster.x) * ease;
+  const y = caster.y + (dummy.y - caster.y) * ease + Math.sin(p * Math.PI) * -30;
+  ctx.save();
+  ctx.strokeStyle = `${accent}66`;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(caster.x + 28, caster.y);
+  ctx.quadraticCurveTo((caster.x + dummy.x) / 2, caster.y - 62, x, y);
+  ctx.stroke();
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 22;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCodexLaser(ctx, caster, dummy, t, accent, wide = false) {
+  if (t < 0.2 || t > 0.82) return;
+  const pulse = 0.55 + Math.sin(t * Math.PI * 18) * 0.18;
+  ctx.save();
+  ctx.globalAlpha = pulse;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = wide ? 34 : 16;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = wide ? 34 : 24;
+  ctx.beginPath();
+  ctx.moveTo(caster.x + 30, caster.y);
+  ctx.lineTo(dummy.x - 25, dummy.y);
+  ctx.stroke();
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = wide ? 7 : 4;
+  ctx.beginPath();
+  ctx.moveTo(caster.x + 30, caster.y);
+  ctx.lineTo(dummy.x - 25, dummy.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexAoe(ctx, center, t, color, accent, maxRadius = 96) {
+  const p = Math.min(1, Math.max(0, (t - 0.16) / 0.62));
+  const radius = 18 + maxRadius * p;
+  ctx.save();
+  ctx.globalAlpha = 1 - p * 0.55;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 5;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 28;
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 0.18 * (1 - p * 0.3);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius * 0.82, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCodexSlash(ctx, caster, dummy, t, accent) {
+  const p = Math.min(1, Math.max(0, (t - 0.12) / 0.6));
+  const x = caster.x + (dummy.x - caster.x) * p;
+  const y = caster.y + Math.sin(p * Math.PI * 4) * 18;
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 22;
+  for (let i = 0; i < 4; i += 1) {
+    const offset = i * 13;
+    ctx.beginPath();
+    ctx.moveTo(x - 26 - offset, y - 30 + i * 10);
+    ctx.quadraticCurveTo(x + 8 - offset, y, x - 18 - offset, y + 34);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexLockOnCombo(ctx, caster, dummy, t, color, accent) {
+  ctx.save();
+  const lock = Math.min(1, t / 0.38);
+  ctx.globalAlpha = 0.35 + lock * 0.45;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.arc(dummy.x, dummy.y, 42 + Math.sin(t * Math.PI * 6) * 5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(dummy.x - 54, dummy.y);
+  ctx.lineTo(dummy.x - 27, dummy.y);
+  ctx.moveTo(dummy.x + 27, dummy.y);
+  ctx.lineTo(dummy.x + 54, dummy.y);
+  ctx.moveTo(dummy.x, dummy.y - 54);
+  ctx.lineTo(dummy.x, dummy.y - 27);
+  ctx.moveTo(dummy.x, dummy.y + 27);
+  ctx.lineTo(dummy.x, dummy.y + 54);
+  ctx.stroke();
+  ctx.restore();
+  if (t > 0.35) drawCodexProjectile(ctx, caster, dummy, (t - 0.35) / 0.65, color, accent, 13);
+}
+
+function drawCodexCosmicDust(ctx, caster, t, accent) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 22;
+  for (let i = 0; i < 4; i += 1) {
+    const p = (t + i * 0.2) % 1;
+    const x = caster.x + 170 - 170 * p;
+    const y = caster.y - 76 + i * 36 + Math.sin(p * Math.PI * 2) * 12;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y);
+    ctx.lineTo(x + 8, y);
+    ctx.moveTo(x, y - 8);
+    ctx.lineTo(x, y + 8);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexHitSpark(ctx, dummy, t, accent) {
+  if (t < 0.56 || t > 0.76) return;
+  const p = (t - 0.56) / 0.2;
+  ctx.save();
+  ctx.globalAlpha = 1 - p;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 20;
+  for (let i = 0; i < 8; i += 1) {
+    const a = (Math.PI * 2 * i) / 8;
+    ctx.beginPath();
+    ctx.moveTo(dummy.x + Math.cos(a) * 32, dummy.y + Math.sin(a) * 32);
+    ctx.lineTo(dummy.x + Math.cos(a) * (54 + p * 18), dummy.y + Math.sin(a) * (54 + p * 18));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexLightning(ctx, dummy, t, accent) {
+  if (t < 0.14 || t > 0.64) return;
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 5;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 24;
+  ctx.beginPath();
+  let x = dummy.x - 12;
+  let y = 18;
+  ctx.moveTo(x, y);
+  for (let i = 0; i < 7; i += 1) {
+    x += i % 2 === 0 ? 28 : -18;
+    y += 22;
+    ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexCards(ctx, caster, dummy, t, accent) {
+  const p = Math.min(1, Math.max(0, (t - 0.1) / 0.62));
+  ctx.save();
+  ctx.translate(caster.x + (dummy.x - caster.x) * p, caster.y + (dummy.y - caster.y) * p);
+  ctx.rotate(p * Math.PI * 2);
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = "#f8fafc";
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
+  for (let i = -1; i <= 1; i += 1) {
+    ctx.save();
+    ctx.translate(i * 13, Math.abs(i) * 5);
+    ctx.rotate(i * 0.18);
+    ctx.fillRect(-10, -15, 20, 30);
+    ctx.strokeRect(-10, -15, 20, 30);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawCodexSummon(ctx, caster, dummy, t, color, accent) {
+  const p = Math.min(1, Math.max(0, (t - 0.12) / 0.36));
+  const summon = { x: caster.x + 68, y: caster.y + 54, r: 16 + p * 6 };
+  drawCodexAoe(ctx, summon, t, color, accent, 42);
+  drawCodexUnit(ctx, summon.x, summon.y, summon.r, color, accent, "S", false);
+  if (t > 0.5) drawCodexProjectile(ctx, summon, dummy, (t - 0.5) / 0.5, color, accent, 7);
+}
+
+function drawCodexClockArc(ctx, dummy, t, accent) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 22;
+  const radius = 72;
+  const start = -Math.PI * 0.25;
+  const end = start + Math.PI * 1.45 * Math.min(1, t * 1.35);
+  ctx.beginPath();
+  ctx.arc(dummy.x, dummy.y, radius, start, end);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(dummy.x, dummy.y);
+  ctx.lineTo(dummy.x + Math.cos(end) * radius, dummy.y + Math.sin(end) * radius);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent) {
+  if (mode === "enemy") {
+    if (skillIndex === 1) drawCodexProjectile(ctx, dummy, caster, t, color, accent, 10);
+    else if (skillIndex === 2) drawCodexAoe(ctx, dummy, t, color, accent, 86);
+    else drawCodexSlash(ctx, dummy, caster, t, accent);
+    return;
+  }
+  if (kind === "thrower" && skillIndex > 0) {
+    drawCodexLockOnCombo(ctx, caster, dummy, t, color, accent);
+    return;
+  }
+  if (["beamer", "demon"].includes(kind) || (kind === "cosmic" && skillIndex === 2)) {
+    drawCodexLaser(ctx, caster, dummy, t, accent, kind === "cosmic" && skillIndex === 2);
+    return;
+  }
+  if (kind === "cosmic" && skillIndex === 0) {
+    drawCodexCosmicDust(ctx, caster, t, accent);
+    return;
+  }
+  if (["grabber", "tank", "riftmaker", "believer", "archmage", "artist"].includes(kind) || skillIndex === 2) {
+    drawCodexAoe(ctx, skillIndex === 0 ? dummy : { x: (caster.x + dummy.x) / 2, y: caster.y }, t, color, accent, skillIndex === 2 ? 120 : 86);
+    if (kind === "archmage" && skillIndex === 0) drawCodexLightning(ctx, dummy, t, accent);
+    return;
+  }
+  if (["charger", "wild", "brawler", "stealth", "swordsman"].includes(kind)) {
+    drawCodexSlash(ctx, caster, dummy, t, accent);
+    return;
+  }
+  if (kind === "poker" || kind === "gambler") {
+    drawCodexCards(ctx, caster, dummy, t, accent);
+    return;
+  }
+  if (kind === "summoner") {
+    drawCodexSummon(ctx, caster, dummy, t, color, accent);
+    return;
+  }
+  if (kind === "timekeeper") {
+    drawCodexClockArc(ctx, dummy, t, accent);
+    return;
+  }
+  drawCodexProjectile(ctx, caster, dummy, t, color, accent);
 }
 
 const PVE_STAGES = {
@@ -985,6 +1360,7 @@ function switchLobbyTab(tabName) {
   });
   if (tabName === "inventory") renderInventory();
   if (tabName === "codex") renderCodex();
+  if (tabName !== "codex") stopCodexPreview();
   if (tabName === "ranking") loadRankings();
 }
 
@@ -1345,9 +1721,7 @@ function renderCodexDetail(kind) {
     </div>
     <section class="codex-preview-stage">
       <div class="codex-preview-card">
-        <div id="codexPreview" class="codex-preview" style="--char-color:${character.color}; --char-accent:${character.accent};">
-          <span id="codexPreviewInitial">${characterInitial(kind)}</span>
-        </div>
+        <canvas id="codexPreviewCanvas" class="codex-preview-canvas" width="760" height="300"></canvas>
         <div class="codex-preview-copy">
           <span id="codexOwnership" class="codex-ownership ${unlocked ? "" : "is-locked"}">${unlocked ? "보유중" : "미보유"}</span>
           <h3 id="codexCharacterName">${character.name}</h3>
@@ -1365,8 +1739,6 @@ function renderCodexDetail(kind) {
       ${renderCodexGaugeStats(ratings)}
     </section>
   `;
-  ui.codexPreview = ui.codexDetail.querySelector("#codexPreview");
-  ui.codexPreviewInitial = ui.codexDetail.querySelector("#codexPreviewInitial");
   ui.codexOwnership = ui.codexDetail.querySelector("#codexOwnership");
   ui.codexCharacterName = ui.codexDetail.querySelector("#codexCharacterName");
   ui.codexSkillList = ui.codexDetail.querySelector("#codexSkillList");
@@ -1379,8 +1751,10 @@ function renderCodexDetail(kind) {
       ui.codexSkillList.querySelector("#codexFocusName").textContent = skill[0];
       ui.codexSkillList.querySelector("#codexFocusCooldown").textContent = skill[1];
       ui.codexSkillList.querySelector("#codexFocusDescription").textContent = skill[2];
+      startCodexPreview(kind, index, "character");
     });
   });
+  startCodexPreview(kind, 0, "character");
 }
 
 function renderEnemyCodexDetail(type) {
@@ -1400,9 +1774,7 @@ function renderEnemyCodexDetail(type) {
     </div>
     <section class="codex-preview-stage">
       <div class="codex-preview-card">
-        <div id="codexPreview" class="codex-preview" style="--char-color:${enemy.color}; --char-accent:${enemy.accent};">
-          <span id="codexPreviewInitial">${enemy.initial}</span>
-        </div>
+        <canvas id="codexPreviewCanvas" class="codex-preview-canvas" width="760" height="300"></canvas>
         <div class="codex-preview-copy">
           <span id="codexOwnership" class="codex-ownership">${enemy.badge}</span>
           <h3 id="codexCharacterName">${enemy.name}</h3>
@@ -1420,8 +1792,6 @@ function renderEnemyCodexDetail(type) {
       ${renderCodexGaugeStats(ratings)}
     </section>
   `;
-  ui.codexPreview = ui.codexDetail.querySelector("#codexPreview");
-  ui.codexPreviewInitial = ui.codexDetail.querySelector("#codexPreviewInitial");
   ui.codexOwnership = ui.codexDetail.querySelector("#codexOwnership");
   ui.codexCharacterName = ui.codexDetail.querySelector("#codexCharacterName");
   ui.codexSkillList = ui.codexDetail.querySelector("#codexSkillList");
@@ -1433,8 +1803,10 @@ function renderEnemyCodexDetail(type) {
       ui.codexSkillList.querySelector("#codexFocusType").textContent = entry[0];
       ui.codexSkillList.querySelector("#codexFocusName").textContent = entry[1];
       ui.codexSkillList.querySelector("#codexFocusDescription").textContent = entry[2];
+      startCodexPreview(type, index, "enemy");
     });
   });
+  startCodexPreview(type, 0, "enemy");
 }
 
 function setCodexType(type) {
