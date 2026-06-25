@@ -631,6 +631,7 @@ let matchmakingRequestPending = false;
 let matchTransitionRoomCode = "";
 let matchTransitionTimeoutId = null;
 let completedMatchTransitionRoomCode = "";
+let matchTransitionEntering = false;
 let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
@@ -1043,6 +1044,7 @@ function resetLocalMatchState() {
   roomRefreshPending = false;
   matchTransitionRoomCode = "";
   completedMatchTransitionRoomCode = "";
+  matchTransitionEntering = false;
   if (matchTransitionTimeoutId) {
     clearTimeout(matchTransitionTimeoutId);
     matchTransitionTimeoutId = null;
@@ -1721,10 +1723,10 @@ function applyRoom(room) {
 }
 
 function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGeneration) {
-  if (!roomCode || expectedGeneration !== matchmakingGeneration) return;
+  if (!roomCode) return;
   if (screens.select.classList.contains("is-active") || screens.game.classList.contains("is-active")) return;
   if (completedMatchTransitionRoomCode === roomCode) return;
-  if (matchTransitionRoomCode === roomCode) return;
+  if (matchTransitionRoomCode === roomCode && (matchTransitionTimeoutId || matchTransitionEntering)) return;
 
   matchTransitionRoomCode = roomCode;
   if (matchTransitionTimeoutId) clearTimeout(matchTransitionTimeoutId);
@@ -1735,8 +1737,7 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
 
   matchTransitionTimeoutId = setTimeout(async () => {
     matchTransitionTimeoutId = null;
-    if (expectedGeneration !== matchmakingGeneration
-      || !currentRoom
+    if (!currentRoom
       || currentRoom.code !== roomCode) {
       if (matchTransitionRoomCode === roomCode) {
         matchTransitionRoomCode = "";
@@ -1745,20 +1746,24 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
       return;
     }
 
-    const entered = await enterCharacterSelectWhenReady(roomCode, expectedGeneration);
-    if (!entered && expectedGeneration === matchmakingGeneration) {
-      matchTransitionRoomCode = "";
-      showMatchOverlay("", false);
-      ui.pvpModeButton.disabled = false;
-      ui.modeMessage.textContent = "매칭 정보를 불러오지 못했습니다. 다시 시도해주세요.";
+    matchTransitionEntering = true;
+    try {
+      const entered = await enterCharacterSelectWhenReady(roomCode, expectedGeneration);
+      if (!entered && currentRoom?.code === roomCode) {
+        matchTransitionRoomCode = "";
+        showMatchOverlay("", false);
+        ui.pvpModeButton.disabled = false;
+        ui.modeMessage.textContent = "매칭 정보를 불러오지 못했습니다. 다시 시도해주세요.";
+      }
+    } finally {
+      matchTransitionEntering = false;
     }
   }, 2000);
 }
 
 async function enterCharacterSelectWhenReady(roomCode, expectedGeneration) {
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    if (expectedGeneration !== matchmakingGeneration
-      || !currentRoom
+    if (!currentRoom
       || currentRoom.code !== roomCode) return false;
 
     if (prepareCharacterSelect()) {
@@ -1773,7 +1778,7 @@ async function enterCharacterSelectWhenReady(roomCode, expectedGeneration) {
         session_token: appSessionToken,
         room_code: roomCode
       });
-      if (expectedGeneration !== matchmakingGeneration) return false;
+      if (currentRoom && currentRoom.code !== roomCode) return false;
       applyRoom(room);
     } catch {
       // The room may still be finishing its initial transaction. Retry briefly.
