@@ -1161,7 +1161,7 @@ function renderLobby() {
 
   ui.playerList.innerHTML = "";
 
-  reconcileMatchPlayers();
+  if (!currentRoom) reconcileMatchPlayers();
   renderMatchSelectors();
   renderPlayerOptions(ui.gachaPlayer, ui.gachaPlayer.value || matchPlayers.p1);
   renderInventory();
@@ -2072,7 +2072,18 @@ function prepareCharacterSelect() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
   const mySlot = myMatchSlot();
-  if (!currentRoom || !p1 || !p2 || !mySlot) return false;
+  if (!currentRoom || !p1 || !p2 || !mySlot) {
+    console.warn("character select blocked", {
+      hasRoom: Boolean(currentRoom),
+      players: players.map(player => player.id),
+      matchPlayers: { ...matchPlayers },
+      currentUserId: currentUser?.id,
+      hasP1: Boolean(p1),
+      hasP2: Boolean(p2),
+      mySlot
+    });
+    return false;
+  }
   ui.selectP1Label.textContent = `PLAYER 1 - ${p1.name}`;
   ui.selectP2Label.textContent = `PLAYER 2 - ${p2.name}`;
   document.querySelectorAll(".select-panel").forEach(panel => {
