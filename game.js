@@ -632,6 +632,7 @@ let matchTransitionRoomCode = "";
 let matchTransitionTimeoutId = null;
 let completedMatchTransitionRoomCode = "";
 let matchTransitionEntering = false;
+let matchFoundSoundRoomCode = "";
 let matchRandomSeed = 1;
 let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
@@ -719,7 +720,7 @@ const PVE_STAGES = {
 
 function normalizePlayer(user) {
   return {
-    id: user.id,
+    id: String(user.id),
     name: user.username ?? user.name,
     coins: user.coins,
     lp: user.lp ?? 1000,
@@ -838,7 +839,8 @@ function savePlayers() {
 }
 
 function getPlayer(id) {
-  return players.find(player => player.id === id);
+  const normalizedId = String(id || "");
+  return players.find(player => player.id === normalizedId);
 }
 
 function loadSoundSettings() {
@@ -1045,6 +1047,7 @@ function resetLocalMatchState() {
   matchTransitionRoomCode = "";
   completedMatchTransitionRoomCode = "";
   matchTransitionEntering = false;
+  matchFoundSoundRoomCode = "";
   if (matchTransitionTimeoutId) {
     clearTimeout(matchTransitionTimeoutId);
     matchTransitionTimeoutId = null;
@@ -1706,8 +1709,8 @@ function applyRoom(room) {
   players = roomPlayers;
   const prep = currentRoom.prepState || currentRoom.prep_state || {};
   if (prep.matchPlayers?.p1 && prep.matchPlayers?.p2) {
-    matchPlayers.p1 = prep.matchPlayers.p1;
-    matchPlayers.p2 = prep.matchPlayers.p2;
+    matchPlayers.p1 = String(prep.matchPlayers.p1);
+    matchPlayers.p2 = String(prep.matchPlayers.p2);
   } else {
     reconcileMatchPlayers(previousP1, previousP2);
   }
@@ -1732,7 +1735,10 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
   if (matchTransitionTimeoutId) clearTimeout(matchTransitionTimeoutId);
   resetMatchmakingUi("");
   ui.pvpModeButton.disabled = true;
-  playMatchFoundSound();
+  if (matchFoundSoundRoomCode !== roomCode) {
+    matchFoundSoundRoomCode = roomCode;
+    playMatchFoundSound();
+  }
   showMatchOverlay("게임이 시작됩니다", true);
 
   matchTransitionTimeoutId = setTimeout(async () => {
@@ -2058,6 +2064,11 @@ function renderBanPickStatus() {
 }
 
 function prepareCharacterSelect() {
+  if ((!matchPlayers.p1 || !matchPlayers.p2 || !getPlayer(matchPlayers.p1) || !getPlayer(matchPlayers.p2))
+    && currentRoom?.players?.length >= 2) {
+    matchPlayers.p1 = currentRoom.players[0].id;
+    matchPlayers.p2 = currentRoom.players[1].id;
+  }
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
   const mySlot = myMatchSlot();
