@@ -452,7 +452,7 @@ const characterGuide = {
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
   brawler: {
-    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 5의 피해를 주고 직접 닿았다면 3의 추가 피해와 2.5의 몸빵 피해를 추가로 줍니다."],
+    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 8의 피해를 주고 직접 닿았다면 3의 추가 피해와 2.5의 몸빵 피해를 추가로 줍니다."],
     normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 25% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
     ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
   },
@@ -492,9 +492,9 @@ const characterGuide = {
     ultimate: ["커져가는신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
   },
   archmage: {
-    attack: ["벼락", "5초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해와 감전 원소를 부착합니다. 원소 반응은 부착 순서에 따라 달라집니다. 감전+화상은 독성 가스, 감전+습기는 전이 기절, 습기+감전은 감전 지대, 습기+화상은 자신 회복, 화상+감전은 벽 충돌 과부하, 화상+습기는 60 피해 증발을 일으킵니다."],
-    normal: ["작열", "9초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 10의 피해와 2초 동안 초당 2의 화상 피해를 주며 화상 원소를 부착합니다."],
-    ultimate: ["창해", "10.5초", "맵 전체를 4초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 5의 피해를 주고 습기 원소를 부착합니다."]
+    attack: ["벼락", "6초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해를 줍니다. 감전 원소를 부착합니다. 감전+화상: 10피해와 10초 맹독가스, 치유 40% 감소, 받는 피해 10% 증가. 감전+습기: 15피해와 1.5초 기절, 주변 적 2초 50% 감속. 습기+감전: 6초 전자기장, 1.5초마다 5피해, 이동기 사용 시 1초 침묵. 습기+화상: 즉시 30 회복, 2초간 초당 5 회복과 30% 가속. 화상+감전: 보호막 파괴, 20피해와 넉백, 벽 충돌 시 10피해와 1초 기절. 화상+습기: 50피해, 체력 30% 이하 대상에게 75피해, 이후 대마법사는 10초 탈진."],
+    normal: ["작열", "11초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 5의 피해를 주고 화상 원소를 부착합니다."],
+    ultimate: ["창해", "23초", "맵 전체를 5초간 심해로 만듭니다. 적을 느리게 만들고 1초마다 2의 피해를 총 5번 주며, 첫 타격에 습기 원소를 부착합니다."]
   },
   gambler: {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
@@ -502,8 +502,8 @@ const characterGuide = {
     ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
   },
   cosmic: {
-    attack: ["별가루 수집", "1초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
-    normal: ["초신성", "12초", "자신 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 20개를 소모합니다."],
+    attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
+    normal: ["초신성", "11초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 20개를 소모합니다."],
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 6의 피해와 별가루 1개를 소모합니다."]
   }
 };
@@ -654,6 +654,70 @@ let selectedPveDifficulty = "easy";
 let pveProgress = { completedStages: [], unlockedStages: ["1-1"] };
 let codexType = "character";
 let rankingMode = "pvp";
+
+const codexRatings = {
+  thrower: { difficulty: 1, damage: 2, mobility: 2 },
+  charger: { difficulty: 1, damage: 2, mobility: 3 },
+  grabber: { difficulty: 2, damage: 2, mobility: 1 },
+  poker: { difficulty: 3, damage: 3, mobility: 1 },
+  stealth: { difficulty: 2, damage: 2, mobility: 3 },
+  enhancer: { difficulty: 2, damage: 3, mobility: 1 },
+  tank: { difficulty: 1, damage: 1, mobility: 1 },
+  beamer: { difficulty: 2, damage: 3, mobility: 1 },
+  wild: { difficulty: 2, damage: 2, mobility: 3 },
+  vampire: { difficulty: 2, damage: 3, mobility: 2 },
+  brawler: { difficulty: 2, damage: 3, mobility: 3 },
+  timekeeper: { difficulty: 2, damage: 2, mobility: 3 },
+  riftmaker: { difficulty: 3, damage: 3, mobility: 2 },
+  summoner: { difficulty: 2, damage: 2, mobility: 1 },
+  swordsman: { difficulty: 2, damage: 3, mobility: 3 },
+  demon: { difficulty: 2, damage: 3, mobility: 2 },
+  artist: { difficulty: 3, damage: 2, mobility: 2 },
+  believer: { difficulty: 2, damage: 1, mobility: 1 },
+  archmage: { difficulty: 3, damage: 3, mobility: 1 },
+  gambler: { difficulty: 3, damage: 3, mobility: 2 },
+  cosmic: { difficulty: 3, damage: 3, mobility: 1 }
+};
+
+const enemyCodexRatings = {
+  melee: { difficulty: 1, damage: 1, mobility: 2 },
+  thrower: { difficulty: 2, damage: 2, mobility: 1 },
+  brute: { difficulty: 1, damage: 2, mobility: 1 },
+  dasher: { difficulty: 2, damage: 2, mobility: 3 },
+  bomber: { difficulty: 2, damage: 3, mobility: 1 },
+  miniboss: { difficulty: 2, damage: 3, mobility: 2 },
+  boss: { difficulty: 3, damage: 3, mobility: 2 },
+  voidKnight: { difficulty: 3, damage: 2, mobility: 1 },
+  arcSniper: { difficulty: 3, damage: 3, mobility: 1 },
+  colossus: { difficulty: 2, damage: 3, mobility: 1 },
+  nightmare: { difficulty: 3, damage: 3, mobility: 3 },
+  riftReaver: { difficulty: 3, damage: 3, mobility: 2 },
+  eclipseSniper: { difficulty: 3, damage: 3, mobility: 1 },
+  bloodWraith: { difficulty: 3, damage: 3, mobility: 3 },
+  obsidianTitan: { difficulty: 3, damage: 3, mobility: 1 }
+};
+
+function renderCodexGauge(label, value) {
+  const filled = clamp(Number(value) || 0, 0, 3);
+  return `
+    <div class="codex-gauge-row">
+      <span>${label}</span>
+      <div class="codex-gauge" aria-label="${label} ${filled} / 3">
+        ${[1, 2, 3].map(index => `<i class="${index <= filled ? "is-filled" : ""}"></i>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderCodexGaugeStats(ratings) {
+  return `
+    <section class="codex-gauge-panel">
+      ${renderCodexGauge("난이도", ratings.difficulty)}
+      ${renderCodexGauge("데미지", ratings.damage)}
+      ${renderCodexGauge("기동성", ratings.mobility)}
+    </section>
+  `;
+}
 
 const PVE_STAGES = {
   "1-1": {
@@ -1261,53 +1325,116 @@ function renderCodexDetail(kind) {
   const guide = characterGuide[kind] || characterGuide[DEFAULT_CHARACTER];
   const unlocked = currentUser?.ownedCharacters?.includes(kind);
   const maxHp = characterMaxHp(kind);
+  const ratings = codexRatings[kind] || { difficulty: 1, damage: 1, mobility: 1 };
   ui.codexDetail.style.setProperty("--char-color", character.color);
   ui.codexDetail.style.setProperty("--char-accent", character.accent);
-  ui.codexPreview.style.setProperty("--char-color", character.color);
-  ui.codexPreview.style.setProperty("--char-accent", character.accent);
-  ui.codexPreviewInitial.textContent = characterInitial(kind);
-  ui.codexCharacterName.textContent = character.name;
-  ui.codexOwnership.textContent = unlocked ? "보유중" : "미보유";
-  ui.codexOwnership.classList.toggle("is-locked", !unlocked);
 
   const skillTypes = [
     ["일반 공격", guide.attack],
     ["일반 스킬", guide.normal],
     ["궁극기", guide.ultimate]
   ];
-  ui.codexSkillList.innerHTML = `
-    <section class="codex-stat-card">
-      <span>체력</span>
-      <strong>${maxHp}</strong>
+  ui.codexDetail.innerHTML = `
+    <div class="codex-skill-tabs">
+      ${skillTypes.map(([, skill], index) => `
+        <button class="codex-skill-tab ${index === 0 ? "is-active" : ""}" type="button" data-skill-index="${index}">
+          <strong>스킬 ${index + 1}</strong>
+          <em>${skill[1]}</em>
+        </button>
+      `).join("")}
+    </div>
+    <section class="codex-preview-stage">
+      <div class="codex-preview-card">
+        <div id="codexPreview" class="codex-preview" style="--char-color:${character.color}; --char-accent:${character.accent};">
+          <span id="codexPreviewInitial">${characterInitial(kind)}</span>
+        </div>
+        <div class="codex-preview-copy">
+          <span id="codexOwnership" class="codex-ownership ${unlocked ? "" : "is-locked"}">${unlocked ? "보유중" : "미보유"}</span>
+          <h3 id="codexCharacterName">${character.name}</h3>
+          <small>HP ${maxHp}</small>
+        </div>
+      </div>
     </section>
-  ` + skillTypes.map(([type, skill]) => `
-    <section class="codex-skill">
-      <span>${type}</span>
-      <h4>${skill[0]}</h4>
-      <em>${skill[1]}</em>
-      <p>${skill[2]}</p>
+    <section id="codexSkillList" class="codex-skill-list">
+    <section class="codex-skill-focus">
+      <span id="codexFocusType">${skillTypes[0][0]}</span>
+      <h4 id="codexFocusName">${skillTypes[0][1][0]}</h4>
+      <em id="codexFocusCooldown">${skillTypes[0][1][1]}</em>
+      <p id="codexFocusDescription">${skillTypes[0][1][2]}</p>
     </section>
-  `).join("");
+      ${renderCodexGaugeStats(ratings)}
+    </section>
+  `;
+  ui.codexPreview = ui.codexDetail.querySelector("#codexPreview");
+  ui.codexPreviewInitial = ui.codexDetail.querySelector("#codexPreviewInitial");
+  ui.codexOwnership = ui.codexDetail.querySelector("#codexOwnership");
+  ui.codexCharacterName = ui.codexDetail.querySelector("#codexCharacterName");
+  ui.codexSkillList = ui.codexDetail.querySelector("#codexSkillList");
+  ui.codexDetail.querySelectorAll(".codex-skill-tab").forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.skillIndex);
+      const [type, skill] = skillTypes[index] || skillTypes[0];
+      ui.codexDetail.querySelectorAll(".codex-skill-tab").forEach(item => item.classList.toggle("is-active", item === button));
+      ui.codexSkillList.querySelector("#codexFocusType").textContent = type;
+      ui.codexSkillList.querySelector("#codexFocusName").textContent = skill[0];
+      ui.codexSkillList.querySelector("#codexFocusCooldown").textContent = skill[1];
+      ui.codexSkillList.querySelector("#codexFocusDescription").textContent = skill[2];
+    });
+  });
 }
 
 function renderEnemyCodexDetail(type) {
   const enemy = enemyGuide[type] || enemyGuide.melee;
+  const ratings = enemyCodexRatings[type] || { difficulty: 1, damage: 1, mobility: 1 };
+  const entries = enemy.entries || [["정보", enemy.name, enemy.badge]];
   ui.codexDetail.style.setProperty("--char-color", enemy.color);
   ui.codexDetail.style.setProperty("--char-accent", enemy.accent);
-  ui.codexPreview.style.setProperty("--char-color", enemy.color);
-  ui.codexPreview.style.setProperty("--char-accent", enemy.accent);
-  ui.codexPreviewInitial.textContent = enemy.initial;
-  ui.codexCharacterName.textContent = enemy.name;
-  ui.codexOwnership.textContent = enemy.badge;
-  ui.codexOwnership.classList.remove("is-locked");
-  ui.codexSkillList.innerHTML = enemy.entries.map(([typeLabel, title, description]) => `
-    <section class="codex-skill codex-enemy-skill">
-      <span>${typeLabel}</span>
-      <h4>${title}</h4>
-      <em>PVE</em>
-      <p>${description}</p>
+  ui.codexDetail.innerHTML = `
+    <div class="codex-skill-tabs">
+      ${entries.slice(0, 3).map(([, title], index) => `
+        <button class="codex-skill-tab ${index === 0 ? "is-active" : ""}" type="button" data-skill-index="${index}">
+          <strong>스킬 ${index + 1}</strong>
+          <em>PVE</em>
+        </button>
+      `).join("")}
+    </div>
+    <section class="codex-preview-stage">
+      <div class="codex-preview-card">
+        <div id="codexPreview" class="codex-preview" style="--char-color:${enemy.color}; --char-accent:${enemy.accent};">
+          <span id="codexPreviewInitial">${enemy.initial}</span>
+        </div>
+        <div class="codex-preview-copy">
+          <span id="codexOwnership" class="codex-ownership">${enemy.badge}</span>
+          <h3 id="codexCharacterName">${enemy.name}</h3>
+          <small>PVE</small>
+        </div>
+      </div>
     </section>
-  `).join("");
+    <section id="codexSkillList" class="codex-skill-list">
+      <section class="codex-skill-focus">
+        <span id="codexFocusType">${entries[0][0]}</span>
+        <h4 id="codexFocusName">${entries[0][1]}</h4>
+        <em id="codexFocusCooldown">PVE</em>
+        <p id="codexFocusDescription">${entries[0][2]}</p>
+      </section>
+      ${renderCodexGaugeStats(ratings)}
+    </section>
+  `;
+  ui.codexPreview = ui.codexDetail.querySelector("#codexPreview");
+  ui.codexPreviewInitial = ui.codexDetail.querySelector("#codexPreviewInitial");
+  ui.codexOwnership = ui.codexDetail.querySelector("#codexOwnership");
+  ui.codexCharacterName = ui.codexDetail.querySelector("#codexCharacterName");
+  ui.codexSkillList = ui.codexDetail.querySelector("#codexSkillList");
+  ui.codexDetail.querySelectorAll(".codex-skill-tab").forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.skillIndex);
+      const entry = entries[index] || entries[0];
+      ui.codexDetail.querySelectorAll(".codex-skill-tab").forEach(item => item.classList.toggle("is-active", item === button));
+      ui.codexSkillList.querySelector("#codexFocusType").textContent = entry[0];
+      ui.codexSkillList.querySelector("#codexFocusName").textContent = entry[1];
+      ui.codexSkillList.querySelector("#codexFocusDescription").textContent = entry[2];
+    });
+  });
 }
 
 function setCodexType(type) {
@@ -2256,9 +2383,9 @@ function normalSkillCooldown(kind) {
     demon: 540,
     artist: 180,
     believer: 1200,
-    archmage: 540,
+    archmage: 660,
     gambler: 480,
-    cosmic: 720
+    cosmic: 660
   }[kind] ?? Infinity;
 }
 
@@ -2282,7 +2409,7 @@ function ultimateCooldown(kind) {
     demon: 1800,
     artist: 1200,
     believer: 900,
-    archmage: 630,
+    archmage: 1380,
     gambler: 1200,
     cosmic: 0
   }[kind] ?? Infinity;
@@ -2389,7 +2516,7 @@ function makeCharacterCombatState(kind) {
     ceremonyTick: 0,
     faithStacks: 0,
     faithBurnTick: 60,
-    mageLightningTimer: kind === "archmage" ? 300 : Infinity,
+    mageLightningTimer: kind === "archmage" ? 360 : Infinity,
     mageFireDelay: 0,
     mageSeaTime: 0,
     mageSeaTick: 60,
@@ -2400,11 +2527,15 @@ function makeCharacterCombatState(kind) {
     mageReaction: null,
     mageToxicGas: null,
     mageTransfer: null,
+    mageElectroField: null,
     mageConductiveField: false,
     mageConductiveTick: 120,
     mageVaporHealTime: 0,
     mageVaporHealTick: 60,
+    mageHealReductionTime: 0,
+    mageDamageAmpTime: 0,
     overloadWallDamage: 0,
+    overloadWallStun: 0,
     rouletteAttackTimer: kind === "gambler" ? 240 : Infinity,
     rouletteFormKind: "",
     rouletteFormTime: 0,
@@ -2546,6 +2677,7 @@ function damage(fighter, amount, attacker = null) {
   if (fighter.stealthTime > 0) return;
   if (fighter.phaseTime > 0) return;
   let finalAmount = amount;
+  if (fighter.mageDamageAmpTime > 0) finalAmount *= 1.1;
   const reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
   finalAmount *= 1 - reduction;
   finalAmount = Math.max(0, finalAmount);
@@ -2659,7 +2791,7 @@ function addSkillPulse(fighter, color = fighter.accent) {
 }
 
 function fighterDirection(fighter) {
-  if (fighter.cosmicBlasterActive) {
+  if (fighter.cosmicBlasterActive || fighter.cosmicBlasterCharging > 0) {
     if (Number.isFinite(fighter.facingX) && Number.isFinite(fighter.facingY)) {
       return { x: fighter.facingX, y: fighter.facingY };
     }
@@ -3448,8 +3580,10 @@ function startStealth(fighter) {
 
 function heal(fighter, amount) {
   if (amount <= 0 || game.over) return;
+  let finalAmount = amount;
+  if (fighter.mageHealReductionTime > 0) finalAmount *= 0.6;
   const before = fighter.hp;
-  fighter.hp = clamp(fighter.hp + amount, 0, fighter.maxHp);
+  fighter.hp = clamp(fighter.hp + finalAmount, 0, fighter.maxHp);
   const actualHealing = fighter.hp - before;
   fighter.healingDone += actualHealing;
   const shownAmount = Math.round(actualHealing * 10) / 10;
@@ -3500,29 +3634,50 @@ function triggerMageReaction(owner, target, existingElement, nextElement, reacti
   if (key === "electro+fire") {
     damage(target, 10, owner);
     target.mageToxicGas = { owner, time: 600, tick: 60, damage: 1, color: "#a3e635" };
+    target.mageHealReductionTime = Math.max(target.mageHealReductionTime || 0, 600);
+    target.mageDamageAmpTime = Math.max(target.mageDamageAmpTime || 0, 600);
   } else if (key === "electro+wet") {
-    damage(target, 5, owner);
-    target.stunTime = Math.max(target.stunTime || 0, 120);
-    target.mageTransfer = { owner, time: 180, damage: 5 };
+    damage(target, 15, owner);
+    target.stunTime = Math.max(target.stunTime || 0, 90);
+    [opponentOf(owner), ...enemySummonsOf(owner)].forEach(other => {
+      if (!other || other === target || other.hp <= 0) return;
+      if (Math.hypot(other.x - target.x, other.y - target.y) <= 160) {
+        other.slowTime = Math.max(other.slowTime || 0, 120);
+        addVisualEffect({ type: "mage-lightning", x: other.x, y: other.y, color: "#38bdf8", life: 24, maxLife: 24 });
+      }
+    });
   } else if (key === "wet+electro") {
-    owner.mageConductiveField = true;
-    owner.mageConductiveTick = 120;
-    addVisualEffect({ type: "mage-sea", fighter: owner, color: "#22d3ee", life: 180, maxLife: 180 });
+    target.mageElectroField = {
+      owner,
+      x: target.x,
+      y: target.y,
+      radius: target.radius * 1.732,
+      time: 360,
+      tick: 90
+    };
+    addVisualEffect({ type: "mage-field", x: target.x, y: target.y, radius: target.radius * 1.732, color: "#22d3ee", life: 360, maxLife: 360 });
   } else if (key === "wet+fire") {
-    owner.mageVaporHealTime = 600;
+    heal(owner, 30);
+    owner.mageVaporHealTime = 120;
     owner.mageVaporHealTick = 60;
+    owner.hasteTime = Math.max(owner.hasteTime || 0, 120);
+    addVisualEffect({ type: "mage-mist", x: owner.x, y: owner.y, radius: 145, color: "#bfdbfe", life: 240, maxLife: 240 });
   } else if (key === "fire+electro") {
     target.shieldTime = 0;
     target.shieldBlastPending = false;
+    damage(target, 20, owner);
     const speed = Math.hypot(target.vx, target.vy);
     const fallback = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
     const dx = speed > 0.2 ? -target.vx / speed : (target.x - owner.x) / fallback;
     const dy = speed > 0.2 ? -target.vy / speed : (target.y - owner.y) / fallback;
-    target.vx = dx * 18;
-    target.vy = dy * 18;
-    target.overloadWallDamage = 15;
+    target.vx = dx * 12;
+    target.vy = dy * 12;
+    target.overloadWallDamage = 10;
+    target.overloadWallStun = 60;
   } else if (key === "fire+wet") {
-    damage(target, 60, owner);
+    const executeBonus = target.hp <= target.maxHp * 0.3 ? 1.5 : 1;
+    damage(target, 50 * executeBonus, owner);
+    owner.silenceTime = Math.max(owner.silenceTime || 0, 600);
   }
 }
 
@@ -3593,6 +3748,35 @@ function updateMageAilments(target, dt) {
     }
     if (gas.time <= 0) target.mageToxicGas = null;
   }
+  if (target.mageHealReductionTime > 0) target.mageHealReductionTime = Math.max(0, target.mageHealReductionTime - dt);
+  if (target.mageDamageAmpTime > 0) target.mageDamageAmpTime = Math.max(0, target.mageDamageAmpTime - dt);
+  if (target.mageElectroField) {
+    const field = target.mageElectroField;
+    field.time -= dt;
+    field.tick -= dt;
+    const inside = Math.hypot(target.x - field.x, target.y - field.y) <= field.radius + target.radius;
+    while (field.time > 0 && field.tick <= 0 && !game.over) {
+      if (inside) damage(target, 5, field.owner);
+      field.tick += 90;
+    }
+    if (inside && (
+      target.unstoppableWindup > 0 || target.unstoppableTime > 0 ||
+      target.replayWindup > 0 || target.phaseTime > 0 ||
+      target.chaseTime > 0 || target.swordDanceTime > 0 ||
+      target.swordDanceHits > 0 || target.swordUltimateHits > 0
+    )) {
+      target.unstoppableWindup = 0;
+      target.unstoppableTime = 0;
+      target.replayWindup = 0;
+      target.phaseTime = 0;
+      target.chaseTime = 0;
+      target.swordDanceTime = 0;
+      target.swordDanceHits = 0;
+      target.swordUltimateHits = 0;
+      target.silenceTime = Math.max(target.silenceTime || 0, 60);
+    }
+    if (field.time <= 0) target.mageElectroField = null;
+  }
   if (target.mageTransfer) {
     target.mageTransfer.time -= dt;
     if (target.mageTransfer.time <= 0) target.mageTransfer = null;
@@ -3616,8 +3800,7 @@ function castMageLightning(owner) {
 
 function detonateMageFire(owner) {
   const target = opponentOf(owner);
-  damage(target, 10, owner);
-  applyMageDot(owner, target, "fire", 2, 120);
+  damage(target, 5, owner);
   applyMageElement(owner, target, "fire");
   addVisualEffect({
     type: "mage-fireball",
@@ -3965,7 +4148,7 @@ function triggerNormalSkill(fighter) {
 
   if (fighterActsLike(fighter, "archmage")) {
     fighter.mageFireDelay = 180;
-    fighter.skillTimer = 540;
+    fighter.skillTimer = 660;
     addSkillPulse(fighter, "#fb923c");
     addFloatingText(fighter.x, fighter.y - fighter.radius - 46, "작열 준비", "#fb923c");
     return;
@@ -4128,10 +4311,10 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "archmage") {
-    fighter.mageSeaTime = 240;
+    fighter.mageSeaTime = 300;
     fighter.mageSeaTick = 0;
     fighter.mageSeaElementApplied = false;
-    fighter.ultimateTimer = 630;
+    fighter.ultimateTimer = 1380;
     addSkillPulse(fighter, "#38bdf8");
     addVisualEffect({
       type: "mage-sea",
@@ -4339,7 +4522,7 @@ function moveFighter(fighter, dt) {
       fighter.mageVaporHealTime -= dt;
       fighter.mageVaporHealTick -= dt;
       while (fighter.mageVaporHealTime > 0 && fighter.mageVaporHealTick <= 0 && !game.over) {
-        heal(fighter, 4);
+        heal(fighter, 5);
         fighter.mageVaporHealTick += 60;
       }
     }
@@ -4353,7 +4536,7 @@ function moveFighter(fighter, dt) {
     fighter.mageLightningTimer -= dt;
     if (fighter.mageLightningTimer <= 0) {
       castMageLightning(fighter);
-      fighter.mageLightningTimer += 300;
+      fighter.mageLightningTimer += 360;
       if (game.over) return;
     }
     if (fighter.mageFireDelay > 0) {
@@ -4369,7 +4552,7 @@ function moveFighter(fighter, dt) {
       if (fighter.mageSeaTick <= 0) {
         const target = opponentOf(fighter);
         target.slowTime = Math.max(target.slowTime, 75);
-        damage(target, 5, fighter);
+        damage(target, 2, fighter);
         if (!fighter.mageSeaElementApplied) {
           applyMageElement(fighter, target, "wet");
           fighter.mageSeaElementApplied = true;
@@ -4581,7 +4764,9 @@ function moveFighter(fighter, dt) {
   const wallHit = bounceOnWalls(fighter);
   if (wallHit && fighter.overloadWallDamage > 0) {
     damage(fighter, fighter.overloadWallDamage, opponentOf(fighter));
+    if (fighter.overloadWallStun > 0) fighter.stunTime = Math.max(fighter.stunTime || 0, fighter.overloadWallStun);
     fighter.overloadWallDamage = 0;
+    fighter.overloadWallStun = 0;
   }
   updateSkills(fighter, dt);
 
@@ -5213,7 +5398,7 @@ function spawnCosmicDust(owner) {
 function castSupernova(owner) {
   if (owner.cosmicDust < 20) return;
   owner.cosmicDust -= 20;
-  const radius = 230;
+  const radius = 250;
   game.areaAttacks.push({
     type: "supernova",
     owner,
@@ -6294,6 +6479,10 @@ function drawVisualEffect(effect) {
     drawPointBurst(effect);
     return;
   }
+  if (effect.type === "mage-field" || effect.type === "mage-mist") {
+    drawMageZone(effect);
+    return;
+  }
   if (effect.type === "mage-sea") {
     drawMageSea(effect);
     return;
@@ -6494,6 +6683,37 @@ function drawClockSweep(effect) {
   ctx.beginPath();
   ctx.arc(fighter.x, fighter.y, 8, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
+}
+
+function drawMageZone(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = effect.radius || 120;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha * (effect.type === "mage-mist" ? 0.42 : 0.58);
+  ctx.translate(effect.x, effect.y);
+  ctx.strokeStyle = effect.color;
+  ctx.fillStyle = effect.type === "mage-mist"
+    ? "rgba(191, 219, 254, 0.18)"
+    : "rgba(34, 211, 238, 0.12)";
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = effect.type === "mage-mist" ? 22 : 30;
+  ctx.lineWidth = effect.type === "mage-mist" ? 4 : 5;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  if (effect.type === "mage-field") {
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i += 1) {
+      const angle = game.tick * 0.04 + i * Math.PI * 2 / 5;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * radius * 0.22, Math.sin(angle) * radius * 0.22);
+      ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      ctx.stroke();
+    }
+  }
   ctx.restore();
 }
 
@@ -7252,6 +7472,7 @@ function drawFighter(fighter) {
   });
   ctx.restore();
   if ((fighter.demonMarkCount || 0) > 0) drawDemonMark(fighter);
+  drawMageElementOrbs(fighter);
   drawFighterName(fighter);
   drawFighterHealthBar(fighter);
   drawPokerHand(fighter);
@@ -7399,6 +7620,29 @@ function drawDemonMark(target) {
     ctx.arc(x, y, 6.5, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
+}
+
+function drawMageElementOrbs(target) {
+  const elements = target.mageElements || {};
+  const active = ["fire", "wet", "electro"].filter(key => (elements[key] || 0) > 0);
+  if (!active.length) return;
+  const colors = { fire: "#ef4444", wet: "#38bdf8", electro: "#facc15" };
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.translate(target.x, target.y);
+  active.forEach((element, index) => {
+    const angle = game.tick * 0.065 + index * Math.PI * 2 / active.length;
+    const orbit = target.radius + 22 + index * 4;
+    const x = Math.cos(angle) * orbit;
+    const y = Math.sin(angle) * orbit;
+    ctx.fillStyle = colors[element];
+    ctx.shadowColor = colors[element];
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+  });
   ctx.restore();
 }
 
