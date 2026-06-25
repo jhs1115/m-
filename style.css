@@ -2786,11 +2786,13 @@ h2 {
 }
 
 .codex-skill-focus {
+  height: 132px;
   min-height: 132px;
   padding: 14px;
   background: rgba(7, 13, 24, 0.78);
   border-color: rgba(242, 193, 78, 0.2);
   border-radius: 12px;
+  overflow: hidden;
 }
 
 .codex-skill-focus h4 {
@@ -2803,7 +2805,8 @@ h2 {
 }
 
 .codex-skill-focus p {
-  max-height: 78px;
+  max-height: 72px;
+  overflow-y: auto;
   font-size: 0.9rem;
 }
 

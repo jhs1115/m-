@@ -418,7 +418,7 @@ const characterGuide = {
   },
   poker: {
     attack: ["포커 핸드", "자동", "카드 5장을 공개하고 패의 배율이 적용된 비유도 카드 탄환을 발사합니다."],
-    normal: ["드로우", "10초", "조커, 에이스, 킹, 퀸, 잭 중 카드 한 장을 던져 카드별 효과를 적용합니다."],
+    normal: ["드로우", "10초", "조커, 에이스, 킹, 퀸, 잭 중 카드 한 장을 던집니다. JOKER: 1~45의 무작위 피해. A: 7.5 피해. K: 피해는 없지만 다음 포커 핸드를 강화합니다. Q: 7.5 피해. J: 4.5 피해."],
     ultimate: ["힐 다이스", "40초", "주사위를 굴려 나온 눈의 5배만큼 체력을 회복합니다."]
   },
   stealth: {
@@ -452,9 +452,9 @@ const characterGuide = {
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
   brawler: {
-    attack: ["격투", "1.5초", "적이 가까이 오면 발동합니다. 적에게 스치면 8의 피해를 주고 직접 닿았다면 3의 추가 피해와 2.5의 몸빵 피해를 추가로 줍니다."],
+    attack: ["격투", "1초", "적이 사거리 내에 들어오면 8의 피해를 입힙니다."],
     normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 25% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
-    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 기본 피해와 추가 피해가 증가합니다."]
+    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 피해가 증가합니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -777,6 +777,7 @@ function drawCodexPreviewFrame(state, now) {
       setupCodexActualPreviewSkill(state.previewGame, kind, skillIndex);
     }
     while (state.previewTick < tick && !state.previewGame.over) {
+      runCodexPreviewEvents(state.previewGame, state.previewTick);
       stepGame(1);
       state.previewTick += 1;
     }
@@ -834,6 +835,10 @@ function createCodexActualPreviewGame(kind, skillIndex, width, height) {
   dummy.contactDamage = 0;
   dummy.vx = -0.5;
   dummy.vy = 0.15;
+  caster.maxHp = characterMaxHp(kind);
+  caster.hp = caster.maxHp;
+  dummy.maxHp = 220;
+  dummy.hp = 180;
   primeCodexPreviewTimers(caster);
   primeCodexPreviewTimers(dummy);
   return {
@@ -851,6 +856,7 @@ function createCodexActualPreviewGame(kind, skillIndex, width, height) {
     cosmicDusts: [],
     damageTexts: [],
     visualEffects: [],
+    codexEvents: [],
     contactLock: false,
     over: false,
     tick: 0,
@@ -882,6 +888,7 @@ function primeCodexPreviewTimers(fighter) {
 function setupCodexActualPreviewSkill(previewGame, kind, skillIndex) {
   const caster = previewGame.fighters[0];
   const dummy = previewGame.fighters[1];
+  configureCodexPreviewScene(previewGame, kind, skillIndex);
   const aim = Math.atan2(dummy.y - caster.y, dummy.x - caster.x);
   caster.facingX = Math.cos(aim);
   caster.facingY = Math.sin(aim);
@@ -912,15 +919,199 @@ function setupCodexActualPreviewSkill(previewGame, kind, skillIndex) {
   if (kind === "stealth") {
     caster.stealthTime = skillIndex === 1 ? 180 : 0;
   }
-  if (skillIndex === 0) {
-    setupCodexActualBasic(caster, dummy, kind);
-  } else if (skillIndex === 1) {
-    triggerNormalSkill(caster);
-  } else {
-    triggerUltimate(caster);
-  }
+  scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex);
   caster.skillTimer = Infinity;
   caster.ultimateTimer = Infinity;
+}
+
+function addCodexPreviewEvent(previewGame, tick, action) {
+  previewGame.codexEvents.push({ tick, action, done: false });
+}
+
+function runCodexPreviewEvents(previewGame, tick) {
+  previewGame.codexEvents.forEach(event => {
+    if (!event.done && tick >= event.tick) {
+      event.done = true;
+      event.action();
+    }
+  });
+}
+
+function configureCodexPreviewScene(previewGame, kind, skillIndex) {
+  const caster = previewGame.fighters[0];
+  const dummy = previewGame.fighters[1];
+  const w = canvas.width;
+  const h = canvas.height;
+  if (kind === "grabber" && skillIndex === 2) {
+    caster.x = w * 0.43;
+    dummy.x = w * 0.58;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
+  }
+  if (kind === "poker" && skillIndex === 2) caster.hp = caster.maxHp * 0.45;
+  if (kind === "wild" && skillIndex === 2) dummy.hp = dummy.maxHp * 0.48;
+  if (kind === "vampire") {
+    if (skillIndex > 0) caster.hp = caster.maxHp * 0.28;
+    else dummy.hp = dummy.maxHp;
+  }
+  if (kind === "brawler") {
+    caster.x = w * 0.42;
+    dummy.x = w * 0.59;
+    caster.y = dummy.y = h * 0.55;
+    if (skillIndex === 1) caster.hp = caster.maxHp;
+  }
+  if (kind === "artist") {
+    caster.hp = caster.maxHp * 0.52;
+    caster.x = w * 0.42;
+    dummy.x = w * 0.58;
+    caster.y = dummy.y = h * 0.55;
+  }
+  if (kind === "believer") caster.hp = caster.maxHp * 0.45;
+  if (kind === "demon") dummy.demonMarkCount = skillIndex === 0 ? 0 : 1;
+  if (kind === "enhancer") caster.attackPower = 0;
+}
+
+function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex) {
+  if (kind === "thrower" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 10, () => fireStarStrike(caster, { force: true }));
+    addCodexPreviewEvent(previewGame, 70, () => triggerNormalSkill(caster));
+    return;
+  }
+  if (kind === "poker" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 90, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "stealth" && skillIndex === 1) {
+    caster.stealthTime = 240;
+    addCodexPreviewEvent(previewGame, 75, () => triggerNormalSkill(caster));
+    return;
+  }
+  if (kind === "stealth" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 20, () => triggerUltimate(caster));
+    addCodexPreviewEvent(previewGame, 75, () => startStealth(caster));
+    addCodexPreviewEvent(previewGame, 120, () => {
+      caster.vx = 18;
+      caster.vy = 0;
+    });
+    return;
+  }
+  if (kind === "enhancer" && skillIndex === 0) {
+    addCodexPreviewEvent(previewGame, 1, () => {
+      caster.attackPower = 0;
+      caster.enhanceTimer = 60;
+    });
+    return;
+  }
+  if (kind === "vampire" && skillIndex === 0) {
+    addCodexPreviewEvent(previewGame, 10, () => {
+      caster.hp = caster.maxHp;
+      fireBloodBullet(caster);
+    });
+    addCodexPreviewEvent(previewGame, 105, () => {
+      caster.hp = caster.maxHp * 0.18;
+      fireBloodBullet(caster);
+    });
+    return;
+  }
+  if (kind === "vampire" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 20, () => fireBloodBullet(caster));
+    return;
+  }
+  if (kind === "vampire" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 90, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "brawler" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 15, () => triggerNormalSkill(caster));
+    addCodexPreviewEvent(previewGame, 115, () => {
+      caster.hp = caster.maxHp * 0.35;
+      triggerNormalSkill(caster);
+    });
+    return;
+  }
+  if (kind === "brawler" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 90, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "timekeeper" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 10, () => swingClockHand(caster));
+    addCodexPreviewEvent(previewGame, 55, () => triggerNormalSkill(caster));
+    addCodexPreviewEvent(previewGame, 80, () => swingClockHand(caster));
+    return;
+  }
+  if (kind === "timekeeper" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 10, () => {
+      caster.timeHistory = Array.from({ length: 181 }, () => ({ x: caster.x - 130, y: caster.y - 40, hp: caster.hp * 0.7 }));
+      caster.x += 120;
+      caster.y += 40;
+      caster.hp *= 0.55;
+    });
+    addCodexPreviewEvent(previewGame, 180, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "riftmaker" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 120, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "summoner" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 10, () => summonUnit(caster, false));
+    addCodexPreviewEvent(previewGame, 70, () => triggerNormalSkill(caster));
+    addCodexPreviewEvent(previewGame, 95, () => summonUnit(caster, false));
+    return;
+  }
+  if (kind === "summoner" && skillIndex === 2) {
+    caster.summonMode = "archer";
+    addCodexPreviewEvent(previewGame, 75, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "swordsman" && skillIndex === 1) {
+    addCodexPreviewEvent(previewGame, 5, () => triggerNormalSkill(caster));
+    addCodexPreviewEvent(previewGame, 150, () => {
+      caster.swordDanceTime = 0;
+      caster.swordDanceHits = 0;
+      triggerNormalSkill(caster);
+    });
+    return;
+  }
+  if (kind === "demon") {
+    if (skillIndex === 2) {
+      addCodexPreviewEvent(previewGame, 1, () => fireDemonLine(caster, { damage: 5, addMark: 1, markDuration: 300, width: 26 }));
+      addCodexPreviewEvent(previewGame, 60, () => {
+        dummy.demonMarkCount = Math.max(1, dummy.demonMarkCount || 1);
+        triggerUltimate(caster);
+      });
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 1, () => fireDemonLine(caster, { damage: 5, addMark: 1, markDuration: 300, width: 26 }));
+      addCodexPreviewEvent(previewGame, 95, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 1, () => fireDemonLine(caster, { damage: 5, addMark: 1, markDuration: 300, width: 26 }));
+      addCodexPreviewEvent(previewGame, 80, () => fireDemonLine(caster, { damage: 5, addMark: 1, markDuration: 300, slowTime: 120, width: 26 }));
+    }
+    return;
+  }
+  if (kind === "artist" && skillIndex > 0) {
+    addCodexPreviewEvent(previewGame, 70, () => skillIndex === 1 ? triggerNormalSkill(caster) : triggerUltimate(caster));
+    return;
+  }
+  if (kind === "believer" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 15, () => triggerUltimate(caster));
+    addCodexPreviewEvent(previewGame, 105, () => triggerUltimate(caster));
+    addCodexPreviewEvent(previewGame, 195, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "gambler") {
+    const use = () => skillIndex === 0 ? useRouletteAttack(caster) : skillIndex === 1 ? useRouletteNormal(caster) : useRouletteUltimate(caster);
+    addCodexPreviewEvent(previewGame, 15, use);
+    addCodexPreviewEvent(previewGame, 75, use);
+    addCodexPreviewEvent(previewGame, 135, use);
+    return;
+  }
+  addCodexPreviewEvent(previewGame, kind === "grabber" && skillIndex === 2 ? 55 : 15, () => {
+    if (skillIndex === 0) setupCodexActualBasic(caster, dummy, kind);
+    else if (skillIndex === 1) triggerNormalSkill(caster);
+    else triggerUltimate(caster);
+  });
 }
 
 function setupCodexActualBasic(caster, dummy, kind) {
@@ -6999,13 +7190,10 @@ function createTankBlast(owner) {
 }
 
 function punchTarget(owner, target) {
-  const directContact = Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + owner.radius;
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
   const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
-  const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
-  const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
-  damage(target, baseDamage + extraDamage + bodyDamage, owner);
-  owner.punchTimer = 90;
+  damage(target, baseDamage, owner);
+  owner.punchTimer = 60;
   owner.idleAttackTime = 0;
   addVisualEffect({
     type: "rage-burst",
@@ -7017,13 +7205,10 @@ function punchTarget(owner, target) {
 }
 
 function punchSummon(owner, summon) {
-  const directContact = Math.hypot(summon.x - owner.x, summon.y - owner.y) < summon.radius + owner.radius;
   const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
   const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
-  const extraDamage = directContact ? (owner.dragonFistTime > 0 ? 6 + speedRatio * 4 : 3) : 0;
-  const bodyDamage = directContact ? (owner.dragonFistTime > 0 ? 2.5 + speedRatio * 1.75 : 2.5) : 0;
-  damageSummon(summon, baseDamage + extraDamage + bodyDamage, owner);
-  owner.punchTimer = 90;
+  damageSummon(summon, baseDamage, owner);
+  owner.punchTimer = 60;
   owner.idleAttackTime = 0;
   addVisualEffect({
     type: "rage-burst",
