@@ -1096,7 +1096,7 @@ function startSelectTimer() {
 function syncSelectTimerFromPrep(force = false) {
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
-  const totalBans = totalBanCount(prep);
+  const totalBans = totalBanTurns(prep);
   const phase = banPhase ? `ban-${totalBans}` : "pick";
   if (!force && selectTimerPhase === phase) return;
   selectTimerPhase = phase;
@@ -1760,6 +1760,14 @@ function beginMatchedRoomTransition(roomCode, expectedGeneration = matchmakingGe
         showMatchOverlay("", false);
         ui.pvpModeButton.disabled = false;
         ui.modeMessage.textContent = "매칭 정보를 불러오지 못했습니다. 다시 시도해주세요.";
+      }
+    } catch (error) {
+      console.error("match transition failed", error);
+      if (currentRoom?.code === roomCode) {
+        matchTransitionRoomCode = "";
+        showMatchOverlay("", false);
+        ui.pvpModeButton.disabled = false;
+        ui.modeMessage.textContent = `캐릭터 선택 화면 오류: ${error.message}`;
       }
     } finally {
       matchTransitionEntering = false;
