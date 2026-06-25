@@ -2300,7 +2300,7 @@ h2 {
   inset: -18px;
   border: 1px solid color-mix(in srgb, var(--char-accent) 60%, transparent);
   border-radius: 50%;
-  animation: codex-pulse 2.2s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes codex-pulse {
@@ -2591,7 +2591,6 @@ h2 {
 }
 
 .codex-type-button:hover {
-  transform: translateY(-1px) scale(1.02);
   background: rgba(16, 24, 39, 0.92);
 }
 
@@ -2641,7 +2640,6 @@ h2 {
 }
 
 .codex-character-button:hover {
-  transform: translateX(2px) scale(1.01);
   background: rgba(16, 24, 39, 0.9);
 }
 
@@ -2691,7 +2689,7 @@ h2 {
 }
 
 .codex-skill-tab:hover {
-  transform: translateY(-1px) scale(1.01);
+  background: rgba(16, 24, 39, 0.9);
 }
 
 .codex-skill-tab.is-active {

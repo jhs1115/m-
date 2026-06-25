@@ -776,9 +776,33 @@ function drawCodexPreviewFrame(state, now) {
   const dummy = { x: w * 0.76, y: h * 0.56, r: 25 };
 
   drawCodexPreviewBackground(ctx, w, h, color, accent);
-  drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent);
-  drawCodexUnit(ctx, caster.x, caster.y, caster.r, color, accent, label, false);
-  drawCodexUnit(ctx, dummy.x, dummy.y, dummy.r, "#8b95a7", "#e5e7eb", "D", true);
+  const scene = drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent) || {};
+  const casterPose = scene.caster || caster;
+  const dummyPose = scene.dummy || dummy;
+  if (!scene.hideCaster) {
+    drawCodexActualFighter(ctx, {
+      kind,
+      x: casterPose.x,
+      y: casterPose.y,
+      radius: casterPose.r || caster.r,
+      color,
+      accent,
+      label,
+      state: scene.casterState || {}
+    }, t);
+  }
+  if (!scene.hideDummy) {
+    drawCodexActualFighter(ctx, {
+      kind: "dummy",
+      x: dummyPose.x,
+      y: dummyPose.y,
+      radius: dummyPose.r || dummy.r,
+      color: "#8b95a7",
+      accent: "#e5e7eb",
+      label: "D",
+      state: scene.dummyState || {}
+    }, t);
+  }
   drawCodexHitSpark(ctx, dummy, t, accent);
 }
 
@@ -832,12 +856,354 @@ function drawCodexUnit(ctx, x, y, r, color, accent, label, isDummy = false) {
   ctx.restore();
 }
 
+function drawCodexActualFighter(ctx, fighter, t) {
+  const tick = t * 280;
+  const { kind, x, y, radius, color, accent, label, state } = fighter;
+  ctx.save();
+  ctx.translate(x, y);
+  if (state.rage) drawCodexActualRageAura(ctx, radius, tick, color);
+  if (state.stealth) drawCodexActualStealthAura(ctx, radius, tick, state.hyper ? "#8d7cff" : accent, state.hyper);
+  if (state.dragon) drawCodexActualDragonAura(ctx, radius, tick);
+  if (state.shield) drawCodexActualShield(ctx, radius);
+
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + 7, 0, Math.PI * 2);
+  ctx.fillStyle = state.hit ? "rgba(255,255,255,0.42)" : state.rage ? "rgba(239, 71, 111, 0.34)" : "rgba(255,255,255,0.08)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.globalAlpha = state.stealth ? 0.42 : 1;
+  ctx.fillStyle = state.rage ? "#ff174f" : color;
+  ctx.shadowColor = state.rage ? "#ef476f" : "transparent";
+  ctx.shadowBlur = state.rage ? 22 : 0;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.arc(7, -7, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#101319";
+  ctx.fill();
+
+  if (kind === "thrower") {
+    ctx.beginPath();
+    ctx.arc(-12, 12, 8, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+  }
+  if (kind === "grabber") {
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(-9, 11, 9, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (kind === "poker") {
+    ctx.fillStyle = accent;
+    ctx.fillRect(-15, 8, 22, 16);
+    ctx.fillStyle = "#101319";
+    ctx.font = "900 11px Segoe UI, Arial";
+    ctx.fillText("P", -9, 20);
+  }
+  if (kind === "summoner") {
+    ctx.fillStyle = state.archer ? "#facc15" : "#4ade80";
+    ctx.font = "1000 15px Segoe UI, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(state.archer ? "A" : "W", -12, 14);
+  }
+  if (kind === "swordsman") {
+    ctx.save();
+    ctx.rotate(tick * 0.025);
+    ctx.strokeStyle = "#f7fbff";
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-18, 16);
+    ctx.lineTo(18, -18);
+    ctx.stroke();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 11, 0, Math.PI * 1.25);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (kind === "cosmic") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#93c5fd";
+    ctx.fillStyle = "#f8fbff";
+    ctx.shadowColor = "#93c5fd";
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3;
+    ctx.rotate(tick * 0.025);
+    for (let index = 0; index < 4; index += 1) {
+      const angle = index * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
+      ctx.lineTo(Math.cos(angle) * 24, Math.sin(angle) * 24);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    drawCodexActualFacingArrow(ctx, radius, tick);
+  }
+  if (kind === "demon") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#38bdf8";
+    ctx.fillStyle = "#6b3f24";
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-17, 13);
+    ctx.lineTo(15, -15);
+    ctx.lineTo(8, 8);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  }
+  if (kind === "artist") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#f7f4eb";
+    ctx.fillStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(-6, 2, 13, 0, Math.PI * 2);
+    ctx.stroke();
+    ["#f472b6", "#67e8f9", "#fde68a"].forEach((orbColor, index) => {
+      const angle = index / 3 * Math.PI * 2 + tick * 0.04;
+      ctx.fillStyle = orbColor;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * 13, Math.sin(angle) * 9, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = "#f7f4eb";
+    ctx.beginPath();
+    ctx.moveTo(8, 16);
+    ctx.lineTo(20, -12);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (kind === "believer") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#fef3c7";
+    ctx.fillStyle = accent;
+    ctx.shadowColor = "#fef3c7";
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, -21);
+    ctx.lineTo(0, 18);
+    ctx.moveTo(-14, -5);
+    ctx.lineTo(14, -5);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 12 + Math.sin(tick * 0.12) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  if (state.lockOn) drawCodexActualLockOn(ctx, x, y, radius, tick);
+  if (state.demonMarks) drawCodexActualDemonMark(ctx, x, y, radius, tick, state.demonMarks);
+  if (state.mageElements) drawCodexActualMageElements(ctx, x, y, radius, tick, state.mageElements);
+  drawCodexActualHealthBar(ctx, x, y, radius, state.hpRate ?? 0.72, accent);
+  if (kind === "cosmic") drawCodexActualStatLabel(ctx, x, y, radius, "별가루 50", accent);
+}
+
+function drawCodexActualRageAura(ctx, radius, tick, color) {
+  const pulse = 1 + Math.sin(tick * 0.22) * 0.06;
+  ctx.globalAlpha = 0.34;
+  ctx.fillStyle = "rgba(239, 71, 111, 0.28)";
+  ctx.beginPath();
+  ctx.arc(0, 0, (radius + 18) * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawCodexActualStealthAura(ctx, radius, tick, color, hyper = false) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = hyper ? 30 : 18;
+  ctx.lineWidth = hyper ? 5 : 3;
+  ctx.setLineDash(hyper ? [2, 5, 16, 5] : [5, 5]);
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + (hyper ? 24 : 12) + Math.sin(tick * 0.28) * 4, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexActualDragonAura(ctx, radius, tick) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 32;
+  const pulse = Math.sin(tick * 0.16) * 4;
+  const rotation = tick * 0.055;
+  ctx.strokeStyle = "rgba(250, 204, 21, 0.9)";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + 34 + pulse, Math.PI * 0.15, Math.PI * 1.9);
+  ctx.stroke();
+  for (let i = 0; i < 2; i += 1) {
+    const angle = rotation + i * Math.PI;
+    const startX = Math.cos(angle) * (radius + 7);
+    const startY = Math.sin(angle) * (radius + 7);
+    const midX = Math.cos(angle + 0.95) * (radius + 72);
+    const midY = Math.sin(angle + 0.95) * (radius + 72);
+    const endX = Math.cos(angle + 1.75) * (radius + 38);
+    const endY = Math.sin(angle + 1.75) * (radius + 38);
+    ctx.strokeStyle = i === 0 ? "#fde68a" : "#f59e0b";
+    ctx.lineWidth = 8 - i * 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.quadraticCurveTo(midX, midY, endX, endY);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexActualShield(ctx, radius) {
+  ctx.strokeStyle = "#d5dde8";
+  ctx.fillStyle = "rgba(213, 221, 232, 0.18)";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + 34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawCodexActualFacingArrow(ctx, radius, tick) {
+  const distance = radius + 27 + Math.sin(tick * 0.12) * 3;
+  ctx.save();
+  ctx.translate(distance, 0);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = "rgba(219, 234, 254, 0.95)";
+  ctx.strokeStyle = "#7dd3fc";
+  ctx.shadowColor = "#a78bfa";
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(14, 0);
+  ctx.lineTo(-7, -8);
+  ctx.lineTo(-3, 0);
+  ctx.lineTo(-7, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexActualLockOn(ctx, x, y, radius, tick) {
+  ctx.save();
+  ctx.translate(x, y);
+  const markRadius = radius + 24 + Math.sin(tick * 0.28) * 4;
+  ctx.strokeStyle = "#ff304f";
+  ctx.shadowColor = "#ff304f";
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, markRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 4; i += 1) {
+    const angle = i * Math.PI / 2 + tick * 0.025;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * (markRadius - 8), Math.sin(angle) * (markRadius - 8));
+    ctx.lineTo(Math.cos(angle) * (markRadius + 16), Math.sin(angle) * (markRadius + 16));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexActualDemonMark(ctx, x, y, radius, tick, count) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.translate(x, y);
+  const pulse = 0.5 + Math.sin(tick * 0.16) * 0.5;
+  ctx.shadowColor = "#38bdf8";
+  ctx.shadowBlur = 18 + pulse * 10;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.88)";
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + 11 + pulse * 3, 0, Math.PI * 2);
+  ctx.stroke();
+  for (let index = 0; index < count; index += 1) {
+    const angle = index / Math.max(1, count) * Math.PI * 2 + tick * 0.055;
+    const orbit = radius + 22 + (index % 2) * 5;
+    ctx.fillStyle = index % 2 ? "#173b6c" : "#38bdf8";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawCodexActualMageElements(ctx, x, y, radius, tick, active) {
+  const colors = { fire: "#ef4444", wet: "#38bdf8", electro: "#facc15" };
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.translate(x, y);
+  active.forEach((element, index) => {
+    const angle = tick * 0.065 + index * Math.PI * 2 / active.length;
+    const orbit = radius + 22 + index * 4;
+    ctx.fillStyle = colors[element];
+    ctx.shadowColor = colors[element];
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, 6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawCodexActualHealthBar(ctx, x, y, radius, hpRate, color) {
+  const width = 72;
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.78)";
+  ctx.fillRect(x - width / 2, y + radius + 14, width, 7);
+  ctx.fillStyle = "#7bd88f";
+  ctx.fillRect(x - width / 2, y + radius + 14, width * clamp(hpRate, 0, 1), 7);
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.45;
+  ctx.strokeRect(x - width / 2, y + radius + 14, width, 7);
+  ctx.restore();
+}
+
+function drawCodexActualStatLabel(ctx, x, y, radius, text, color) {
+  ctx.save();
+  ctx.font = "900 12px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "rgba(0,0,0,0.8)";
+  ctx.lineWidth = 3;
+  const labelY = y + radius + 42;
+  ctx.strokeText(text, x, labelY);
+  ctx.fillText(text, x, labelY);
+  ctx.restore();
+}
+
 function drawCodexProjectile(ctx, caster, dummy, t, color, accent, size = 11) {
   const p = Math.min(1, Math.max(0, (t - 0.12) / 0.54));
   const ease = 1 - Math.pow(1 - p, 3);
   const x = caster.x + (dummy.x - caster.x) * ease;
   const y = caster.y + (dummy.y - caster.y) * ease + Math.sin(p * Math.PI) * -30;
   ctx.save();
+  ctx.globalCompositeOperation = "lighter";
   ctx.strokeStyle = `${accent}66`;
   ctx.lineWidth = 4;
   ctx.lineCap = "round";
@@ -847,7 +1213,11 @@ function drawCodexProjectile(ctx, caster, dummy, t, color, accent, size = 11) {
   ctx.stroke();
   ctx.shadowColor = accent;
   ctx.shadowBlur = 22;
-  ctx.fillStyle = color;
+  const gradient = ctx.createRadialGradient(x - size * 0.25, y - size * 0.25, 1, x, y, size * 1.7);
+  gradient.addColorStop(0, "#ffffff");
+  gradient.addColorStop(0.35, color);
+  gradient.addColorStop(1, accent);
+  ctx.fillStyle = gradient;
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
@@ -858,6 +1228,7 @@ function drawCodexLaser(ctx, caster, dummy, t, accent, wide = false) {
   if (t < 0.2 || t > 0.82) return;
   const pulse = 0.55 + Math.sin(t * Math.PI * 18) * 0.18;
   ctx.save();
+  ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = pulse;
   ctx.strokeStyle = accent;
   ctx.lineWidth = wide ? 34 : 16;
@@ -882,19 +1253,35 @@ function drawCodexAoe(ctx, center, t, color, accent, maxRadius = 96) {
   const p = Math.min(1, Math.max(0, (t - 0.16) / 0.62));
   const radius = 18 + maxRadius * p;
   ctx.save();
+  ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = 1 - p * 0.55;
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = 5;
-  ctx.shadowColor = accent;
-  ctx.shadowBlur = 28;
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-  ctx.stroke();
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.globalAlpha = (1 - p) * (0.78 - ring * 0.18);
+    ctx.strokeStyle = ring === 1 ? "#8d7cff" : ring === 2 ? "#f7fbff" : accent;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 22 + ring * 9;
+    ctx.lineWidth = Math.max(1.5, 7 - ring * 2);
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius * (1 + ring * 0.13), 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.globalAlpha = 0.18 * (1 - p * 0.3);
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius * 0.82, 0, Math.PI * 2);
   ctx.fill();
+  for (let ray = 0; ray < 10; ray += 1) {
+    const angle = ray * Math.PI * 0.2 + p * 1.7;
+    const inner = radius * 0.35;
+    const outer = radius * (0.72 + (ray % 3) * 0.12);
+    ctx.globalAlpha = (1 - p) * 0.52;
+    ctx.strokeStyle = ray % 2 ? accent : "#f7fbff";
+    ctx.lineWidth = ray % 3 === 0 ? 3 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(center.x + Math.cos(angle) * inner, center.y + Math.sin(angle) * inner);
+    ctx.lineTo(center.x + Math.cos(angle) * outer, center.y + Math.sin(angle) * outer);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -1051,6 +1438,182 @@ function drawCodexClockArc(ctx, dummy, t, accent) {
   ctx.restore();
 }
 
+function drawCodexAura(ctx, unit, t, color, accent, radius = 58) {
+  const pulse = 0.5 + Math.sin(t * Math.PI * 8) * 0.18;
+  ctx.save();
+  ctx.globalAlpha = 0.42 + pulse * 0.3;
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.arc(unit.x, unit.y, radius + pulse * 14, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(unit.x, unit.y, radius + pulse * 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCodexHeal(ctx, unit, t, accent) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 20;
+  for (let i = 0; i < 3; i += 1) {
+    const y = unit.y - 58 - i * 18 + Math.sin((t + i * 0.2) * Math.PI * 2) * 10;
+    ctx.globalAlpha = 0.35 + i * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(unit.x - 12, y);
+    ctx.lineTo(unit.x + 12, y);
+    ctx.moveTo(unit.x, y - 12);
+    ctx.lineTo(unit.x, y + 12);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexCrossField(ctx, center, t, accent) {
+  const p = Math.min(1, Math.max(0, (t - 0.12) / 0.55));
+  ctx.save();
+  ctx.globalAlpha = 0.25 + p * 0.45;
+  ctx.fillStyle = accent;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 26;
+  ctx.fillRect(center.x - 10, center.y - 94 * p, 20, 188 * p);
+  ctx.fillRect(center.x - 72 * p, center.y - 10, 144 * p, 20);
+  ctx.restore();
+}
+
+function drawCodexRift(ctx, point, t, accent) {
+  const pulse = 0.5 + Math.sin(t * Math.PI * 10) * 0.25;
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 24;
+  ctx.beginPath();
+  ctx.ellipse(point.x, point.y, 24 + pulse * 8, 52 + pulse * 14, Math.PI * 0.12, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = "#020617";
+  ctx.beginPath();
+  ctx.ellipse(point.x, point.y, 18 + pulse * 6, 44 + pulse * 10, Math.PI * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCodexArtistTrail(ctx, caster, dummy, t, accent, trigger = false) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = trigger ? 5 : 3;
+  ctx.globalAlpha = trigger ? 0.72 : 0.28;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = trigger ? 20 : 8;
+  ctx.beginPath();
+  ctx.ellipse((caster.x + dummy.x) / 2, caster.y, 140, 58, -0.18, 0, Math.PI * 2);
+  ctx.stroke();
+  const p = (t * 1.3) % 1;
+  const a = p * Math.PI * 2;
+  const x = (caster.x + dummy.x) / 2 + Math.cos(a) * 140;
+  const y = caster.y + Math.sin(a) * 58;
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCodexDemonMarks(ctx, dummy, t, count = 2) {
+  ctx.save();
+  ctx.fillStyle = "#38bdf8";
+  ctx.shadowColor = "#38bdf8";
+  ctx.shadowBlur = 16;
+  for (let i = 0; i < count; i += 1) {
+    const a = t * Math.PI * 2 + i / count * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(dummy.x + Math.cos(a) * 42, dummy.y + Math.sin(a) * 42, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawCodexFiveWallSlashes(ctx, caster, dummy, t, accent, w) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 22;
+  for (let i = 0; i < 5; i += 1) {
+    const appear = t > 0.12 + i * 0.11;
+    if (!appear) continue;
+    const y = dummy.y - 54 + i * 27;
+    ctx.globalAlpha = Math.max(0.18, 1 - (t - 0.12 - i * 0.11) * 1.4);
+    ctx.beginPath();
+    ctx.moveTo(dummy.x - 80, y - 24);
+    ctx.lineTo(w - 38, y + 24);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexDragon(ctx, caster, t, accent) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 28;
+  ctx.beginPath();
+  for (let i = 0; i < 26; i += 1) {
+    const p = i / 25;
+    const a = p * Math.PI * 2.2 + t * Math.PI * 2;
+    const r = 34 + p * 78;
+    const x = caster.x + Math.cos(a) * r;
+    const y = caster.y + Math.sin(a) * r * 0.52 - p * 48;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexMageElements(ctx, dummy, t) {
+  const colors = ["#facc15", "#fb923c", "#38bdf8"];
+  ctx.save();
+  colors.forEach((color, i) => {
+    const a = t * Math.PI * 2 + i * Math.PI * 2 / 3;
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(dummy.x + Math.cos(a) * 44, dummy.y + Math.sin(a) * 44, 7, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawCodexRoulette(ctx, caster, t, accent) {
+  ctx.save();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 18;
+  for (let i = 0; i < 8; i += 1) {
+    const a = t * Math.PI * 4 + i * Math.PI / 4;
+    ctx.beginPath();
+    ctx.arc(caster.x + Math.cos(a) * 58, caster.y + Math.sin(a) * 58, 7, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w, h, color, accent) {
   if (mode === "enemy") {
     if (skillIndex === 1) drawCodexProjectile(ctx, dummy, caster, t, color, accent, 10);
@@ -1058,39 +1621,206 @@ function drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w
     else drawCodexSlash(ctx, dummy, caster, t, accent);
     return;
   }
-  if (kind === "thrower" && skillIndex > 0) {
-    drawCodexLockOnCombo(ctx, caster, dummy, t, color, accent);
+
+  if (kind === "thrower") {
+    if (skillIndex === 0) drawCodexProjectile(ctx, caster, dummy, t, color, accent, 12);
+    else if (skillIndex === 1) {
+      drawCodexLockOnCombo(ctx, caster, dummy, t, color, accent);
+      return { dummyState: { lockOn: true, hpRate: 0.62 } };
+    }
+    else {
+      drawCodexProjectile(ctx, { x: caster.x, y: caster.y - 18 }, { x: dummy.x, y: dummy.y - 18 }, t, "#ffe28a", "#ffe28a", 13);
+      drawCodexProjectile(ctx, { x: caster.x, y: caster.y + 18 }, { x: dummy.x, y: dummy.y + 18 }, (t + 0.14) % 1, "#ffe28a", "#ffe28a", 13);
+    }
     return;
   }
-  if (["beamer", "demon"].includes(kind) || (kind === "cosmic" && skillIndex === 2)) {
-    drawCodexLaser(ctx, caster, dummy, t, accent, kind === "cosmic" && skillIndex === 2);
+
+  if (kind === "charger") {
+    if (skillIndex === 0 || skillIndex === 1) {
+      const p = skillIndex === 1 ? Math.min(1, t * 1.5) : Math.min(1, Math.max(0, (t - 0.08) / 0.7));
+      const pose = { ...caster, x: caster.x + (dummy.x - caster.x - 46) * p };
+      if (skillIndex === 1) drawCodexAura(ctx, pose, t, color, accent, 48);
+      return { caster: pose, casterState: { rage: skillIndex === 1 }, dummyState: { hpRate: 0.66 } };
+    }
+    drawCodexAura(ctx, caster, t, color, accent, 62);
+    drawCodexLaser(ctx, caster, { x: w - 34, y: caster.y }, t, accent, true);
+    return { casterState: { rage: true }, dummyState: { hpRate: 0.45 } };
+  }
+
+  if (kind === "grabber") {
+    drawCodexLaser(ctx, caster, dummy, t, accent, skillIndex === 1);
+    if (skillIndex === 2) drawCodexAoe(ctx, caster, t, color, accent, 124);
     return;
   }
-  if (kind === "cosmic" && skillIndex === 0) {
-    drawCodexCosmicDust(ctx, caster, t, accent);
+
+  if (kind === "poker") {
+    if (skillIndex === 2) drawCodexHeal(ctx, caster, t, accent);
+    else drawCodexCards(ctx, caster, dummy, t, accent);
     return;
   }
-  if (["grabber", "tank", "riftmaker", "believer", "archmage", "artist"].includes(kind) || skillIndex === 2) {
-    drawCodexAoe(ctx, skillIndex === 0 ? dummy : { x: (caster.x + dummy.x) / 2, y: caster.y }, t, color, accent, skillIndex === 2 ? 120 : 86);
-    if (kind === "archmage" && skillIndex === 0) drawCodexLightning(ctx, dummy, t, accent);
+
+  if (kind === "stealth") {
+    if (skillIndex === 2) {
+      drawCodexAura(ctx, caster, t, "#7c3aed", "#c4b5fd", 64);
+      return { casterState: { stealth: true, hyper: true } };
+    }
+    const pose = skillIndex === 1 ? { ...caster, x: dummy.x + 58, y: dummy.y } : { ...caster, x: caster.x + (dummy.x - caster.x) * Math.min(1, t * 1.4) };
+    drawCodexSlash(ctx, pose, dummy, t, "#c4b5fd");
+    return { caster: pose, hideCaster: t < 0.45, casterState: { stealth: true }, dummyState: { hpRate: 0.58 } };
+  }
+
+  if (kind === "enhancer") {
+    if (skillIndex === 2) {
+      drawCodexProjectile(ctx, { x: caster.x + 22, y: caster.y - 52 }, dummy, t, color, accent, 15);
+      drawCodexProjectile(ctx, { x: caster.x - 18, y: caster.y + 46 }, dummy, (t + 0.2) % 1, color, accent, 15);
+    } else {
+      drawCodexAura(ctx, caster, t, color, accent, skillIndex === 1 ? 72 : 44);
+    }
     return;
   }
-  if (["charger", "wild", "brawler", "stealth", "swordsman"].includes(kind)) {
-    drawCodexSlash(ctx, caster, dummy, t, accent);
+
+  if (kind === "tank") {
+    if (skillIndex === 0) {
+      const pose = { ...caster, x: caster.x + (dummy.x - caster.x - 50) * Math.min(1, t * 1.25) };
+      return { caster: pose, dummyState: { hpRate: 0.66 } };
+    }
+    drawCodexAura(ctx, caster, t, color, accent, skillIndex === 2 ? 112 : 70);
+    if (skillIndex !== 2) drawCodexLaser(ctx, caster, dummy, t, accent, false);
+    return { casterState: { shield: skillIndex === 2 }, dummyState: { hpRate: skillIndex === 2 ? 0.42 : 0.66 } };
+  }
+
+  if (kind === "beamer") {
+    if (skillIndex === 0 || skillIndex === 2) {
+      drawCodexLaser(ctx, { x: dummy.x, y: 18 }, { x: dummy.x, y: h - 18 }, t, accent, skillIndex === 2);
+    } else {
+      drawCodexLaser(ctx, caster, dummy, t, accent, true);
+    }
     return;
   }
-  if (kind === "poker" || kind === "gambler") {
-    drawCodexCards(ctx, caster, dummy, t, accent);
+
+  if (kind === "wild") {
+    if (skillIndex === 1 || skillIndex === 2) {
+      const pose = { ...caster, x: caster.x + (dummy.x - caster.x - 42) * Math.min(1, t * 1.5) };
+      drawCodexAura(ctx, pose, t, color, accent, 48);
+      return { caster: pose, casterState: { rage: true }, dummyState: { hpRate: 0.62 } };
+    }
+    for (let i = 0; i < 3; i += 1) drawCodexSlash(ctx, { x: dummy.x - 62 + i * 45, y: dummy.y - 28 + i * 24 }, dummy, (t + i * 0.15) % 1, accent);
     return;
   }
-  if (kind === "summoner") {
-    drawCodexSummon(ctx, caster, dummy, t, color, accent);
+
+  if (kind === "vampire") {
+    if (skillIndex === 1) drawCodexHeal(ctx, caster, t, accent);
+    else {
+      drawCodexProjectile(ctx, caster, dummy, t, "#9c1647", "#ff5f87", skillIndex === 2 ? 16 : 10);
+      if (skillIndex === 2) drawCodexAura(ctx, caster, t, "#9c1647", "#ff5f87", 58);
+    }
     return;
   }
+
+  if (kind === "brawler") {
+    if (skillIndex === 1) drawCodexAura(ctx, caster, t, color, accent, 58);
+    else if (skillIndex === 2) {
+      drawCodexDragon(ctx, caster, t, "#facc15");
+      drawCodexSlash(ctx, caster, dummy, t, "#facc15");
+      return { casterState: { dragon: true }, dummyState: { hpRate: 0.48 } };
+    } else drawCodexSlash(ctx, caster, dummy, t, accent);
+    return;
+  }
+
   if (kind === "timekeeper") {
-    drawCodexClockArc(ctx, dummy, t, accent);
+    if (skillIndex === 1) {
+      const pose = { ...caster, x: caster.x + (dummy.x - caster.x) * 0.45 };
+      drawCodexClockArc(ctx, dummy, t, accent);
+      return { caster: pose };
+    }
+    if (skillIndex === 2) drawCodexAoe(ctx, caster, t, color, accent, 118);
+    else drawCodexClockArc(ctx, dummy, t, accent);
     return;
   }
+
+  if (kind === "riftmaker") {
+    const rift = { x: caster.x + 90, y: caster.y - 42 };
+    drawCodexRift(ctx, rift, t, accent);
+    if (skillIndex === 0) drawCodexLaser(ctx, rift, dummy, t, accent, false);
+    else if (skillIndex === 1) drawCodexAoe(ctx, rift, t, color, accent, 82);
+    else {
+      drawCodexRift(ctx, { x: dummy.x - 70, y: dummy.y + 58 }, t + 0.2, accent);
+      drawCodexProjectile(ctx, rift, dummy, t, color, accent, 9);
+      drawCodexProjectile(ctx, { x: dummy.x - 70, y: dummy.y + 58 }, dummy, (t + 0.22) % 1, color, accent, 9);
+    }
+    return;
+  }
+
+  if (kind === "summoner") {
+    if (skillIndex === 1) drawCodexAura(ctx, caster, t, color, accent, 52);
+    else drawCodexSummon(ctx, caster, dummy, t, color, accent);
+    return { casterState: { archer: skillIndex === 1 && t > 0.5 } };
+  }
+
+  if (kind === "swordsman") {
+    if (skillIndex === 0) {
+      const pose = t < 0.32 ? caster : { ...dummy, x: dummy.x - 34 };
+      drawCodexAoe(ctx, pose, t, color, accent, 58);
+      return { caster: pose };
+    }
+    if (skillIndex === 1) {
+      if (t > 0.62) drawCodexAoe(ctx, dummy, t, color, accent, 78);
+      return { hideCaster: t > 0.16 && t < 0.82 };
+    }
+    drawCodexFiveWallSlashes(ctx, caster, dummy, t, accent, w);
+    return { hideCaster: t > 0.12 && t < 0.85 };
+  }
+
+  if (kind === "demon") {
+    if (skillIndex === 1) drawCodexProjectile(ctx, caster, dummy, t, "#1e3a8a", "#38bdf8", 18);
+    else drawCodexLaser(ctx, caster, dummy, t, "#38bdf8", skillIndex === 2);
+    drawCodexDemonMarks(ctx, dummy, t, skillIndex === 2 ? 2 : 1);
+    return { dummyState: { demonMarks: skillIndex === 2 ? 2 : 1, hpRate: skillIndex === 2 ? 0.42 : 0.62 } };
+  }
+
+  if (kind === "artist") {
+    if (skillIndex === 2) drawCodexHeal(ctx, { x: (caster.x + dummy.x) / 2, y: caster.y }, t, accent);
+    drawCodexArtistTrail(ctx, caster, dummy, t, accent, skillIndex !== 0);
+    return;
+  }
+
+  if (kind === "believer") {
+    if (skillIndex === 0) drawCodexHeal(ctx, caster, t, accent);
+    else if (skillIndex === 1) {
+      drawCodexAoe(ctx, { x: (caster.x + dummy.x) / 2, y: caster.y }, t, color, accent, 135);
+      drawCodexHeal(ctx, caster, t, accent);
+      drawCodexHeal(ctx, dummy, t + 0.2, accent);
+    } else drawCodexCrossField(ctx, { x: (caster.x + dummy.x) / 2, y: caster.y }, t, accent);
+    return;
+  }
+
+  if (kind === "archmage") {
+    if (skillIndex === 0) drawCodexLightning(ctx, dummy, t, "#facc15");
+    else if (skillIndex === 1) {
+      drawCodexProjectile(ctx, { x: dummy.x, y: 10 }, dummy, t, "#fb923c", "#fb923c", 18);
+      drawCodexAoe(ctx, dummy, t, "#fb923c", "#fb923c", 72);
+    } else {
+      drawCodexAoe(ctx, { x: (caster.x + dummy.x) / 2, y: caster.y }, t, "#38bdf8", "#38bdf8", 135);
+    }
+    drawCodexMageElements(ctx, dummy, t);
+    return { dummyState: { mageElements: skillIndex === 0 ? ["electro"] : skillIndex === 1 ? ["fire"] : ["wet"], hpRate: 0.58 } };
+  }
+
+  if (kind === "gambler") {
+    drawCodexRoulette(ctx, caster, t, accent);
+    if (skillIndex === 0) drawCodexProjectile(ctx, caster, dummy, t, color, accent, 11);
+    else if (skillIndex === 1) drawCodexLockOnCombo(ctx, caster, dummy, t, color, accent);
+    else drawCodexLaser(ctx, caster, dummy, t, accent, true);
+    return;
+  }
+
+  if (kind === "cosmic") {
+    if (skillIndex === 0) drawCodexCosmicDust(ctx, caster, t, accent);
+    else if (skillIndex === 1) drawCodexAoe(ctx, caster, t, color, accent, 112);
+    else drawCodexLaser(ctx, caster, dummy, t, "#93c5fd", true);
+    return;
+  }
+
   drawCodexProjectile(ctx, caster, dummy, t, color, accent);
 }
 
@@ -1810,9 +2540,8 @@ function renderEnemyCodexDetail(type) {
 }
 
 function setCodexType(type) {
-  if (!["character", "enemy"].includes(type)) return;
-  codexType = type;
-  renderCodex(type === "enemy" ? "melee" : DEFAULT_CHARACTER);
+  codexType = "character";
+  renderCodex(DEFAULT_CHARACTER);
 }
 
 async function loadRankings() {
