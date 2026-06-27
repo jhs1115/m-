@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260613d">
+  <link rel="stylesheet" href="style.css?v=20260627b">
 </head>
 <body>
   <main class="app">
@@ -655,6 +655,14 @@
               <span class="fighter-icon archmage">Z</span>
               <strong data-name="대마법 쓰는 색히">대마법 쓰는 색히</strong>
             </button>
+            <button class="fighter-card" data-player="p1" data-character="gunner">
+              <span class="fighter-icon gunner">Y</span>
+              <strong data-name="총쏘는 색히">총쏘는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p1" data-character="freezer">
+              <span class="fighter-icon freezer">I</span>
+              <strong data-name="얼리는 색히">얼리는 색히</strong>
+            </button>
             <button class="fighter-card" data-player="p1" data-character="gambler">
               <span class="fighter-icon gambler">?</span>
               <strong data-name="도박하는 색히">도박하는 색히</strong>
@@ -749,6 +757,14 @@
               <span class="fighter-icon archmage">Z</span>
               <strong data-name="대마법 쓰는 색히">대마법 쓰는 색히</strong>
             </button>
+            <button class="fighter-card" data-player="p2" data-character="gunner">
+              <span class="fighter-icon gunner">Y</span>
+              <strong data-name="총쏘는 색히">총쏘는 색히</strong>
+            </button>
+            <button class="fighter-card" data-player="p2" data-character="freezer">
+              <span class="fighter-icon freezer">I</span>
+              <strong data-name="얼리는 색히">얼리는 색히</strong>
+            </button>
             <button class="fighter-card" data-player="p2" data-character="gambler">
               <span class="fighter-icon gambler">?</span>
               <strong data-name="도박하는 색히">도박하는 색히</strong>
@@ -793,13 +809,18 @@
       <canvas id="arena" width="620" height="520" aria-label="M zzang 게임 필드"></canvas>
 
       <div class="skill-bar" aria-label="스킬">
-        <button id="normalSkillButton" class="skill-button" type="button">
+        <button id="attackSkillButton" class="skill-button mage-only" type="button">
           <span>1</span>
+          <strong id="attackSkillName">일반공격</strong>
+          <b id="attackSkillCooldown"></b>
+        </button>
+        <button id="normalSkillButton" class="skill-button" type="button">
+          <span>2</span>
           <strong id="normalSkillName">일반스킬</strong>
           <b id="normalSkillCooldown"></b>
         </button>
         <button id="ultimateSkillButton" class="skill-button ultimate" type="button">
-          <span>2</span>
+          <span>3</span>
           <strong id="ultimateSkillName">궁극기</strong>
           <b id="ultimateSkillCooldown"></b>
         </button>
@@ -859,6 +880,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260616a"></script>
+  <script src="game.js?v=20260627b"></script>
 </body>
 </html>

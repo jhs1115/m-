@@ -215,8 +215,12 @@ const ui = {
   playerTwoHealthBar: document.getElementById("playerTwoHealthBar"),
   playerOneHealthText: document.getElementById("playerOneHealthText"),
   playerTwoHealthText: document.getElementById("playerTwoHealthText"),
+  skillBar: document.querySelector(".skill-bar"),
   normalSkillButton: document.getElementById("normalSkillButton"),
   ultimateSkillButton: document.getElementById("ultimateSkillButton"),
+  attackSkillButton: document.getElementById("attackSkillButton"),
+  attackSkillName: document.getElementById("attackSkillName"),
+  attackSkillCooldown: document.getElementById("attackSkillCooldown"),
   normalSkillName: document.getElementById("normalSkillName"),
   ultimateSkillName: document.getElementById("ultimateSkillName"),
   normalSkillCooldown: document.getElementById("normalSkillCooldown"),
@@ -407,6 +411,18 @@ const characters = {
     accent: "#facc15",
     contactDamage: 0
   },
+  gunner: {
+    name: "총쏘는 색히",
+    color: "#e5e7eb",
+    accent: "#f97316",
+    contactDamage: 0
+  },
+  freezer: {
+    name: "얼리는 색히",
+    color: "#bfdbfe",
+    accent: "#38bdf8",
+    contactDamage: 0
+  },
   gambler: {
     name: "도박하는 색히",
     color: "#f2c14e",
@@ -421,7 +437,7 @@ const characters = {
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gambler", "cosmic"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "gambler", "cosmic"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -442,7 +458,9 @@ const skillNames = {
   demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" },
   artist: { normal: "드로잉", ultimate: "예술의 혼" },
   believer: { normal: "주신을 위해", ultimate: "커져가는신앙" },
-  archmage: { normal: "작열", ultimate: "창해" },
+  archmage: { attack: "벼락", normal: "작열", ultimate: "창해" },
+  gunner: { normal: "기관총", ultimate: "리로드" },
+  freezer: { normal: "스노우 엔젤", ultimate: "이터널 블리자드" },
   gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" },
   cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" }
 };
@@ -540,8 +558,18 @@ const characterGuide = {
   },
   archmage: {
     attack: ["벼락", "6초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해를 줍니다. 감전 원소를 부착합니다. 감전+화상: 10피해와 10초 맹독가스, 치유 40% 감소, 받는 피해 10% 증가. 감전+습기: 15피해와 1.5초 기절, 주변 적 2초 50% 감속. 습기+감전: 6초 전자기장, 1.5초마다 5피해, 이동기 사용 시 1초 침묵. 습기+화상: 즉시 30 회복, 2초간 초당 5 회복과 30% 가속. 화상+감전: 보호막 파괴, 20피해와 넉백, 벽 충돌 시 10피해와 1초 기절. 화상+습기: 50피해, 체력 30% 이하 대상에게 75피해, 이후 대마법사는 10초 탈진."],
-    normal: ["작열", "11초", "3초 후 맵 전체를 강타하는 파이어 볼을 떨어뜨립니다. 적에게 5의 피해를 주고 화상 원소를 부착합니다."],
-    ultimate: ["창해", "23초", "맵 전체를 5초간 심해로 만듭니다. 적을 느리게 만들고 1초마다 2의 피해를 총 5번 주며, 첫 타격에 습기 원소를 부착합니다."]
+    normal: ["작열", "11초", "3초 후 맵 전체를 강타하는 불꽃을 떨어뜨립니다. 적에게 5의 피해를 주고 화상 원소를 부착합니다."],
+    ultimate: ["창해", "23초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 2의 피해를 주고 습기 원소를 부착합니다."]
+  },
+  gunner: {
+    attack: ["권총", "1초", "적에게 총알을 발사해 7.5의 피해를 입힙니다. 5번 쏠 때마다 3초 동안 장전합니다."],
+    normal: ["기관총", "10초", "2.5초 동안 기관총 상태가 됩니다. 0.1초마다 1의 피해를 가진 탄환을 난사합니다."],
+    ultimate: ["리로드", "3초", "앞으로 순간이동합니다. 순간이동한 위치에서 탄환을 발사하여 맞은 적에게 5의 피해를 입힙니다."]
+  },
+  freezer: {
+    attack: ["고드름", "3초", "적에게 고드름을 발사해 5의 피해와 1초 슬로우를 줍니다. 슬로우 중이면 추가 5, 스턴 중이면 추가 15 피해를 줍니다."],
+    normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 기절시킵니다."],
+    ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 얼음의 정수를 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 슬로우 장판이 남습니다."]
   },
   gambler: {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
@@ -726,8 +754,17 @@ const codexRatings = {
   artist: { difficulty: 2, damage: 2, mobility: 1 },
   believer: { difficulty: 1, damage: 1, mobility: 1 },
   archmage: { difficulty: 3, damage: 3, mobility: 1 },
+  gunner: { difficulty: 2, damage: 3, mobility: 2 },
+  freezer: { difficulty: 2, damage: 2, mobility: 1 },
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
+};
+
+const codexChangeNotes = {
+  poker: "변경점: 포커 핸드 배율과 드로우 카드 피해가 낮아져 한 번에 터지는 폭딜이 줄었습니다. K 강화도 1.4배로 조정되었습니다.",
+  archmage: "변경점: 벼락이 자동 일반공격이 아니라 직접 누르는 전용 스킬로 변경되었습니다. 대마법사는 전투 중 벼락, 작열, 창해 3개의 스킬 버튼을 사용합니다.",
+  gunner: "신규 추가: 빠른 권총 사격과 2.5초 기관총 난사, 짧은 전진 이동기 리로드를 사용하는 원거리 캐릭터입니다.",
+  freezer: "신규 추가: 슬로우와 스턴 연계에 특화된 얼음 캐릭터입니다. 고드름은 슬로우 또는 스턴 상태의 적에게 추가 피해를 줍니다."
 };
 
 const enemyCodexRatings = {
@@ -1155,6 +1192,28 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     addCodexPreviewEvent(previewGame, 135, use);
     return;
   }
+  if (kind === "gunner") {
+    if (skillIndex === 0) {
+      [10, 58, 106, 154, 202].forEach(tick => addCodexPreviewEvent(previewGame, tick, () => firePistol(caster)));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 15, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 60, () => triggerUltimate(caster));
+    }
+    return;
+  }
+  if (kind === "freezer") {
+    if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 18, () => fireIcicle(caster, false));
+      addCodexPreviewEvent(previewGame, 120, () => fireIcicle(caster, false));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 15, () => fireIcicle(caster, false));
+      addCodexPreviewEvent(previewGame, 95, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 30, () => triggerUltimate(caster));
+    }
+    return;
+  }
   addCodexPreviewEvent(previewGame, kind === "grabber" && skillIndex === 2 ? 55 : 15, () => {
     if (skillIndex === 0) setupCodexActualBasic(caster, dummy, kind);
     else if (skillIndex === 1) triggerNormalSkill(caster);
@@ -1191,6 +1250,8 @@ function setupCodexActualBasic(caster, dummy, kind) {
     heal(caster, 10);
     addVisualEffect({ type: "prayer-heal", fighter: caster, color: caster.accent, life: 38, maxLife: 38 });
   } else if (kind === "archmage") castMageLightning(caster);
+  else if (kind === "gunner") firePistol(caster);
+  else if (kind === "freezer") fireIcicle(caster, false);
   else if (kind === "gambler") useRouletteAttack(caster);
   else if (kind === "cosmic") {
     caster.cosmicDustTimer = 1;
@@ -2882,7 +2943,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gambler: "?", cosmic: "U"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gunner: "Y", freezer: "I", gambler: "?", cosmic: "U"
   })[kind] || "?";
 }
 
@@ -3054,6 +3115,7 @@ function renderCodexDetail(kind) {
       <em id="codexFocusCooldown">${skillTypes[0][1][1]}</em>
       <p id="codexFocusDescription">${skillTypes[0][1][2]}</p>
     </section>
+      ${codexChangeNotes[kind] ? `<section class="codex-change-note"><strong>변경점</strong><p>${codexChangeNotes[kind]}</p></section>` : ""}
       ${renderCodexGaugeStats(ratings)}
     </section>
   `;
@@ -4105,6 +4167,8 @@ function normalSkillCooldown(kind) {
     artist: 180,
     believer: 1200,
     archmage: 660,
+    gunner: 600,
+    freezer: 720,
     gambler: 480,
     cosmic: 840
   }[kind] ?? Infinity;
@@ -4131,6 +4195,8 @@ function ultimateCooldown(kind) {
     artist: 1200,
     believer: 900,
     archmage: 1380,
+    gunner: 180,
+    freezer: 1800,
     gambler: 1200,
     cosmic: 0
   }[kind] ?? Infinity;
@@ -4170,6 +4236,8 @@ function makeCharacterCombatState(kind) {
     pokerReveal: 0,
     pokerLabel: "",
     pokerBoostMultiplier: 1,
+    pokerDealCount: 0,
+    drawCardCount: 0,
     stealthTimer: character.canStealth ? 480 : Infinity,
     stealthTime: 0,
     stealthDamage: 15,
@@ -4237,7 +4305,7 @@ function makeCharacterCombatState(kind) {
     ceremonyTick: 0,
     faithStacks: 0,
     faithBurnTick: 60,
-    mageLightningTimer: kind === "archmage" ? 360 : Infinity,
+    mageLightningTimer: kind === "archmage" ? 0 : Infinity,
     mageFireDelay: 0,
     mageSeaTime: 0,
     mageSeaTick: 60,
@@ -4253,6 +4321,12 @@ function makeCharacterCombatState(kind) {
     mageConductiveTick: 120,
     mageVaporHealTime: 0,
     mageVaporHealTick: 60,
+    gunTimer: kind === "gunner" ? 60 : Infinity,
+    gunAmmo: 5,
+    gunReloadTime: 0,
+    machineGunTime: 0,
+    machineGunTick: 0,
+    icicleTimer: kind === "freezer" ? 180 : Infinity,
     mageHealReductionTime: 0,
     mageDamageAmpTime: 0,
     overloadWallDamage: 0,
@@ -5539,9 +5613,9 @@ function detonateMageFire(owner) {
   });
 }
 
-const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage"];
-const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
-const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
+const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage", "gunner", "freezer"];
+const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer"];
+const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer"];
 
 function roulettePick(pool, owner, salt) {
   const seed = hashSeed(`${currentRoom?.code || game?.seedKey || "local"}|${owner.ownerId || owner.id}|${game.tick}|${salt}|${pool.length}`);
@@ -5582,6 +5656,8 @@ function useRouletteAttack(owner) {
     fireDemonLine(owner, { damage: 5, addMark: 1, markDuration: 300, slowTime: 120, width: 26 });
   } else if (kind === "believer") heal(owner, 10);
   else if (kind === "archmage") castMageLightning(owner);
+  else if (kind === "gunner") firePistol(owner);
+  else if (kind === "freezer") fireIcicle(owner, false);
   owner.rouletteAttackTimer = 240;
 }
 
@@ -5634,6 +5710,11 @@ function useRouletteNormal(owner) {
     owner.mageFireDelay = 180;
     setRouletteForm(owner, "archmage", 180);
     addFloatingText(owner.x, owner.y - owner.radius - 46, "작열 준비", "#fb923c");
+  } else if (kind === "gunner") {
+    owner.machineGunTime = 150;
+    owner.machineGunTick = 1;
+  } else if (kind === "freezer") {
+    castSnowAngel(owner);
   } else if (kind === "believer") {
     owner.ceremonyTime = 300;
     owner.ceremonyTick = 60;
@@ -5702,6 +5783,8 @@ function useRouletteUltimate(owner) {
     return;
   }
   if (kind === "archmage") setRouletteForm(owner, "archmage", 240);
+  if (kind === "gunner") setRouletteForm(owner, "gunner", 150);
+  if (kind === "freezer") setRouletteForm(owner, "freezer", 240);
   if (kind === "believer") setRouletteForm(owner, "believer", 900);
   if (kind === "beamer") setRouletteForm(owner, "beamer", 180);
   if (kind === "vampire") setRouletteForm(owner, "vampire", 180);
@@ -5858,6 +5941,27 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
+  if (fighter.kind === "gunner") {
+    fighter.machineGunTime = 150;
+    fighter.machineGunTick = 1;
+    fighter.skillTimer = 600;
+    addSkillPulse(fighter, fighter.accent);
+    return;
+  }
+
+  if (fighter.kind === "freezer") {
+    castSnowAngel(fighter);
+    return;
+  }
+
+  if (fighter.kind === "archmage") {
+    fighter.mageFireDelay = 180;
+    fighter.skillTimer = 660;
+    addSkillPulse(fighter, "#fb923c");
+    addFloatingText(fighter.x, fighter.y - fighter.radius - 46, "작열 준비", "#fb923c");
+    return;
+  }
+
   if (fighterActsLike(fighter, "believer")) {
     fighter.ceremonyTime = 300;
     fighter.ceremonyTick = 60;
@@ -5873,13 +5977,6 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
-  if (fighterActsLike(fighter, "archmage")) {
-    fighter.mageFireDelay = 180;
-    fighter.skillTimer = 660;
-    addSkillPulse(fighter, "#fb923c");
-    addFloatingText(fighter.x, fighter.y - fighter.radius - 46, "작열 준비", "#fb923c");
-    return;
-  }
 }
 
 function triggerUltimate(fighter) {
@@ -6028,6 +6125,18 @@ function triggerUltimate(fighter) {
     return;
   }
 
+  if (fighter.kind === "gunner") {
+    castReloadShot(fighter);
+    return;
+  }
+
+  if (fighter.kind === "freezer") {
+    fireIcicle(fighter, true);
+    fighter.ultimateTimer = 1800;
+    addSkillPulse(fighter, fighter.accent);
+    return;
+  }
+
   if (fighter.kind === "believer") {
     fighter.faithStacks += 1;
     fighter.faithBurnTick = Math.min(fighter.faithBurnTick, 60);
@@ -6067,6 +6176,9 @@ function fighterByOwnerId(ownerId) {
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
   if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0) return false;
+  if (type === "attack") {
+    return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
+  }
   if (type === "normal") {
     if (fighter.kind === "vampire") return false;
     if (fighter.skillTimer > 0) return false;
@@ -6083,7 +6195,10 @@ function skillAvailable(fighter, type) {
 
 function executeSkill(fighter, type) {
   if (!skillAvailable(fighter, type)) return false;
-  if (type === "normal") {
+  if (type === "attack") {
+    castMageLightning(fighter);
+    fighter.mageLightningTimer = 360;
+  } else if (type === "normal") {
     triggerNormalSkill(fighter);
   } else {
     triggerUltimate(fighter);
@@ -6166,10 +6281,22 @@ function updateSkillHud() {
   const names = skillNames[fighter.kind] || { normal: "일반스킬", ultimate: "궁극기" };
   const normalCooldown = cooldownSeconds(fighter.skillTimer);
   const ultimateCooldown = cooldownSeconds(fighter.ultimateTimer);
+  const attackCooldown = cooldownSeconds(fighter.mageLightningTimer);
+  const isArchmage = fighter.kind === "archmage";
   const normalLocked = (fighter.kind === "stealth" && fighter.stealthTime <= 0 && normalCooldown === 0)
     || (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter) && normalCooldown === 0);
   const ultimateLocked = fighter.kind === "riftmaker" && !nearestOwnedRift(fighter) && ultimateCooldown === 0;
 
+  ui.skillBar?.classList.toggle("is-archmage", isArchmage);
+  if (ui.attackSkillButton) {
+    ui.attackSkillName.textContent = names.attack || "일반공격";
+    ui.attackSkillCooldown.textContent = isArchmage && attackCooldown > 0 ? attackCooldown : "";
+    ui.attackSkillButton.classList.toggle("is-cooling", isArchmage && attackCooldown > 0);
+    ui.attackSkillButton.classList.toggle("is-locked", !isArchmage);
+    ui.attackSkillButton.disabled = !skillAvailable(fighter, "attack");
+  }
+  ui.normalSkillButton.querySelector("span").textContent = isArchmage ? "2" : "1";
+  ui.ultimateSkillButton.querySelector("span").textContent = isArchmage ? "3" : "2";
   ui.normalSkillName.textContent = names.normal;
   ui.ultimateSkillName.textContent = names.ultimate;
   ui.normalSkillButton.removeAttribute("data-cost");
@@ -6194,6 +6321,7 @@ function updateSkillHud() {
 function updateSkills(fighter, dt) {
   if (fighter.skillTimer > 0) fighter.skillTimer -= dt;
   if (fighter.ultimateTimer > 0) fighter.ultimateTimer -= dt;
+  if (fighter.mageLightningTimer > 0) fighter.mageLightningTimer -= dt;
   if (fighter.lockOnTime > 0) {
     fighter.lockOnTime -= dt;
     fighter.lockOnPulse += dt;
@@ -6261,12 +6389,6 @@ function moveFighter(fighter, dt) {
         fighter.mageConductiveTick += 120;
       }
     }
-    fighter.mageLightningTimer -= dt;
-    if (fighter.mageLightningTimer <= 0) {
-      castMageLightning(fighter);
-      fighter.mageLightningTimer += 360;
-      if (game.over) return;
-    }
     if (fighter.mageFireDelay > 0) {
       fighter.mageFireDelay -= dt;
       if (fighter.mageFireDelay <= 0) {
@@ -6288,6 +6410,37 @@ function moveFighter(fighter, dt) {
         fighter.mageSeaTick += 60;
         if (game.over) return;
       }
+    }
+  }
+  if (fighter.kind === "gunner") {
+    if (fighter.gunReloadTime > 0) fighter.gunReloadTime -= dt;
+    if (fighter.machineGunTime > 0) {
+      fighter.machineGunTime -= dt;
+      fighter.machineGunTick -= dt;
+      while (fighter.machineGunTime > 0 && fighter.machineGunTick <= 0 && !game.over) {
+        fireStraightBullet(fighter, {
+          damage: 1,
+          speed: 12.6,
+          radius: 5,
+          color: "#f8fafc",
+          accent: "#fb923c",
+          noBounce: true,
+          gunBullet: true
+        });
+        fighter.machineGunTick += 6;
+      }
+    }
+    fighter.gunTimer -= dt;
+    if (fighter.gunTimer <= 0 && fighter.gunReloadTime <= 0 && fighter.machineGunTime <= 0) {
+      firePistol(fighter);
+      fighter.gunTimer += 60;
+    }
+  }
+  if (fighter.kind === "freezer") {
+    fighter.icicleTimer -= dt;
+    if (fighter.icicleTimer <= 0) {
+      fireIcicle(fighter, false);
+      fighter.icicleTimer += 180;
     }
   }
   if (fighter.silenceTime > 0) fighter.silenceTime -= dt;
@@ -7641,15 +7794,15 @@ function punchSummon(owner, summon) {
 function throwDrawCard(owner) {
   const target = nearestEnemyTarget(owner);
   const cards = ["JOKER", "A", "K", "Q", "J"];
-  const sequence = game.pokerShots.length;
+  const sequence = owner.drawCardCount = (owner.drawCardCount || 0) + 1;
   const type = cards[combatRandomIndex(owner, `draw-card-${sequence}`, cards.length, 0)];
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   const damageByType = {
-    JOKER: combatRandomIndex(owner, `draw-card-${sequence}`, 45, 1) + 1,
-    A: 7.5,
+    JOKER: combatRandomIndex(owner, `draw-card-${sequence}`, 22, 1) + 1,
+    A: 6,
     K: 0,
-    Q: 7.5,
-    J: 4.5
+    Q: 6,
+    J: 4
   };
   game.pokerShots.push({
     owner,
@@ -7696,8 +7849,8 @@ function assassinate(owner) {
 
 function dealPokerAttack(owner, options = {}) {
   if ((!owner.canPoker && !options.force) || game.over) return;
-  const ranks = ["A", "K", "Q", "J", "10", "9"];
-  const sequence = game.pokerShots.length;
+  const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7"];
+  const sequence = owner.pokerDealCount = (owner.pokerDealCount || 0) + 1;
   const hand = Array.from({ length: 5 }, (_, index) => ranks[combatRandomIndex(owner, `poker-hand-${sequence}`, ranks.length, index)]);
   const counts = Object.values(hand.reduce((acc, rank) => {
     acc[rank] = (acc[rank] || 0) + 1;
@@ -7706,22 +7859,22 @@ function dealPokerAttack(owner, options = {}) {
   let multiplier = 1;
   let label = "노페어";
   if (counts[0] === 5) {
-    multiplier = 12;
+    multiplier = 4.5;
     label = "파이브카드";
   } else if (counts[0] === 4) {
-    multiplier = 8;
+    multiplier = 3.5;
     label = "포카드";
   } else if (counts[0] === 3 && counts[1] === 2) {
-    multiplier = 7;
+    multiplier = 3;
     label = "풀하우스";
   } else if (counts[0] === 3) {
-    multiplier = 3;
+    multiplier = 2.2;
     label = "쓰리페어";
   } else if (counts[0] === 2 && counts[1] === 2) {
-    multiplier = 5;
+    multiplier = 1.8;
     label = "투페어";
   } else if (counts[0] === 2) {
-    multiplier = 2;
+    multiplier = 1.35;
     label = "원페어";
   }
   multiplier *= owner.pokerBoostMultiplier;
@@ -7745,7 +7898,7 @@ function dealPokerAttack(owner, options = {}) {
       vx: 0,
       vy: 0,
       radius: 10,
-      damage: 2.25 * multiplier,
+      damage: 1.7 * multiplier,
       life: 190,
       delay: index * 9,
       spread: (index - 2) * 0.1,
@@ -7780,6 +7933,24 @@ function updateBalls(dt) {
     ball.life -= dt;
     if (ball.hitCooldown > 0) ball.hitCooldown -= dt;
     if (!ball.blood && !ball.noBounce) bounceOnWalls(ball);
+    if (ball.blizzardCore) {
+      if (game.tick % 6 === 0) {
+        addVisualEffect({
+          type: "skill-pulse",
+          x: ball.x,
+          y: ball.y,
+          radius: 42,
+          color: "#93c5fd",
+          life: 28,
+          maxLife: 28
+        });
+      }
+      game.fighters.forEach(target => {
+        if (target !== ball.owner && Math.hypot(target.x - ball.x, target.y - ball.y) < target.radius + 48) {
+          target.slowTime = Math.max(target.slowTime, 90);
+        }
+      });
+    }
 
     const summonTarget = collidingEnemySummon(ball.owner, ball.x, ball.y, ball.radius);
     if (summonTarget && ball.hitCooldown <= 0) {
@@ -7802,6 +7973,7 @@ function updateBalls(dt) {
       if (ball.blood || ball.riftShot || ball.summonArrow || ball.rouletteShot || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
       }
+      if (ball.gunBullet || ball.freezeBullet) return false;
       const angle = Math.atan2(summonTarget.y - ball.y, summonTarget.x - ball.x);
       const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
       ball.vx = -Math.cos(angle) * speed;
@@ -7829,9 +8001,15 @@ function updateBalls(dt) {
             });
             return false;
           }
-          damage(target, ball.damage, ball.owner);
+          let hitDamage = ball.damage;
+          if (ball.freezeBullet) {
+            if (target.stunTime > 0) hitDamage += 15;
+            else if (target.slowTime > 0) hitDamage += 5;
+            target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 60);
+          }
+          damage(target, hitDamage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || ball.riftShot || ball.rouletteShot || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.blood || ball.riftShot || ball.rouletteShot || ball.gunBullet || ball.freezeBullet || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -7918,7 +8096,7 @@ function updatePokerShots(dt) {
 
 function applyPokerCardHit(card) {
   if (card.effect === "K") {
-    card.owner.pokerBoostMultiplier = 2;
+    card.owner.pokerBoostMultiplier = 1.4;
     addSkillPulse(card.owner, card.owner.accent);
     return;
   }
@@ -9665,6 +9843,76 @@ function drawFighterName(fighter) {
   ctx.fillStyle = "#f7f4eb";
   ctx.fillText(text, x + boxWidth / 2, y, boxWidth - 12);
   ctx.restore();
+}
+
+function fireStraightBullet(owner, options = {}) {
+  const target = nearestEnemyTarget(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const speed = options.speed || 14;
+  game.balls.push({
+    owner,
+    x: owner.x + Math.cos(angle) * (owner.radius + 18),
+    y: owner.y + Math.sin(angle) * (owner.radius + 18),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    radius: options.radius || 7,
+    life: options.life || 120,
+    hitCooldown: 0,
+    damage: options.damage || 5,
+    speed,
+    color: options.color || owner.accent,
+    noBounce: true,
+    gunBullet: options.gunBullet || false,
+    freezeBullet: options.freezeBullet || false,
+    blizzardCore: options.blizzardCore || false
+  });
+}
+
+function firePistol(owner, damageAmount = 7.5) {
+  fireStraightBullet(owner, { damage: damageAmount, speed: 15.5, radius: 6, color: "#f8fafc", gunBullet: true });
+  owner.gunAmmo -= 1;
+  if (owner.gunAmmo <= 0) {
+    owner.gunReloadTime = 180;
+    owner.gunAmmo = 5;
+    addFloatingText(owner.x, owner.y - owner.radius - 42, "장전", "#f97316");
+  }
+}
+
+function castReloadShot(owner) {
+  const direction = fighterDirection(owner);
+  owner.x = clamp(owner.x + direction.x * 150, owner.radius, canvas.width - owner.radius);
+  owner.y = clamp(owner.y + direction.y * 150, owner.radius, canvas.height - owner.radius);
+  fireStraightBullet(owner, { damage: 5, speed: 17, radius: 7, color: "#f97316", gunBullet: true });
+  owner.ultimateTimer = 180;
+  addSkillPulse(owner, owner.accent);
+}
+
+function fireIcicle(owner, blizzard = false) {
+  fireStraightBullet(owner, {
+    damage: blizzard ? 15 : 5,
+    speed: blizzard ? 5.4 : 12.4,
+    radius: blizzard ? 15 : 9,
+    life: blizzard ? 360 : 160,
+    color: blizzard ? "#93c5fd" : "#bfdbfe",
+    freezeBullet: true,
+    blizzardCore: blizzard
+  });
+}
+
+function castSnowAngel(owner) {
+  const target = opponentOf(owner);
+  if (target.slowTime > 0) {
+    target.stunTime = Math.max(target.stunTime, 180);
+    addVisualEffect({
+      type: "skill-pulse",
+      fighter: target,
+      color: "#bfdbfe",
+      life: 42,
+      maxLife: 42
+    });
+  }
+  owner.skillTimer = 720;
+  addSkillPulse(owner, owner.accent);
 }
 
 function drawFighterHealthBar(fighter) {
@@ -14255,6 +14503,7 @@ document.querySelectorAll("[data-lobby-tab]").forEach(button => {
 ui.codexTypeButtons.forEach(button => {
   button.addEventListener("click", () => setCodexType(button.dataset.codexType));
 });
+ui.attackSkillButton?.addEventListener("click", () => useSkill("attack"));
 ui.normalSkillButton.addEventListener("click", () => useSkill("normal"));
 ui.ultimateSkillButton.addEventListener("click", () => useSkill("ultimate"));
 ui.pveNormalSkillButton.addEventListener("click", () => usePveSkill("normal"));
@@ -14285,9 +14534,13 @@ document.addEventListener("keydown", event => {
   if (!game || screens.auth.classList.contains("is-active") || screens.signup.classList.contains("is-active")) return;
   if (event.key === "1") {
     event.preventDefault();
-    useSkill("normal");
+    useSkill(myFighter()?.kind === "archmage" ? "attack" : "normal");
   }
   if (event.key === "2") {
+    event.preventDefault();
+    useSkill(myFighter()?.kind === "archmage" ? "normal" : "ultimate");
+  }
+  if (event.key === "3" && myFighter()?.kind === "archmage") {
     event.preventDefault();
     useSkill("ultimate");
   }

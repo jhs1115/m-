@@ -743,7 +743,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
     'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
-    'believer', 'archmage', 'gambler', 'cosmic'
+    'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
@@ -966,7 +966,7 @@ begin
     raise exception 'login required';
   end if;
 
-  if skill_type not in ('normal', 'ultimate') then
+  if skill_type not in ('attack', 'normal', 'ultimate') then
     raise exception 'invalid skill type';
   end if;
 
@@ -1124,7 +1124,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gambler', 'cosmic'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
@@ -1204,7 +1204,7 @@ declare
   all_characters text[] := array[
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer', 'tank', 'beamer',
     'wild', 'vampire', 'brawler', 'timekeeper', 'riftmaker', 'summoner', 'swordsman',
-    'demon', 'artist', 'believer', 'archmage', 'gambler', 'cosmic'
+    'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
