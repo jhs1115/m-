@@ -503,8 +503,8 @@ const characterGuide = {
   },
   cosmic: {
     attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
-    normal: ["초신성", "11초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 20개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 6의 피해와 별가루 1개를 소모합니다."]
+    normal: ["초신성", "10초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 12개를 소모합니다."],
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3의 피해를 주고 초당 별가루 8개를 소모합니다."]
   }
 };
 
@@ -1067,11 +1067,12 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
   }
   if (kind === "swordsman" && skillIndex === 1) {
     addCodexPreviewEvent(previewGame, 5, () => triggerNormalSkill(caster));
-    addCodexPreviewEvent(previewGame, 150, () => {
+    addCodexPreviewEvent(previewGame, 155, () => {
       caster.swordDanceTime = 0;
       caster.swordDanceHits = 0;
-      triggerNormalSkill(caster);
+      useSwordBasic(caster);
     });
+    addCodexPreviewEvent(previewGame, 305, () => useSwordBasic(caster));
     return;
   }
   if (kind === "demon") {
@@ -2786,9 +2787,9 @@ function renderCodexDetail(kind) {
   ];
   ui.codexDetail.innerHTML = `
     <div class="codex-skill-tabs">
-      ${skillTypes.map(([, skill], index) => `
+      ${skillTypes.map(([type, skill], index) => `
         <button class="codex-skill-tab ${index === 0 ? "is-active" : ""}" type="button" data-skill-index="${index}">
-          <strong>스킬 ${index + 1}</strong>
+          <strong>${type}</strong>
           <em>${skill[1]}</em>
         </button>
       `).join("")}
@@ -2841,7 +2842,7 @@ function renderEnemyCodexDetail(type) {
     <div class="codex-skill-tabs">
       ${entries.slice(0, 3).map(([, title], index) => `
         <button class="codex-skill-tab ${index === 0 ? "is-active" : ""}" type="button" data-skill-index="${index}">
-          <strong>스킬 ${index + 1}</strong>
+          <strong>${["일반공격", "일반스킬", "궁극기"][index] || title}</strong>
           <em>PVE</em>
         </button>
       `).join("")}
@@ -3800,6 +3801,21 @@ function seededRandom() {
   return (matchRandomSeed >>> 0) / 4294967296;
 }
 
+function deterministicRandom(seedText) {
+  return hashSeed(String(seedText)) / 4294967296;
+}
+
+function combatRandom(owner, salt, index = 0) {
+  const roomCode = currentRoom?.code || game?.seedKey || "local";
+  const ownerKey = owner?.ownerId || owner?.id || "global";
+  const tick = game?.tick || 0;
+  return deterministicRandom(`${roomCode}|${ownerKey}|${tick}|${salt}|${index}`);
+}
+
+function combatRandomIndex(owner, salt, length, index = 0) {
+  return Math.floor(combatRandom(owner, salt, index) * length) % Math.max(1, length);
+}
+
 function randomVelocity(speed) {
   const angle = seededRandom() * Math.PI * 2;
   return {
@@ -3830,7 +3846,7 @@ function normalSkillCooldown(kind) {
     believer: 1200,
     archmage: 660,
     gambler: 480,
-    cosmic: 660
+    cosmic: 600
   }[kind] ?? Infinity;
 }
 
@@ -4014,7 +4030,11 @@ function fighterActsLike(fighter, kind) {
 }
 
 function makeFighter(kind, label, ownerId, x, y) {
-  const velocity = randomVelocity(6.5);
+  const initialSeed = deterministicRandom(`${currentRoom?.code || "local"}|${ownerId}|${kind}|initial-velocity`);
+  const velocity = {
+    vx: Math.cos(initialSeed * Math.PI * 2) * 6.5,
+    vy: Math.sin(initialSeed * Math.PI * 2) * 6.5
+  };
   const speed = Math.hypot(velocity.vx, velocity.vy) || 1;
   return {
     ...makeCharacterCombatState(kind),
@@ -4584,9 +4604,9 @@ function updateRifts(dt) {
   game.rifts = game.rifts.filter(rift => rift.life > 0 && rift.hitsRemaining > 0);
 }
 
-function randomEdgePosition(radius = 20) {
-  const wall = Math.floor(seededRandom() * 4);
-  const ratio = 0.12 + seededRandom() * 0.76;
+function randomEdgePosition(radius = 20, owner = null, salt = "edge") {
+  const wall = combatRandomIndex(owner, salt, 4, 0);
+  const ratio = 0.12 + combatRandom(owner, salt, 1) * 0.76;
   if (wall === 0) return { x: radius, y: radius + ratio * (canvas.height - radius * 2) };
   if (wall === 1) return { x: canvas.width - radius, y: radius + ratio * (canvas.height - radius * 2) };
   if (wall === 2) return { x: radius + ratio * (canvas.width - radius * 2), y: radius };
@@ -4597,7 +4617,7 @@ function summonUnit(owner, elite = false) {
   const type = owner.summonMode;
   const archer = type === "archer";
   const radius = elite ? 25 : 19;
-  const position = randomEdgePosition(radius);
+  const position = randomEdgePosition(radius, owner, `summon-${type}-${elite ? "elite" : "normal"}-${game.summons.length}`);
   game.summons.push({
     owner,
     type,
@@ -5264,7 +5284,7 @@ const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer"
 const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage"];
 
 function roulettePick(pool, owner, salt) {
-  const seed = hashSeed(`${currentRoom?.code || "local"}|${owner.id}|${game.tick}|${salt}|${pool.length}`);
+  const seed = hashSeed(`${currentRoom?.code || game?.seedKey || "local"}|${owner.ownerId || owner.id}|${game.tick}|${salt}|${pool.length}`);
   return pool[seed % pool.length];
 }
 
@@ -5634,7 +5654,7 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "poker") {
-    const roll = Math.floor(seededRandom() * 6) + 1;
+    const roll = combatRandomIndex(fighter, "heal-dice", 6, 0) + 1;
     heal(fighter, roll * 5);
     addFloatingText(fighter.x, fighter.y - fighter.radius - 52, `${roll}`, fighter.accent);
     addSkillPulse(fighter, "#7bd88f");
@@ -5792,7 +5812,7 @@ function skillAvailable(fighter, type) {
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
-    if (fighter.kind === "cosmic" && fighter.cosmicDust < 20) return false;
+    if (fighter.kind === "cosmic" && fighter.cosmicDust < 12) return false;
     return true;
   }
   if (fighter.kind === "wild") return false;
@@ -5895,8 +5915,8 @@ function updateSkillHud() {
   ui.normalSkillButton.removeAttribute("data-cost");
   ui.ultimateSkillButton.removeAttribute("data-cost");
   if (fighter.kind === "cosmic") {
-    ui.normalSkillButton.setAttribute("data-cost", "별가루 20");
-    ui.ultimateSkillButton.setAttribute("data-cost", "초당 10");
+    ui.normalSkillButton.setAttribute("data-cost", "별가루 12");
+    ui.ultimateSkillButton.setAttribute("data-cost", "초당 8");
     ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
     ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "종료" : "";
   } else {
@@ -6397,7 +6417,7 @@ function moveFighter(fighter, dt) {
           fighter.throwTimer = 180;
           break;
         }
-        fighter.cosmicDust -= 1;
+        fighter.cosmicDust = Math.max(0, fighter.cosmicDust - 0.8);
         hitCosmicBlaster(fighter);
         fighter.cosmicBlasterTick += 6;
       }
@@ -6524,6 +6544,7 @@ function enemyTargetsOnLine(owner, x1, y1, x2, y2, width) {
 }
 
 function applySwordCircle(owner, damageAmount = 5, radius = 82) {
+  const sequence = game.areaAttacks.length;
   game.areaAttacks.push({
     type: "sword-circle",
     owner,
@@ -6535,7 +6556,7 @@ function applySwordCircle(owner, damageAmount = 5, radius = 82) {
     hit: false,
     damage: damageAmount,
     color: owner.accent,
-    angle: seededRandom() * Math.PI
+    angle: combatRandom(owner, `sword-circle-${sequence}`, 0) * Math.PI
   });
   addVisualEffect({
     type: "sword-ring",
@@ -6727,7 +6748,9 @@ function launchDemonMissile(owner) {
 
 function spawnArtOrb(owner) {
   if (!game || game.artOrbs?.some(orb => orb.owner === owner)) return;
-  const velocity = randomVelocity(characterBaseSpeed(owner) * 0.605);
+  const speed = characterBaseSpeed(owner) * 0.605;
+  const angle = combatRandom(owner, `art-orb-${game.artOrbs?.length || 0}`, 0) * Math.PI * 2;
+  const velocity = { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
   game.artOrbs.push({
     owner,
     x: owner.x,
@@ -6830,9 +6853,10 @@ function useInnerPeace(owner) {
 
 function spawnCosmicDust(owner) {
   if (!game || owner.cosmicBlasterActive || owner.cosmicBlasterCharging > 0) return;
-  const edge = Math.floor(seededRandom() * 4);
-  const x = edge === 0 ? -28 : edge === 1 ? canvas.width + 28 : seededRandom() * canvas.width;
-  const y = edge === 2 ? -28 : edge === 3 ? canvas.height + 28 : seededRandom() * canvas.height;
+  const sequence = game.cosmicDusts.length;
+  const edge = combatRandomIndex(owner, `cosmic-dust-${sequence}`, 4, 0);
+  const x = edge === 0 ? -28 : edge === 1 ? canvas.width + 28 : combatRandom(owner, `cosmic-dust-${sequence}`, 1) * canvas.width;
+  const y = edge === 2 ? -28 : edge === 3 ? canvas.height + 28 : combatRandom(owner, `cosmic-dust-${sequence}`, 2) * canvas.height;
   game.cosmicDusts.push({
     owner,
     x,
@@ -6844,8 +6868,8 @@ function spawnCosmicDust(owner) {
 }
 
 function castSupernova(owner) {
-  if (owner.cosmicDust < 20) return;
-  owner.cosmicDust -= 20;
+  if (owner.cosmicDust < 12) return;
+  owner.cosmicDust -= 12;
   const radius = 250;
   game.areaAttacks.push({
     type: "supernova",
@@ -6860,7 +6884,7 @@ function castSupernova(owner) {
     stun: 180,
     color: "#93c5fd"
   });
-  owner.skillTimer = 660;
+  owner.skillTimer = 600;
 }
 
 function toggleCosmicBlaster(owner) {
@@ -6961,7 +6985,7 @@ function hitCosmicBlaster(owner) {
     const closestX = line.x1 + lineDx * t;
     const closestY = line.y1 + lineDy * t;
     if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 52) {
-      damageCombatTarget(target, 6, owner);
+      damageCombatTarget(target, 3, owner);
     }
   });
 }
@@ -6973,23 +6997,157 @@ function drawCosmicBlasters() {
     if (fighter.cosmicBlasterCharging > 0) {
       const progress = 1 - fighter.cosmicBlasterCharging / 60;
       ctx.translate(fighter.x, fighter.y);
-      ctx.strokeStyle = "#93c5fd";
-      ctx.shadowColor = "#c4b5fd";
-      ctx.shadowBlur = 30 + progress * 24;
-      ctx.lineWidth = 3 + progress * 6;
-      for (let ring = 0; ring < 3; ring += 1) {
+      const pulse = Math.sin(game.tick * 0.22) * 0.5 + 0.5;
+      const voidGradient = ctx.createRadialGradient(0, 0, 4, 0, 0, fighter.radius + 92 + progress * 34);
+      voidGradient.addColorStop(0, "rgba(0,0,0,0.98)");
+      voidGradient.addColorStop(0.22, "rgba(8, 5, 20, 0.92)");
+      voidGradient.addColorStop(0.48, "rgba(59, 7, 100, 0.34)");
+      voidGradient.addColorStop(0.72, "rgba(34, 211, 238, 0.22)");
+      voidGradient.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = voidGradient;
+      ctx.shadowColor = "#a78bfa";
+      ctx.shadowBlur = 34 + progress * 34;
+      ctx.beginPath();
+      ctx.arc(0, 0, fighter.radius + 80 + progress * 28, 0, Math.PI * 2);
+      ctx.fill();
+      for (let ring = 0; ring < 5; ring += 1) {
+        ctx.rotate((ring % 2 ? -1 : 1) * (game.tick * 0.018 + ring * 0.24));
+        ctx.strokeStyle = ring % 2 ? "rgba(45, 212, 191, 0.72)" : "rgba(167, 139, 250, 0.86)";
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 24 + progress * 18;
+        ctx.lineWidth = ring === 0 ? 5 + progress * 8 : 2.5;
+        ctx.setLineDash(ring % 2 ? [10, 16] : [24, 12]);
+        ctx.lineDashOffset = -game.tick * (1.2 + ring * 0.5);
         ctx.beginPath();
-        ctx.arc(0, 0, fighter.radius + 18 + ring * 14 + progress * 18, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, fighter.radius + 20 + ring * 18 + progress * 34, fighter.radius + 12 + ring * 9 + progress * 16, ring * 0.38, 0, Math.PI * 2);
         ctx.stroke();
       }
+      for (let star = 0; star < 18; star += 1) {
+        const angle = star * Math.PI * 2 / 18 + game.tick * 0.05;
+        const orbit = fighter.radius + 26 + (star % 5) * 15 + progress * 20;
+        ctx.fillStyle = star % 3 === 0 ? "#67e8f9" : star % 3 === 1 ? "#c4b5fd" : "#fde68a";
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 16;
+        ctx.globalAlpha = 0.45 + pulse * 0.45;
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, star % 4 === 0 ? 3.4 : 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       ctx.restore();
       return;
     }
     const line = cosmicBlasterLine(fighter);
-    drawPrismaticBeam(ctx, line.x1, line.y1, line.x2, line.y2, 74, "#93c5fd", game.tick, 0.92);
-    drawPrismaticBeam(ctx, line.x1, line.y1, line.x2, line.y2, 38, "#f8fbff", game.tick + 30, 0.7);
+    drawCosmicVoidBeam(ctx, line.x1, line.y1, line.x2, line.y2, game.tick);
     ctx.restore();
   });
+}
+
+function drawCosmicVoidBeam(renderCtx, x1, y1, x2, y2, tick) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length;
+  const uy = dy / length;
+  const nx = -uy;
+  const ny = ux;
+  const pulse = Math.sin(tick * 0.18) * 0.5 + 0.5;
+  renderCtx.save();
+  renderCtx.globalCompositeOperation = "lighter";
+  renderCtx.lineCap = "round";
+
+  [
+    { width: 128, color: "rgba(49, 46, 129, 0.26)", blur: 54, alpha: 0.72 },
+    { width: 92, color: "rgba(14, 165, 233, 0.20)", blur: 48, alpha: 0.62 },
+    { width: 66, color: "rgba(88, 28, 135, 0.42)", blur: 40, alpha: 0.82 },
+    { width: 42, color: "rgba(3, 7, 18, 0.98)", blur: 30, alpha: 0.98 },
+    { width: 22, color: "rgba(0, 0, 0, 0.98)", blur: 18, alpha: 1 }
+  ].forEach((layer, index) => {
+    renderCtx.globalAlpha = layer.alpha;
+    renderCtx.strokeStyle = layer.color;
+    renderCtx.shadowColor = index < 3 ? (index === 1 ? "#22d3ee" : "#a78bfa") : "#020617";
+    renderCtx.shadowBlur = layer.blur + pulse * 16;
+    renderCtx.lineWidth = layer.width + pulse * (index < 2 ? 12 : 4);
+    renderCtx.beginPath();
+    renderCtx.moveTo(x1, y1);
+    renderCtx.lineTo(x2, y2);
+    renderCtx.stroke();
+  });
+
+  for (let ribbon = 0; ribbon < 5; ribbon += 1) {
+    const phase = tick * (0.045 + ribbon * 0.006) + ribbon * Math.PI * 0.42;
+    renderCtx.globalAlpha = 0.48 - ribbon * 0.045;
+    renderCtx.strokeStyle = ribbon % 2 ? "#67e8f9" : "#a78bfa";
+    renderCtx.shadowColor = renderCtx.strokeStyle;
+    renderCtx.shadowBlur = 28;
+    renderCtx.lineWidth = 5 - ribbon * 0.45;
+    renderCtx.beginPath();
+    const steps = 36;
+    for (let i = 0; i <= steps; i += 1) {
+      const p = i / steps;
+      const swirl = Math.sin(p * Math.PI * 10 + phase) * (32 + ribbon * 7) * (0.35 + Math.sin(p * Math.PI) * 0.85);
+      const x = x1 + dx * p + nx * swirl;
+      const y = y1 + dy * p + ny * swirl;
+      if (i === 0) renderCtx.moveTo(x, y);
+      else renderCtx.lineTo(x, y);
+    }
+    renderCtx.stroke();
+  }
+
+  for (let shard = 0; shard < 44; shard += 1) {
+    const seed = (shard * 97.13 + tick * 1.7) % 1000;
+    const p = ((seed * 0.001) + shard * 0.037) % 1;
+    const side = Math.sin(seed * 12.9898) * (42 + (shard % 7) * 7);
+    const drift = Math.sin(tick * 0.09 + shard) * 8;
+    const x = x1 + dx * p + nx * (side + drift);
+    const y = y1 + dy * p + ny * (side + drift);
+    const size = shard % 6 === 0 ? 3.8 : shard % 3 === 0 ? 2.6 : 1.7;
+    renderCtx.globalAlpha = 0.35 + Math.sin(tick * 0.12 + shard) * 0.22;
+    renderCtx.fillStyle = shard % 4 === 0 ? "#fde68a" : shard % 4 === 1 ? "#67e8f9" : shard % 4 === 2 ? "#c4b5fd" : "#f8fafc";
+    renderCtx.shadowColor = renderCtx.fillStyle;
+    renderCtx.shadowBlur = 18;
+    renderCtx.beginPath();
+    if (shard % 5 === 0) {
+      renderCtx.moveTo(x, y - size * 2.1);
+      renderCtx.lineTo(x + size * 0.72, y - size * 0.72);
+      renderCtx.lineTo(x + size * 2.1, y);
+      renderCtx.lineTo(x + size * 0.72, y + size * 0.72);
+      renderCtx.lineTo(x, y + size * 2.1);
+      renderCtx.lineTo(x - size * 0.72, y + size * 0.72);
+      renderCtx.lineTo(x - size * 2.1, y);
+      renderCtx.lineTo(x - size * 0.72, y - size * 0.72);
+      renderCtx.closePath();
+      renderCtx.fill();
+    } else {
+      renderCtx.arc(x, y, size, 0, Math.PI * 2);
+      renderCtx.fill();
+    }
+  }
+
+  const mouth = renderCtx.createRadialGradient(x1, y1, 2, x1, y1, 118);
+  mouth.addColorStop(0, "rgba(0,0,0,1)");
+  mouth.addColorStop(0.28, "rgba(24, 24, 27, 0.98)");
+  mouth.addColorStop(0.5, "rgba(88, 28, 135, 0.55)");
+  mouth.addColorStop(0.76, "rgba(34, 211, 238, 0.30)");
+  mouth.addColorStop(1, "rgba(0,0,0,0)");
+  renderCtx.globalAlpha = 0.92;
+  renderCtx.fillStyle = mouth;
+  renderCtx.shadowColor = "#a78bfa";
+  renderCtx.shadowBlur = 42;
+  renderCtx.beginPath();
+  renderCtx.arc(x1, y1, 112 + pulse * 12, 0, Math.PI * 2);
+  renderCtx.fill();
+
+  renderCtx.globalAlpha = 0.84;
+  renderCtx.strokeStyle = "#111827";
+  renderCtx.shadowColor = "#22d3ee";
+  renderCtx.shadowBlur = 34;
+  renderCtx.lineWidth = 14;
+  renderCtx.beginPath();
+  renderCtx.moveTo(x1, y1);
+  renderCtx.lineTo(x2, y2);
+  renderCtx.stroke();
+  renderCtx.restore();
 }
 
 function throwBall(owner, options = {}) {
@@ -7113,18 +7271,19 @@ function createSkyLaser(owner) {
 
 function createWildSlashes(owner, x = null, y = null) {
   for (let index = 0; index < 3; index += 1) {
+    const sequence = game.areaAttacks.length;
     game.areaAttacks.push({
       type: "slash",
       owner,
-      x: x ?? 70 + seededRandom() * (canvas.width - 140),
-      y: y ?? 70 + seededRandom() * (canvas.height - 140),
+      x: x ?? 70 + combatRandom(owner, `wild-slash-${sequence}`, index * 3) * (canvas.width - 140),
+      y: y ?? 70 + combatRandom(owner, `wild-slash-${sequence}`, index * 3 + 1) * (canvas.height - 140),
       radius: 58,
       delay: 28 + index * 8,
       life: 55 + index * 8,
       hit: false,
       damage: 20,
       color: owner.accent,
-      angle: seededRandom() * Math.PI
+      angle: combatRandom(owner, `wild-slash-${sequence}`, index * 3 + 2) * Math.PI
     });
   }
 }
@@ -7222,10 +7381,11 @@ function punchSummon(owner, summon) {
 function throwDrawCard(owner) {
   const target = nearestEnemyTarget(owner);
   const cards = ["JOKER", "A", "K", "Q", "J"];
-  const type = cards[Math.floor(seededRandom() * cards.length)];
+  const sequence = game.pokerShots.length;
+  const type = cards[combatRandomIndex(owner, `draw-card-${sequence}`, cards.length, 0)];
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   const damageByType = {
-    JOKER: Math.floor(seededRandom() * 45) + 1,
+    JOKER: combatRandomIndex(owner, `draw-card-${sequence}`, 45, 1) + 1,
     A: 7.5,
     K: 0,
     Q: 7.5,
@@ -7277,7 +7437,8 @@ function assassinate(owner) {
 function dealPokerAttack(owner, options = {}) {
   if ((!owner.canPoker && !options.force) || game.over) return;
   const ranks = ["A", "K", "Q", "J", "10", "9"];
-  const hand = Array.from({ length: 5 }, () => ranks[Math.floor(seededRandom() * ranks.length)]);
+  const sequence = game.pokerShots.length;
+  const hand = Array.from({ length: 5 }, (_, index) => ranks[combatRandomIndex(owner, `poker-hand-${sequence}`, ranks.length, index)]);
   const counts = Object.values(hand.reduce((acc, rank) => {
     acc[rank] = (acc[rank] || 0) + 1;
     return acc;
