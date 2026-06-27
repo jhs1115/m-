@@ -240,26 +240,23 @@ const ui = {
 };
 
 const patchNoticeVersions = {
-  "v1.0": {
-    title: "V1.0 업데이트",
+  "beta-v1.1": {
+    title: "beta v1.1 업데이트",
+    items: [
+      "칭호 시스템 추가 - 조건 달성 후 우편함에서 칭호를 수령하고 인벤토리에서 장착할 수 있습니다.",
+      "픽창 개선 - 랭크게임과 일반게임 모두 상대 닉네임과 장착 칭호가 표시됩니다.",
+      "우주의 힘쓰는 색히 밸런스 조정 - 초신성 쿨타임과 별가루 소모량을 조정했습니다.",
+      "공지사항 UI 개선 - 버전별 업데이트 내용을 선택해서 확인할 수 있습니다."
+    ]
+  },
+  "beta-v1.0": {
+    title: "beta v1.0 업데이트",
     items: [
       "신규 캐릭터 - 우주의 힘쓰는 색히",
       "스킬 리메이크 - 그림그리는 색히, 대마법쓰는 색히, 맨몸격투하는 색히",
       "랭크전 밴 타이머 수정",
       "도감 UI 대폭 변경 - 상세 설명 추가, 스킬마다 미리보기 가능"
     ]
-  },
-  "v0.9": {
-    title: "V0.9",
-    items: ["이전 공지 내용은 준비 중입니다."]
-  },
-  "v0.8": {
-    title: "V0.8",
-    items: ["이전 공지 내용은 준비 중입니다."]
-  },
-  "v0.7": {
-    title: "V0.7",
-    items: ["이전 공지 내용은 준비 중입니다."]
   }
 };
 
@@ -272,7 +269,7 @@ const titleCatalog = {
   challenger: { name: "challenger", condition: "챌린저 티어 달성", tier: "challenger", check: user => user.lp >= 2700 && user.rankPosition === 1 },
   all_collect: { name: "올컬렉트", condition: "모든 캐릭터 보유", tier: "collect", check: user => gachaPool.every(kind => user.ownedCharacters?.includes(kind)) },
   million_left: { name: "내왼손에는 백만원", condition: "코인 1000C 이상 보유", tier: "gold", check: user => user.coins >= 1000 },
-  million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "gold", check: user => user.coins >= 10000 },
+  million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "grand-gold", check: user => user.coins >= 10000 },
   god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 }
 };
 
@@ -2492,8 +2489,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "v1.0") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["v1.0"];
+function renderPatchNotice(version = "beta-v1.1") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.1"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -2508,7 +2505,7 @@ function renderPatchNotice(version = "v1.0") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("v1.0");
+  if (open) renderPatchNotice("beta-v1.1");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -2532,6 +2529,15 @@ function equippedTitleMarkup(player) {
   const key = player?.equippedTitle;
   if (!key || !titleCatalog[key]) return "";
   return `<small class="equipped-title ${titleTierClass(key)}">${escapeHtml(titleDisplayName(key))}</small>`;
+}
+
+function playerNameWithTitle(player, fallback = "PLAYER") {
+  return `${escapeHtml(player?.name || player?.username || fallback)}${equippedTitleMarkup(player)}`;
+}
+
+function playerTitleText(player) {
+  const key = player?.equippedTitle;
+  return key && titleCatalog[key] ? titleDisplayName(key) : "";
 }
 
 function claimableTitleKeys(user = currentUser) {
@@ -2816,7 +2822,7 @@ function renderLobby() {
   if (currentUser) {
     const tier = tierForLp(currentUser.lp);
     const tierClass = tierClassForLp(currentUser.lp);
-    ui.currentUserName.textContent = currentUser.name;
+    ui.currentUserName.innerHTML = playerNameWithTitle(currentUser, "로그인이 필요합니다");
     ui.currentUserTier.textContent = tier;
     ui.currentUserName.className = `rank-name ${tierClass}`;
     ui.currentUserTier.className = `tier-label ${tierClass}`;
@@ -2889,7 +2895,7 @@ function renderTitleInventory() {
       ? `<button class="ghost-button title-equip-button" type="button" data-equip-title="${escapeHtml(key)}" ${isEquipped ? "disabled" : ""}>${isEquipped ? "장착중" : "장착"}</button>`
       : `<span class="title-lock-state">${canClaim ? "우편함에서 수령 가능" : "미획득"}</span>`;
     return `
-      <article class="title-card ${owned ? "is-owned" : "is-locked"} ${titleTierClass(key)}">
+      <article class="title-card ${owned ? "is-owned" : "is-locked"} ${canClaim ? "can-claim" : ""} ${isEquipped ? "is-equipped" : ""} ${titleTierClass(key)}">
         <div>
           <strong class="equipped-title ${titleTierClass(key)}">${escapeHtml(title.name)}</strong>
           <span>${escapeHtml(title.condition)}</span>
@@ -3140,7 +3146,7 @@ function renderRankings(rankings, mode = "pvp") {
       <article class="ranking-row ${podiumClass} ${isMe ? "is-me" : ""}">
         <b>${rankMark}</b>
         <div>
-          <strong class="${tierClass}">${escapeHtml(player.name || player.username || "unknown")}</strong>
+          <strong class="${tierClass}">${playerNameWithTitle(player, "unknown")}</strong>
           <span class="${tierClass}">${tier}</span>
         </div>
         <em>${scoreText}</em>
@@ -3173,7 +3179,7 @@ function renderRankingPodium(topPlayers, mode = "pvp") {
           <article class="podium-slot ${slot.className}">
             <div class="podium-player">
               <span>${slot.rank === 1 ? "♛" : "◆"}</span>
-              <strong class="${tierClass}">${escapeHtml(slot.player.name || slot.player.username || "unknown")}</strong>
+              <strong class="${tierClass}">${playerNameWithTitle(slot.player, "unknown")}</strong>
               <em>${scoreText}</em>
             </div>
             <div class="podium-block">
@@ -3232,8 +3238,8 @@ function updateLobbyPreview() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
 
-  ui.lobbyP1Name.textContent = p1?.name ?? "PLAYER 1";
-  ui.lobbyP2Name.textContent = p2?.name ?? "PLAYER 2";
+  ui.lobbyP1Name.innerHTML = p1 ? playerNameWithTitle(p1, "PLAYER 1") : "PLAYER 1";
+  ui.lobbyP2Name.innerHTML = p2 ? playerNameWithTitle(p2, "PLAYER 2") : "PLAYER 2";
   ui.lobbyP1Coins.textContent = p1?.lp ?? 0;
   ui.lobbyP2Coins.textContent = p2?.lp ?? 0;
 
@@ -3713,7 +3719,7 @@ async function drawCharacter() {
     ui.gachaReveal.classList.add("is-hit");
     ui.gachaReveal.querySelector("span").textContent = characterInitial(picked);
     ui.gachaResultName.textContent = characters[picked].name;
-    ui.gachaMessage.textContent = `${currentUser.name}: ${characters[picked].name} 획득!`;
+    ui.gachaMessage.innerHTML = `${playerNameWithTitle(currentUser)}: ${escapeHtml(characters[picked].name)} 획득!`;
     renderLobby();
   } catch (error) {
     ui.gachaReveal.classList.remove("is-rolling");
@@ -3825,10 +3831,10 @@ function renderBanPickStatus() {
   ui.banPickStatus?.classList.toggle("is-hidden", Boolean(prep.casual));
   screens.select?.classList.toggle("is-ban-phase", banPhase);
   if (ui.p1BanHeader && p1) {
-    ui.p1BanHeader.innerHTML = `PLAYER 1 BAN <b>${escapeHtml(p1.name)}</b>${equippedTitleMarkup(p1)}`;
+    ui.p1BanHeader.innerHTML = `PLAYER 1 BAN <b>${playerNameWithTitle(p1)}</b>`;
   }
   if (ui.p2BanHeader && p2) {
-    ui.p2BanHeader.innerHTML = `PLAYER 2 BAN <b>${escapeHtml(p2.name)}</b>${equippedTitleMarkup(p2)}`;
+    ui.p2BanHeader.innerHTML = `PLAYER 2 BAN <b>${playerNameWithTitle(p2)}</b>`;
   }
   const renderList = (target, list) => {
     if (!target) return;
@@ -3873,8 +3879,8 @@ function prepareCharacterSelect() {
     });
     return false;
   }
-  const p1Name = `PLAYER 1 - ${escapeHtml(p1.name)}${equippedTitleMarkup(p1)}`;
-  const p2Name = `PLAYER 2 - ${escapeHtml(p2.name)}${equippedTitleMarkup(p2)}`;
+  const p1Name = `PLAYER 1 - ${playerNameWithTitle(p1)}`;
+  const p2Name = `PLAYER 2 - ${playerNameWithTitle(p2)}`;
   ui.selectP1Label.innerHTML = p1Name;
   ui.selectP2Label.innerHTML = p2Name;
   if (ui.selectMatchNames) {
@@ -4318,8 +4324,8 @@ function resetGame() {
   pendingSkillUse = false;
 
   ui.currentBet.textContent = "";
-  ui.hudP1Label.textContent = p1.name;
-  ui.hudP2Label.textContent = p2.name;
+  ui.hudP1Label.innerHTML = playerNameWithTitle(p1, "PLAYER 1");
+  ui.hudP2Label.innerHTML = playerNameWithTitle(p2, "PLAYER 2");
   ui.playerOneName.textContent = game.fighters[0].name;
   ui.playerTwoName.textContent = game.fighters[1].name;
   ui.resultOverlay.classList.remove("is-active");
@@ -5060,7 +5066,7 @@ function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
   setResultCharacter(ui.resultCharacterOrb, fighter);
   ui.resultTimeTop.textContent = elapsed;
   ui.resultTime.textContent = elapsed;
-  ui.resultPlayerName.textContent = fighter.ownerName || player.name;
+  ui.resultPlayerName.innerHTML = playerNameWithTitle(player, fighter.ownerName || "PLAYER");
   ui.resultCharacterName.textContent = fighter.name;
   ui.resultCurrentLp.textContent = `${player.lp} LP`;
   ui.resultDamageDealt.textContent = formatResultNumber(fighter.damageDealt);
@@ -5081,7 +5087,7 @@ function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
   if (outcome === "lose") {
     ui.resultEyebrow.textContent = "MATCH DEFEAT";
     ui.resultTitle.textContent = "패배";
-    ui.resultText.textContent = `${fighter.name} 패배 · 다음 경기를 준비하세요`;
+    ui.resultText.innerHTML = `${escapeHtml(fighter.name)} 패배 · 다음 경기를 준비하세요`;
     if (lpPreview?.casual) {
       ui.resultLpGain.textContent = "+0 LP";
       ui.resultReward.textContent = "LP 변화 없음";
@@ -5096,7 +5102,7 @@ function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
 
   ui.resultEyebrow.textContent = "MATCH VICTORY";
   ui.resultTitle.textContent = "승리!";
-  ui.resultText.textContent = `${fighter.ownerName} · ${fighter.name} 승리`;
+  ui.resultText.innerHTML = `${playerNameWithTitle(player, fighter.ownerName || "PLAYER")} · ${escapeHtml(fighter.name)} 승리`;
   if (lpPreview?.casual) {
     ui.resultLpGain.textContent = "+0 LP";
     ui.resultReward.textContent = "+10C";
@@ -5159,14 +5165,14 @@ async function settleMatch(winnerPlayer, loserPlayer) {
       const coinReward = Number(data.coinReward ?? 10);
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.remove("is-defeat");
-      ui.resultText.textContent = `${updatedWinner.name} 승리 · 일반게임 종료`;
+      ui.resultText.innerHTML = `${playerNameWithTitle(updatedWinner)} 승리 · 일반게임 종료`;
       ui.resultReward.textContent = `+${coinReward}C`;
       ui.resultRewardLabel.textContent = "일반게임 승리 보상";
     } else if (casualMatch) {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.add("is-defeat");
       ui.resultTitle.textContent = "패배";
-      ui.resultText.textContent = `${updatedLoser.name} 패배 · 일반게임 종료`;
+      ui.resultText.innerHTML = `${playerNameWithTitle(updatedLoser)} 패배 · 일반게임 종료`;
       ui.resultReward.textContent = "LP 변화 없음";
       ui.resultRewardLabel.textContent = "일반게임";
       ui.resultCurrentLp.textContent = `${updatedLoser.lp} LP`;
@@ -5175,20 +5181,20 @@ async function settleMatch(winnerPlayer, loserPlayer) {
       ui.resultBox.classList.remove("is-defeat");
       ui.resultBox.classList.add("is-promotion");
       ui.resultTitle.textContent = `${data.newTier} 승급!`;
-      ui.resultText.textContent = `${updatedWinner.name} 승리 · ${data.newTier} 승급`;
+      ui.resultText.innerHTML = `${playerNameWithTitle(updatedWinner)} 승리 · ${escapeHtml(data.newTier || "")} 승급`;
       ui.resultReward.textContent = `+${lpGain} LP · +${data.promotionReward ?? 200}C`;
       ui.resultRewardLabel.textContent = `${data.newTier} 승급 보상`;
     } else if (localWon) {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.remove("is-defeat");
-      ui.resultText.textContent = `${updatedWinner.name} 승리 · 랭크 정산 완료`;
+      ui.resultText.innerHTML = `${playerNameWithTitle(updatedWinner)} 승리 · 랭크 정산 완료`;
       ui.resultReward.textContent = `+${lpGain} LP`;
       ui.resultRewardLabel.textContent = "랭크 승리 보상";
     } else {
       ui.resultBox.classList.remove("is-promotion");
       ui.resultBox.classList.add("is-defeat");
       ui.resultTitle.textContent = "패배";
-      ui.resultText.textContent = `${updatedLoser.name} 패배 · ${updatedWinner.name} 승리`;
+      ui.resultText.innerHTML = `${playerNameWithTitle(updatedLoser)} 패배 · ${playerNameWithTitle(updatedWinner)} 승리`;
       ui.resultReward.textContent = `-${lpLoss} LP`;
       ui.resultRewardLabel.textContent = "랭크 패배";
       ui.resultCurrentLp.textContent = `${updatedLoser.lp} LP`;
@@ -9618,6 +9624,7 @@ function drawFighterName(fighter) {
   ctx.roundRect(x, y - boxHeight / 2, boxWidth, boxHeight, 8);
   ctx.fill();
   ctx.stroke();
+  ctx.font = "900 14px Segoe UI, Arial";
   ctx.fillStyle = "#f7f4eb";
   ctx.fillText(text, x + boxWidth / 2, y, boxWidth - 12);
   ctx.restore();
@@ -10456,7 +10463,7 @@ async function startPveStage(stage) {
     floatingTexts: []
   };
   setPveSpeed(1);
-  ui.pvePlayerLabel.textContent = `${currentUser.name} · ${difficulty.label}`;
+  ui.pvePlayerLabel.innerHTML = `${playerNameWithTitle(currentUser)} · ${escapeHtml(difficulty.label)}`;
   ui.pveResultOverlay.classList.remove("is-active");
   ui.pveAugmentOverlay.classList.remove("is-active");
   renderSurvivalBuild();
@@ -13927,7 +13934,7 @@ async function finishPve(won) {
   ui.pveResultEyebrow.textContent = won ? "MISSION COMPLETE" : "MISSION FAILED";
   ui.pveResultTitle.textContent = won ? "승리!" : "패배";
   ui.pveResultText.textContent = won ? `${completedStage} 스테이지 클리어` : `${completedStage} 공략 실패`;
-  ui.pveResultPlayerName.textContent = currentUser.name;
+  ui.pveResultPlayerName.innerHTML = playerNameWithTitle(currentUser);
   ui.pveResultCharacterName.textContent = player.name;
   ui.pveResultReward.textContent = won ? "정산 중" : "보상 없음";
   ui.pveResultRewardLabel.textContent = won ? "클리어 보상" : "다시 도전하세요";
@@ -13985,7 +13992,7 @@ async function finishSurvivalPve(cleared = false) {
   ui.pveResultText.textContent = cleared
     ? `15분 ${pveGame.difficulty.label} 생존 성공 · LV.${pveGame.level} · ${pveGame.kills}마리 처치`
     : `${pveGame.difficulty.label} · LV.${pveGame.level} · ${pveGame.kills}마리 처치`;
-  ui.pveResultPlayerName.textContent = currentUser.name;
+  ui.pveResultPlayerName.innerHTML = playerNameWithTitle(currentUser);
   ui.pveResultCharacterName.textContent = "균열 생존자";
   ui.pveResultCharacterOrb.textContent = "M";
   ui.pveResultCharacterOrb.style.setProperty("--result-color", "#3dd6d0");

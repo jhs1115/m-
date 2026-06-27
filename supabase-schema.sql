@@ -1563,6 +1563,7 @@ begin
         'name', ranked.username,
         'lp', ranked.lp,
         'coins', ranked.coins,
+        'equippedTitle', ranked.equipped_title,
         'tier', case
           when ranked.lp < 2700 then public.lp_tier(ranked.lp)
           when ranked.rank_position = 1 then '챌린저'
@@ -1576,7 +1577,7 @@ begin
     from (
       select ranked_users.*
       from (
-        select id, username, lp, coins,
+        select id, username, lp, coins, equipped_title,
           row_number() over (order by lp desc, username asc) as rank_position
         from public.app_users
       ) ranked_users
@@ -1608,6 +1609,7 @@ begin
         'name', ranked.username,
         'lp', ranked.lp,
         'coins', ranked.coins,
+        'equippedTitle', ranked.equipped_title,
         'pveDamageTotal', ranked.pve_damage_total
       )
       order by ranked.rank_position
@@ -1615,7 +1617,7 @@ begin
     from (
       select ranked_users.*
       from (
-        select id, username, lp, coins, pve_damage_total,
+        select id, username, lp, coins, equipped_title, pve_damage_total,
           row_number() over (order by pve_damage_total desc, username asc) as rank_position
         from public.app_users
       ) ranked_users

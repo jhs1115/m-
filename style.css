@@ -390,6 +390,8 @@ body:not(.is-authenticated) .notice-actions {
   align-content: start;
   gap: 14px;
   padding: 22px;
+  overflow-y: auto;
+  scrollbar-color: rgba(242, 193, 78, 0.5) rgba(5, 8, 14, 0.42);
 }
 
 .patch-version-panel strong {
@@ -597,22 +599,99 @@ body:not(.is-authenticated) .notice-actions {
 }
 
 .title-card {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   min-height: 92px;
   padding: 16px;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 20% 20%, rgba(242, 193, 78, 0.1), transparent 34%),
-    rgba(5, 10, 19, 0.82);
-  border: 1px solid rgba(242, 193, 78, 0.2);
+    radial-gradient(circle at 18% 22%, rgba(242, 193, 78, 0.06), transparent 34%),
+    linear-gradient(180deg, rgba(7, 12, 20, 0.9), rgba(4, 7, 12, 0.94));
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.018);
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.title-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.12) 38%, transparent 58%),
+    radial-gradient(circle at 92% 15%, rgba(242, 193, 78, 0.2), transparent 30%);
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.title-card:hover {
+  transform: translateY(-1px);
 }
 
 .title-card.is-locked {
-  opacity: 0.62;
-  filter: saturate(0.65);
+  opacity: 0.44;
+  filter: grayscale(0.55) saturate(0.42);
+  background:
+    linear-gradient(180deg, rgba(6, 10, 17, 0.88), rgba(3, 6, 11, 0.95));
+}
+
+.title-card.is-locked strong,
+.title-card.is-locked span {
+  color: #6b7280 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: currentColor;
+  background: none;
+}
+
+.title-card.is-owned {
+  opacity: 1;
+  filter: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(242, 193, 78, 0.2), transparent 36%),
+    radial-gradient(circle at 92% 70%, rgba(34, 211, 238, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(15, 22, 35, 0.98), rgba(5, 10, 18, 0.98));
+  border-color: rgba(242, 193, 78, 0.48);
+  box-shadow:
+    0 0 26px rgba(242, 193, 78, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.title-card.is-owned::before,
+.title-card.can-claim::before {
+  opacity: 1;
+}
+
+.title-card.is-equipped {
+  border-color: rgba(255, 226, 138, 0.92);
+  box-shadow:
+    0 0 30px rgba(242, 193, 78, 0.28),
+    0 0 62px rgba(242, 193, 78, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.title-card.is-equipped::after {
+  content: "장착";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 3px 8px;
+  color: #081018;
+  background: linear-gradient(180deg, #ffe69b, #f2c14e);
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(242, 193, 78, 0.5);
+  font-size: 0.62rem;
+  font-weight: 1000;
+}
+
+.title-card.can-claim {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(56, 189, 248, 0.52);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.16);
 }
 
 .title-card span,
@@ -622,6 +701,11 @@ body:not(.is-authenticated) .notice-actions {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.title-card.can-claim .title-lock-state {
+  color: #67e8f9;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
 }
 
 .title-equip-button {
@@ -635,6 +719,32 @@ body:not(.is-authenticated) .notice-actions {
   font-size: 0.74rem;
   line-height: 1.2;
   letter-spacing: 0.02em;
+}
+
+.rank-name .equipped-title,
+.ranking-row .equipped-title,
+.podium-player .equipped-title,
+.hud-card .equipped-title,
+.result-player-identity .equipped-title,
+.survival-hud .equipped-title,
+.status-message .equipped-title,
+.player-label .equipped-title,
+.select-match-names .equipped-title,
+.ban-side .equipped-title {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.68rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.hud-card .equipped-title,
+.survival-hud .equipped-title {
+  font-size: 0.62rem;
+}
+
+.result-player-identity .equipped-title {
+  font-size: 0.76rem;
 }
 
 .title-basic {
@@ -657,13 +767,31 @@ body:not(.is-authenticated) .notice-actions {
   text-shadow: 0 0 14px rgba(250, 204, 21, 0.45);
 }
 
-.title-challenger {
-  color: #fff7ad;
-  background: linear-gradient(90deg, #fff7ad, #facc15, #ffffff, #f59e0b);
+.title-grand-gold {
+  color: #fff2a8;
+  background: linear-gradient(90deg, #b45309, #facc15, #fff7ad, #f59e0b, #ffffff);
+  background-size: 240% 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  text-shadow: 0 0 16px rgba(250, 204, 21, 0.75), 0 0 34px rgba(255, 255, 255, 0.36);
-  animation: title-shine 2.4s linear infinite;
+  text-shadow:
+    0 0 12px rgba(250, 204, 21, 0.75),
+    0 0 30px rgba(245, 158, 11, 0.62),
+    0 0 54px rgba(255, 255, 255, 0.2);
+  animation: grand-gold-shine 1.8s linear infinite;
+}
+
+.title-challenger {
+  color: #fff7ad;
+  background: linear-gradient(90deg, #fff4a3, #ffffff, #ffd230, #ff8a00, #ffffff, #fff4a3);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.95),
+    0 0 22px rgba(250, 204, 21, 0.95),
+    0 0 44px rgba(245, 158, 11, 0.8),
+    0 0 72px rgba(255, 255, 255, 0.34);
+  animation: challenger-title-shine 1.35s linear infinite;
 }
 
 .title-god-pve {
@@ -676,7 +804,8 @@ body:not(.is-authenticated) .notice-actions {
 }
 
 .title-challenger,
-.title-god-pve {
+.title-god-pve,
+.title-grand-gold {
   -webkit-text-fill-color: transparent;
 }
 
@@ -688,18 +817,112 @@ body:not(.is-authenticated) .notice-actions {
 .title-card strong.title-pro { color: #c4b5fd; }
 .mailbox-item strong.title-gold,
 .mailbox-item strong.title-collect,
+.mailbox-item strong.title-grand-gold,
 .title-card strong.title-gold,
-.title-card strong.title-collect { color: #facc15; }
+.title-card strong.title-collect,
+.title-card strong.title-grand-gold { color: #facc15; }
 .mailbox-item strong.title-challenger,
 .mailbox-item strong.title-god-pve,
+.mailbox-item strong.title-grand-gold,
 .title-card strong.title-challenger,
-.title-card strong.title-god-pve {
+.title-card strong.title-god-pve,
+.title-card strong.title-grand-gold {
   color: transparent;
+}
+
+.title-card.is-owned.title-challenger {
+  background:
+    radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.26), transparent 24%),
+    radial-gradient(circle at 72% 40%, rgba(250, 204, 21, 0.36), transparent 38%),
+    radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.16), transparent 42%),
+    linear-gradient(135deg, rgba(45, 29, 5, 0.98), rgba(12, 16, 24, 0.98));
+  border-color: rgba(255, 230, 150, 0.95);
+  box-shadow:
+    0 0 24px rgba(250, 204, 21, 0.42),
+    0 0 70px rgba(245, 158, 11, 0.2),
+    inset 0 0 18px rgba(255, 255, 255, 0.08);
+}
+
+.title-card.is-owned.title-challenger::before {
+  opacity: 1;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.24) 40%, transparent 58%),
+    radial-gradient(circle at 86% 24%, rgba(255, 255, 255, 0.28), transparent 16%),
+    radial-gradient(circle at 28% 78%, rgba(250, 204, 21, 0.24), transparent 22%);
+  animation: title-card-gleam 2.1s ease-in-out infinite;
+}
+
+.title-card.is-equipped.title-challenger {
+  box-shadow:
+    0 0 34px rgba(250, 204, 21, 0.68),
+    0 0 92px rgba(245, 158, 11, 0.36),
+    inset 0 0 24px rgba(255, 255, 255, 0.12);
+}
+
+.title-card.is-owned.title-grand-gold {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 72% 34%, rgba(250, 204, 21, 0.32), transparent 36%),
+    linear-gradient(135deg, rgba(37, 22, 4, 0.98), rgba(9, 12, 18, 0.98));
+  border-color: rgba(250, 204, 21, 0.72);
+  box-shadow:
+    0 0 28px rgba(250, 204, 21, 0.32),
+    0 0 74px rgba(245, 158, 11, 0.2),
+    inset 0 0 18px rgba(255, 247, 173, 0.08);
+}
+
+.title-card.is-owned.title-grand-gold::before {
+  opacity: 1;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.18) 42%, transparent 60%),
+    radial-gradient(circle at 88% 22%, rgba(250, 204, 21, 0.28), transparent 18%);
+  animation: title-card-gleam 2.5s ease-in-out infinite;
 }
 
 @keyframes title-shine {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.45); }
+}
+
+@keyframes challenger-title-shine {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1.05);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.75);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes grand-gold-shine {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1.05);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.55);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes title-card-gleam {
+  0%, 100% {
+    transform: translateX(-18%);
+    opacity: 0.48;
+  }
+  50% {
+    transform: translateX(18%);
+    opacity: 0.95;
+  }
 }
 
 .match-overlay {
@@ -3133,6 +3356,10 @@ h2 {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
   margin-top: 8px;
+  max-height: min(620px, calc(100vh - 300px));
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-color: rgba(242, 193, 78, 0.5) rgba(5, 8, 14, 0.42);
 }
 
 .inventory-card {
