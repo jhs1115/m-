@@ -568,9 +568,9 @@ const characterGuide = {
     ultimate: ["리로드", "3초", "앞으로 순간이동합니다. 순간이동한 위치에서 탄환을 발사하여 맞은 적에게 5의 피해를 입힙니다."]
   },
   freezer: {
-    attack: ["고드름", "3초", "적에게 고드름을 발사해 5의 피해와 1초 슬로우를 줍니다. 슬로우 중이면 추가 5, 스턴 중이면 추가 15 피해를 줍니다."],
-    normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 기절시킵니다."],
-    ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 얼음의 정수를 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 슬로우 장판이 남습니다."]
+    attack: ["고드름", "3초", "적에게 고드름 3갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 여러 고드름이 모두 맞을 수 있습니다. 슬로우 중이면 추가 5, 스턴 중이면 추가 10 피해를 줍니다."],
+    normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 얼려 기절시키고 5의 피해를 줍니다."],
+    ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 더 큰 얼음의 정수를 관통 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 6초 동안 유지되는 넓은 슬로우 장판이 남습니다."]
   },
   gambler: {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
@@ -7956,14 +7956,14 @@ function updateBalls(dt) {
           owner: ball.owner,
           x: ball.x,
           y: ball.y,
-          radius: 42,
+          radius: 63,
           color: "#93c5fd",
-          life: 180,
-          maxLife: 180
+          life: 360,
+          maxLife: 360
         });
       }
       game.fighters.forEach(target => {
-        if (target !== ball.owner && Math.hypot(target.x - ball.x, target.y - ball.y) < target.radius + 48) {
+        if (target !== ball.owner && Math.hypot(target.x - ball.x, target.y - ball.y) < target.radius + 72) {
           target.slowTime = Math.max(target.slowTime, 90);
         }
       });
@@ -7998,10 +7998,10 @@ function updateBalls(dt) {
           owner: ball.owner,
           x: ball.x,
           y: ball.y,
-          radius: 58,
+          radius: 87,
           color: "#93c5fd",
-          life: 180,
-          maxLife: 180
+          life: 360,
+          maxLife: 360
         });
         ball.hitCooldown = 24;
         return true;
@@ -8035,9 +8035,9 @@ function updateBalls(dt) {
           }
           let hitDamage = ball.damage;
           if (ball.freezeBullet) {
-            if (target.stunTime > 0) hitDamage += 15;
+            if (target.stunTime > 0) hitDamage += 10;
             else if (target.slowTime > 0) hitDamage += 5;
-            target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 60);
+            target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 75);
           }
           damage(target, hitDamage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
@@ -8048,10 +8048,10 @@ function updateBalls(dt) {
               owner: ball.owner,
               x: ball.x,
               y: ball.y,
-              radius: 64,
+              radius: 96,
               color: "#93c5fd",
-              life: 180,
-              maxLife: 180
+              life: 360,
+              maxLife: 360
             });
             ball.hitCooldown = 30;
             break;
@@ -10013,7 +10013,7 @@ function drawFighterName(fighter) {
 
 function fireStraightBullet(owner, options = {}) {
   const target = nearestEnemyTarget(owner);
-  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x) + (options.angleOffset || 0);
   const speed = options.speed || 14;
   game.balls.push({
     owner,
@@ -10054,25 +10054,40 @@ function castReloadShot(owner) {
 }
 
 function fireIcicle(owner, blizzard = false) {
+  if (!blizzard) {
+    [-0.14, 0, 0.14].forEach(angleOffset => {
+      fireStraightBullet(owner, {
+        damage: 5,
+        speed: 24.8,
+        radius: 9,
+        life: 160,
+        color: "#bfdbfe",
+        freezeBullet: true,
+        angleOffset
+      });
+    });
+    return;
+  }
+  const direction = fighterDirection(owner);
   fireStraightBullet(owner, {
-    damage: blizzard ? 15 : 5,
-    speed: blizzard ? 5.4 : 24.8,
-    radius: blizzard ? 15 : 9,
-    life: blizzard ? 360 : 160,
-    color: blizzard ? "#93c5fd" : "#bfdbfe",
+    damage: 15,
+    speed: 5.4,
+    radius: 22.5,
+    life: 360,
+    color: "#93c5fd",
     freezeBullet: true,
-    blizzardCore: blizzard
+    blizzardCore: true
   });
   if (blizzard) {
     addVisualEffect({
       type: "ice-field",
       owner,
-      x: owner.x + owner.facingX * (owner.radius + 28),
-      y: owner.y + owner.facingY * (owner.radius + 28),
-      radius: 78,
+      x: owner.x + direction.x * (owner.radius + 28),
+      y: owner.y + direction.y * (owner.radius + 28),
+      radius: 117,
       color: "#93c5fd",
-      life: 180,
-      maxLife: 180
+      life: 360,
+      maxLife: 360
     });
   }
 }
@@ -10080,6 +10095,7 @@ function fireIcicle(owner, blizzard = false) {
 function castSnowAngel(owner) {
   const target = opponentOf(owner);
   if (target.slowTime > 0) {
+    damage(target, 5, owner);
     target.stunTime = Math.max(target.stunTime, 180);
     target.frozenTime = Math.max(target.frozenTime || 0, 180);
     addVisualEffect({

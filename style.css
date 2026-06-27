@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: dark;
   --bg: #111319;
   --panel: #1c2029;
@@ -694,20 +694,6 @@ body:not(.is-authenticated) .notice-actions {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.title-card.is-equipped::after {
-  content: "장착";
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  padding: 3px 8px;
-  color: #081018;
-  background: linear-gradient(180deg, #ffe69b, #f2c14e);
-  border-radius: 999px;
-  box-shadow: 0 0 16px rgba(242, 193, 78, 0.5);
-  font-size: 0.62rem;
-  font-weight: 1000;
-}
-
 .title-card.can-claim {
   opacity: 1;
   filter: none;
@@ -891,6 +877,21 @@ body:not(.is-authenticated) .notice-actions {
   text-shadow: 0 0 16px rgba(168, 85, 247, 0.62), 0 0 24px rgba(34, 211, 238, 0.2) !important;
 }
 
+.equipped-title.title-beta,
+.mailbox-item strong.title-beta,
+.title-card strong.title-beta {
+  color: #b7d8ff !important;
+  background: linear-gradient(90deg, #93c5fd, #d8b4fe, #67e8f9);
+  background-size: 180% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow:
+    0 0 10px rgba(147, 197, 253, 0.42),
+    0 0 18px rgba(168, 85, 247, 0.24) !important;
+  animation: beta-title-shine 3.4s ease-in-out infinite;
+}
+
 .equipped-title.title-basic {
   color: #dbeafe !important;
   text-shadow: 0 0 8px rgba(203, 213, 225, 0.32) !important;
@@ -982,9 +983,18 @@ body:not(.is-authenticated) .notice-actions {
     inset 0 0 14px rgba(255, 255, 255, 0.05);
 }
 
-.title-card.is-equipped::after {
-  content: "장착중";
+.title-card.is-owned.title-beta {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.18), transparent 30%),
+    radial-gradient(circle at 84% 66%, rgba(168, 85, 247, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(12, 20, 36, 0.98), rgba(5, 10, 18, 0.98));
+  border-color: rgba(147, 197, 253, 0.46);
+  box-shadow:
+    0 0 18px rgba(147, 197, 253, 0.18),
+    0 0 34px rgba(168, 85, 247, 0.08),
+    inset 0 0 12px rgba(255, 255, 255, 0.035);
 }
+
 
 .title-equip-button {
   position: relative;
@@ -1069,6 +1079,21 @@ body:not(.is-authenticated) .notice-actions {
   50% {
     background-position: 100% 50%;
     filter: brightness(1.32);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+}
+
+@keyframes beta-title-shine {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.18);
   }
   100% {
     background-position: 0% 50%;
@@ -6289,4 +6314,8 @@ h2 {
     height: 76px;
   }
 
+}
+
+.title-card.is-equipped::after {
+  content: "장착중";
 }
