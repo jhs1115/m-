@@ -57,6 +57,8 @@ const ui = {
   mailboxEmpty: document.getElementById("mailboxEmpty"),
   mailboxList: document.getElementById("mailboxList"),
   mailboxAlertBadge: document.getElementById("mailboxAlertBadge"),
+  mailboxCodeInput: document.getElementById("mailboxCodeInput"),
+  mailboxCodeButton: document.getElementById("mailboxCodeButton"),
   claimMailboxRewardButton: document.getElementById("claimMailboxRewardButton"),
   mailboxMessage: document.getElementById("mailboxMessage"),
   openSignupButton: document.getElementById("openSignupButton"),
@@ -270,7 +272,8 @@ const titleCatalog = {
   all_collect: { name: "올컬렉트", condition: "모든 캐릭터 보유", tier: "collect", check: user => gachaPool.every(kind => user.ownedCharacters?.includes(kind)) },
   million_left: { name: "내왼손에는 백만원", condition: "코인 1000C 이상 보유", tier: "gold", check: user => user.coins >= 1000 },
   million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "grand-gold", check: user => user.coins >= 10000 },
-  god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 }
+  god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 },
+  developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false }
 };
 
 const characters = {
@@ -2634,6 +2637,40 @@ async function claimTitleReward(titleKey) {
   } catch (error) {
     ui.mailboxMessage.textContent = `수령 실패: ${error.message}`;
     updateMailboxUi();
+  }
+}
+
+async function redeemMailboxCode() {
+  if (!currentUser || !appSessionToken || !ui.mailboxCodeInput) return;
+  const code = ui.mailboxCodeInput.value.trim();
+  if (!code) {
+    ui.mailboxMessage.textContent = "코드를 입력하세요.";
+    return;
+  }
+  ui.mailboxCodeButton.disabled = true;
+  ui.mailboxMessage.textContent = "코드 확인 중...";
+  try {
+    const data = await rpc("redeem_mailbox_code", {
+      session_token: appSessionToken,
+      reward_code: code
+    });
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    ui.mailboxCodeInput.value = "";
+    renderLobby();
+    updateMailboxUi();
+    if (data.title) {
+      ui.mailboxMessage.textContent = `${titleDisplayName(data.title)} 칭호를 받았습니다.`;
+    } else {
+      ui.mailboxMessage.textContent = `${data.coins ?? 100}C를 받았습니다.`;
+    }
+  } catch (error) {
+    const message = String(error.message || "");
+    ui.mailboxMessage.textContent = message.includes("already used code")
+      ? "이미 사용한 코드입니다."
+      : `코드 실패: ${message}`;
+  } finally {
+    ui.mailboxCodeButton.disabled = false;
   }
 }
 
@@ -14123,6 +14160,10 @@ ui.mailboxList?.addEventListener("click", event => {
   button.disabled = true;
   if (button.dataset.mailType === "title") claimTitleReward(button.dataset.titleKey);
   else claimMailboxReward();
+});
+ui.mailboxCodeButton?.addEventListener("click", redeemMailboxCode);
+ui.mailboxCodeInput?.addEventListener("keydown", event => {
+  if (event.key === "Enter") redeemMailboxCode();
 });
 ui.inventoryTabButtons?.forEach(button => {
   button.addEventListener("click", () => {

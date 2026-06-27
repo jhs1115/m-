@@ -13,6 +13,7 @@ create table if not exists public.app_users (
   pve_hard_cleared boolean not null default false,
   owned_titles text[] not null default array[]::text[],
   equipped_title text,
+  redeemed_codes text[] not null default array[]::text[],
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
@@ -37,6 +38,9 @@ add column if not exists owned_titles text[] not null default array[]::text[];
 
 alter table public.app_users
 add column if not exists equipped_title text;
+
+alter table public.app_users
+add column if not exists redeemed_codes text[] not null default array[]::text[];
 
 alter table public.app_users
 alter column coins set default 0;
@@ -1298,6 +1302,64 @@ $$;
 
 grant execute on function public.claim_title_reward(text, text) to anon, authenticated;
 grant execute on function public.equip_title(text, text) to anon, authenticated;
+
+create or replace function public.redeem_mailbox_code(session_token text, reward_code text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := lower(trim(coalesce(reward_code, '')));
+  title_key text;
+  coin_reward integer := 0;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if normalized_code not in ('wjdgmltjr1115', 'noob_coin') then
+    raise exception 'invalid code';
+  end if;
+
+  select * into active_user
+  from public.app_users
+  where id = active_user.id
+  for update;
+
+  if normalized_code = any(active_user.redeemed_codes) then
+    raise exception 'already used code';
+  end if;
+
+  if normalized_code = 'wjdgmltjr1115' then
+    title_key := 'developer';
+    update public.app_users
+    set owned_titles = case when title_key = any(owned_titles) then owned_titles else array_append(owned_titles, title_key) end,
+        equipped_title = coalesce(equipped_title, title_key),
+        redeemed_codes = array_append(redeemed_codes, normalized_code)
+    where id = active_user.id
+    returning * into active_user;
+  else
+    coin_reward := 100;
+    update public.app_users
+    set coins = coins + coin_reward,
+        redeemed_codes = array_append(redeemed_codes, normalized_code)
+    where id = active_user.id
+    returning * into active_user;
+  end if;
+
+  return jsonb_build_object(
+    'title', title_key,
+    'coins', coin_reward,
+    'user', public.app_user_json(active_user)
+  );
+end;
+$$;
+
+grant execute on function public.redeem_mailbox_code(text, text) to anon, authenticated;
 
 create or replace function public.begin_pve_run(session_token text, stage_code text)
 returns jsonb

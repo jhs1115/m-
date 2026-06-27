@@ -493,6 +493,27 @@ body:not(.is-authenticated) .notice-actions {
   text-shadow: 0 0 22px rgba(242, 193, 78, 0.18);
 }
 
+.mailbox-code-row {
+  position: absolute;
+  top: 14px;
+  right: 74px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mailbox-code-row .text-input {
+  width: 170px;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.82rem;
+}
+
+.mailbox-code-row .ghost-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
 .mailbox-modal .patch-note-close {
   color: #f7f4eb;
   background: rgba(5, 8, 14, 0.62);
@@ -719,6 +740,9 @@ body:not(.is-authenticated) .notice-actions {
   font-size: 0.74rem;
   line-height: 1.2;
   letter-spacing: 0.02em;
+  width: fit-content;
+  max-width: 100%;
+  text-shadow: 0 0 10px currentColor;
 }
 
 .rank-name .equipped-title,
@@ -747,6 +771,27 @@ body:not(.is-authenticated) .notice-actions {
   font-size: 0.76rem;
 }
 
+.equipped-title.title-basic,
+.equipped-title.title-expert,
+.equipped-title.title-pro,
+.equipped-title.title-gold,
+.equipped-title.title-collect,
+.equipped-title.title-grand-gold,
+.equipped-title.title-challenger,
+.equipped-title.title-god-pve,
+.equipped-title.title-developer,
+.ranking-row .equipped-title,
+.podium-player .equipped-title,
+.hud-card .equipped-title,
+.result-player-identity .equipped-title,
+.survival-hud .equipped-title,
+.status-message .equipped-title,
+.player-label .equipped-title,
+.select-match-names .equipped-title,
+.ban-side .equipped-title {
+  font-weight: 1000;
+}
+
 .title-basic {
   color: #cbd5e1;
 }
@@ -759,6 +804,18 @@ body:not(.is-authenticated) .notice-actions {
 .title-pro {
   color: #c4b5fd;
   text-shadow: 0 0 14px rgba(168, 85, 247, 0.54), 0 0 22px rgba(34, 211, 238, 0.18);
+}
+
+.title-developer {
+  color: #d8b4fe;
+  background: linear-gradient(90deg, #a78bfa, #67e8f9, #f0abfc, #c4b5fd);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0 0 12px rgba(167, 139, 250, 0.58),
+    0 0 24px rgba(34, 211, 238, 0.28);
+  animation: developer-title-shine 2.4s linear infinite;
 }
 
 .title-gold,
@@ -805,8 +862,38 @@ body:not(.is-authenticated) .notice-actions {
 
 .title-challenger,
 .title-god-pve,
-.title-grand-gold {
+.title-grand-gold,
+.title-developer {
   -webkit-text-fill-color: transparent;
+}
+
+.equipped-title.title-challenger,
+.equipped-title.title-god-pve,
+.equipped-title.title-grand-gold,
+.equipped-title.title-developer {
+  display: inline-block;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.equipped-title.title-gold,
+.equipped-title.title-collect {
+  color: #facc15 !important;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.56), 0 0 24px rgba(245, 158, 11, 0.22) !important;
+}
+
+.equipped-title.title-expert {
+  color: #7dd3fc !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.52) !important;
+}
+
+.equipped-title.title-pro {
+  color: #c4b5fd !important;
+  text-shadow: 0 0 16px rgba(168, 85, 247, 0.62), 0 0 24px rgba(34, 211, 238, 0.2) !important;
+}
+
+.equipped-title.title-basic {
+  color: #dbeafe !important;
+  text-shadow: 0 0 8px rgba(203, 213, 225, 0.32) !important;
 }
 
 .mailbox-item strong.title-basic,
@@ -815,6 +902,8 @@ body:not(.is-authenticated) .notice-actions {
 .title-card strong.title-expert { color: #7dd3fc; }
 .mailbox-item strong.title-pro,
 .title-card strong.title-pro { color: #c4b5fd; }
+.mailbox-item strong.title-developer,
+.title-card strong.title-developer { color: #c4b5fd; }
 .mailbox-item strong.title-gold,
 .mailbox-item strong.title-collect,
 .mailbox-item strong.title-grand-gold,
@@ -824,9 +913,11 @@ body:not(.is-authenticated) .notice-actions {
 .mailbox-item strong.title-challenger,
 .mailbox-item strong.title-god-pve,
 .mailbox-item strong.title-grand-gold,
+.mailbox-item strong.title-developer,
 .title-card strong.title-challenger,
 .title-card strong.title-god-pve,
-.title-card strong.title-grand-gold {
+.title-card strong.title-grand-gold,
+.title-card strong.title-developer {
   color: transparent;
 }
 
@@ -879,6 +970,18 @@ body:not(.is-authenticated) .notice-actions {
   animation: title-card-gleam 2.5s ease-in-out infinite;
 }
 
+.title-card.is-owned.title-developer {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(167, 139, 250, 0.24), transparent 30%),
+    radial-gradient(circle at 84% 66%, rgba(34, 211, 238, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(21, 16, 38, 0.98), rgba(5, 10, 18, 0.98));
+  border-color: rgba(167, 139, 250, 0.58);
+  box-shadow:
+    0 0 24px rgba(167, 139, 250, 0.28),
+    0 0 50px rgba(34, 211, 238, 0.12),
+    inset 0 0 14px rgba(255, 255, 255, 0.05);
+}
+
 @keyframes title-shine {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.45); }
@@ -911,6 +1014,21 @@ body:not(.is-authenticated) .notice-actions {
   100% {
     background-position: 0% 50%;
     filter: brightness(1.05);
+  }
+}
+
+@keyframes developer-title-shine {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.32);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
   }
 }
 
