@@ -548,7 +548,7 @@ const characterGuide = {
   },
   artist: {
     attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 60.5%입니다."],
-    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 30의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
+    normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 25의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
     ultimate: ["내면의 평화", "20초", "현재 궤도 안에 있는 모든 캐릭터의 체력을 30 회복시킵니다. 이후 현재 그려진 궤도가 삭제됩니다."]
   },
   believer: {
@@ -754,7 +754,7 @@ const codexRatings = {
   artist: { difficulty: 2, damage: 2, mobility: 1 },
   believer: { difficulty: 1, damage: 1, mobility: 1 },
   archmage: { difficulty: 3, damage: 3, mobility: 1 },
-  gunner: { difficulty: 2, damage: 3, mobility: 2 },
+  gunner: { difficulty: 3, damage: 2, mobility: 3 },
   freezer: { difficulty: 2, damage: 2, mobility: 1 },
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
@@ -4151,7 +4151,7 @@ function combatRandomIndex(owner, salt, length, index = 0) {
 }
 
 function randomVelocity(speed) {
-  const angle = seededRandom() * Math.PI * 2;
+  const angle = deterministicRandom(`${pveGame?.seed || currentRoom?.code || "local"}|random-velocity|${pveGame?.tick || game?.tick || 0}`) * Math.PI * 2;
   return {
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed
@@ -4216,8 +4216,9 @@ function ultimateCooldown(kind) {
 
 function characterMaxHp(kind) {
   return {
+    gunner: 175,
     swordsman: 125,
-    archmage: 140,
+    archmage: 150,
     believer: 175,
     brawler: 200,
     charger: 250,
@@ -4409,7 +4410,7 @@ function resetGame() {
   ].join("|"));
 
   const stealthMirror = selections.p1 === "stealth" && selections.p2 === "stealth";
-  const easterWinnerIndex = stealthMirror && seededRandom() < 0.5 ? 0 : 1;
+  const easterWinnerIndex = stealthMirror && deterministicRandom(`${currentRoom?.code || "local"}|stealth-mirror-winner`) < 0.5 ? 0 : 1;
   game = {
     fighters: [
       makeFighter(selections.p1, "PLAYER 1", p1.id, 120, canvas.height / 2),
@@ -4618,7 +4619,7 @@ function fighterDirection(fighter) {
   if (Number.isFinite(fighter.facingX) && Number.isFinite(fighter.facingY)) {
     return { x: fighter.facingX, y: fighter.facingY };
   }
-  const seed = hashSeed(`${currentRoom?.code || "local"}|${fighter.ownerId}|${game?.tick || 0}`);
+  const seed = hashSeed(`${currentRoom?.code || "local"}|${fighter.ownerId}|${fighter.kind}|fallback-direction`);
   const angle = (seed / 4294967296) * Math.PI * 2;
   return { x: Math.cos(angle), y: Math.sin(angle) };
 }
@@ -7234,7 +7235,7 @@ function useDrawing(owner) {
       wasInsideTrail = insideTrail;
     }
     if (overlapGroups > 0) {
-      damageCombatTarget(target, 30, owner);
+      damageCombatTarget(target, 25, owner);
       hits += 1;
     }
   });
@@ -7951,12 +7952,13 @@ function updateBalls(dt) {
       if (game.tick % 6 === 0) {
         addVisualEffect({
           type: "ice-field",
+          owner: ball.owner,
           x: ball.x,
           y: ball.y,
           radius: 42,
           color: "#93c5fd",
-          life: 72,
-          maxLife: 72
+          life: 180,
+          maxLife: 180
         });
       }
       game.fighters.forEach(target => {
@@ -7992,12 +7994,13 @@ function updateBalls(dt) {
         summonTarget.slowTime = Math.max(summonTarget.slowTime || 0, 90);
         addVisualEffect({
           type: "ice-field",
+          owner: ball.owner,
           x: ball.x,
           y: ball.y,
           radius: 58,
           color: "#93c5fd",
-          life: 84,
-          maxLife: 84
+          life: 180,
+          maxLife: 180
         });
         ball.hitCooldown = 24;
         return true;
@@ -8041,12 +8044,13 @@ function updateBalls(dt) {
           if (ball.blizzardCore) {
             addVisualEffect({
               type: "ice-field",
+              owner: ball.owner,
               x: ball.x,
               y: ball.y,
               radius: 64,
               color: "#93c5fd",
-              life: 96,
-              maxLife: 96
+              life: 180,
+              maxLife: 180
             });
             ball.hitCooldown = 30;
             break;
@@ -8268,6 +8272,13 @@ function updateDamageTexts(dt) {
 function updateVisualEffects(dt) {
   game.visualEffects = game.visualEffects.filter(effect => {
     if (effect.type === "clock-sweep") resolveClockSweepHits(effect);
+    if (effect.type === "ice-field" && effect.owner) {
+      game.fighters.forEach(target => {
+        if (target !== effect.owner && Math.hypot(target.x - effect.x, target.y - effect.y) < target.radius + (effect.radius || 42)) {
+          target.slowTime = Math.max(target.slowTime, 30);
+        }
+      });
+    }
     effect.life -= dt;
     return effect.life > 0;
   });
@@ -10044,7 +10055,7 @@ function castReloadShot(owner) {
 function fireIcicle(owner, blizzard = false) {
   fireStraightBullet(owner, {
     damage: blizzard ? 15 : 5,
-    speed: blizzard ? 5.4 : 12.4,
+    speed: blizzard ? 5.4 : 24.8,
     radius: blizzard ? 15 : 9,
     life: blizzard ? 360 : 160,
     color: blizzard ? "#93c5fd" : "#bfdbfe",
@@ -10054,12 +10065,13 @@ function fireIcicle(owner, blizzard = false) {
   if (blizzard) {
     addVisualEffect({
       type: "ice-field",
+      owner,
       x: owner.x + owner.facingX * (owner.radius + 28),
       y: owner.y + owner.facingY * (owner.radius + 28),
       radius: 78,
       color: "#93c5fd",
-      life: 84,
-      maxLife: 84
+      life: 180,
+      maxLife: 180
     });
   }
 }
@@ -10706,7 +10718,7 @@ function loop(now) {
   }
   let steps = 0;
   while (game.tick < targetTick && steps < 60) {
-    stepGame(gameSpeed);
+    stepGame(1);
     steps += 1;
   }
 
