@@ -760,13 +760,6 @@ const codexRatings = {
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
 };
 
-const codexChangeNotes = {
-  poker: "변경점: 포커 핸드 배율과 드로우 카드 피해가 낮아져 한 번에 터지는 폭딜이 줄었습니다. K 강화도 1.4배로 조정되었습니다.",
-  archmage: "변경점: 벼락이 자동 일반공격이 아니라 직접 누르는 전용 스킬로 변경되었습니다. 대마법사는 전투 중 벼락, 작열, 창해 3개의 스킬 버튼을 사용합니다.",
-  gunner: "신규 추가: 빠른 권총 사격과 2.5초 기관총 난사, 짧은 전진 이동기 리로드를 사용하는 원거리 캐릭터입니다.",
-  freezer: "신규 추가: 슬로우와 스턴 연계에 특화된 얼음 캐릭터입니다. 고드름은 슬로우 또는 스턴 상태의 적에게 추가 피해를 줍니다."
-};
-
 const enemyCodexRatings = {
   melee: { difficulty: 1, damage: 1, mobility: 2 },
   thrower: { difficulty: 2, damage: 2, mobility: 1 },
@@ -1052,6 +1045,22 @@ function configureCodexPreviewScene(previewGame, kind, skillIndex) {
     dummy.x = w * 0.58;
     caster.y = dummy.y = h * 0.55;
   }
+  if (kind === "freezer") {
+    caster.x = w * 0.34;
+    dummy.x = w * 0.66;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
+    if (skillIndex === 1) dummy.slowTime = 140;
+    if (skillIndex === 2) dummy.hp = dummy.maxHp;
+  }
+  if (kind === "gunner") {
+    caster.x = w * 0.34;
+    dummy.x = w * 0.66;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
+  }
   if (kind === "believer") caster.hp = caster.maxHp * 0.45;
   if (kind === "demon") dummy.demonMarkCount = skillIndex === 0 ? 0 : 1;
   if (kind === "enhancer") caster.attackPower = 0;
@@ -1210,7 +1219,11 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
       addCodexPreviewEvent(previewGame, 15, () => fireIcicle(caster, false));
       addCodexPreviewEvent(previewGame, 95, () => triggerNormalSkill(caster));
     } else {
-      addCodexPreviewEvent(previewGame, 30, () => triggerUltimate(caster));
+      addCodexPreviewEvent(previewGame, 18, () => triggerUltimate(caster));
+      addCodexPreviewEvent(previewGame, 170, () => {
+        dummy.slowTime = 120;
+        castSnowAngel(caster);
+      });
     }
     return;
   }
@@ -3115,7 +3128,6 @@ function renderCodexDetail(kind) {
       <em id="codexFocusCooldown">${skillTypes[0][1][1]}</em>
       <p id="codexFocusDescription">${skillTypes[0][1][2]}</p>
     </section>
-      ${codexChangeNotes[kind] ? `<section class="codex-change-note"><strong>변경점</strong><p>${codexChangeNotes[kind]}</p></section>` : ""}
       ${renderCodexGaugeStats(ratings)}
     </section>
   `;
@@ -4253,6 +4265,7 @@ function makeCharacterCombatState(kind) {
     unstoppableTime: 0,
     unstoppableHit: false,
     stunTime: 0,
+    frozenTime: 0,
     slowTime: 0,
     hasteTime: 0,
     phaseTime: 0,
@@ -6334,6 +6347,7 @@ function moveFighter(fighter, dt) {
   fighter.timeHistory.push({ x: fighter.x, y: fighter.y, hp: fighter.hp });
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
   if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
+  if (fighter.frozenTime > 0) fighter.frozenTime -= dt;
   if (fighter.demonMarkTime > 0) {
     fighter.demonMarkTime -= dt;
     if (fighter.demonMarkTime <= 0) {
@@ -7936,13 +7950,13 @@ function updateBalls(dt) {
     if (ball.blizzardCore) {
       if (game.tick % 6 === 0) {
         addVisualEffect({
-          type: "skill-pulse",
+          type: "ice-field",
           x: ball.x,
           y: ball.y,
           radius: 42,
           color: "#93c5fd",
-          life: 28,
-          maxLife: 28
+          life: 72,
+          maxLife: 72
         });
       }
       game.fighters.forEach(target => {
@@ -8546,6 +8560,14 @@ function drawVisualEffect(effect) {
   }
   if (effect.type === "skill-pulse" || effect.type === "replay-charge") {
     drawExpandingBurst(effect, 34, effect.type === "replay-charge" ? 94 : 72, 4);
+    return;
+  }
+  if (effect.type === "ice-field") {
+    drawIceField(effect);
+    return;
+  }
+  if (effect.type === "ice-prison-burst") {
+    drawIcePrisonBurst(effect);
     return;
   }
   if (effect.type === "time-skip") {
@@ -9325,6 +9347,109 @@ function drawStealthBurst(effect) {
   ctx.restore();
 }
 
+function drawIceField(effect) {
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = (effect.radius || 42) * (0.72 + progress * 0.55);
+  const alpha = 1 - progress;
+  ctx.save();
+  ctx.translate(effect.x, effect.y);
+  ctx.globalCompositeOperation = "lighter";
+  const gradient = ctx.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius);
+  gradient.addColorStop(0, "rgba(255,255,255,0.34)");
+  gradient.addColorStop(0.35, "rgba(125,211,252,0.22)");
+  gradient.addColorStop(1, "rgba(14,165,233,0)");
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#bfdbfe";
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 2;
+  for (let ray = 0; ray < 6; ray += 1) {
+    const angle = ray * Math.PI / 3 + game.tick * 0.012;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * radius * 0.18, Math.sin(angle) * radius * 0.18);
+    ctx.lineTo(Math.cos(angle) * radius * 0.92, Math.sin(angle) * radius * 0.92);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawIcePrisonBurst(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const alpha = 1 - progress;
+  ctx.save();
+  ctx.translate(fighter.x, fighter.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = "#e0f2fe";
+  ctx.fillStyle = "rgba(125, 211, 252, 0.18)";
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 28;
+  ctx.lineWidth = 4;
+  const height = fighter.radius * (2.35 + progress * 0.28);
+  const width = fighter.radius * (1.75 + progress * 0.2);
+  ctx.beginPath();
+  ctx.moveTo(0, -height / 2);
+  ctx.lineTo(width / 2, -height * 0.18);
+  ctx.lineTo(width * 0.38, height * 0.42);
+  ctx.lineTo(0, height / 2);
+  ctx.lineTo(-width * 0.38, height * 0.42);
+  ctx.lineTo(-width / 2, -height * 0.18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "#ffffff";
+  ctx.globalAlpha = alpha * 0.72;
+  for (let shard = 0; shard < 5; shard += 1) {
+    const angle = -Math.PI / 2 + shard * Math.PI / 4;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * width * 0.12, Math.sin(angle) * height * 0.14);
+    ctx.lineTo(Math.cos(angle) * width * 0.6, Math.sin(angle) * height * 0.52);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFrozenPrison(fighter) {
+  const pulse = 1 + Math.sin(game.tick * 0.12) * 0.035;
+  ctx.save();
+  ctx.translate(fighter.x, fighter.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = clamp(fighter.frozenTime / 28, 0.32, 0.92);
+  ctx.fillStyle = "rgba(186, 230, 253, 0.2)";
+  ctx.strokeStyle = "#dff8ff";
+  ctx.shadowColor = "#7dd3fc";
+  ctx.shadowBlur = 24;
+  ctx.lineWidth = 3;
+  const width = fighter.radius * 1.8 * pulse;
+  const height = fighter.radius * 2.38 * pulse;
+  ctx.beginPath();
+  ctx.moveTo(0, -height / 2);
+  ctx.lineTo(width / 2, -height * 0.16);
+  ctx.lineTo(width * 0.4, height * 0.38);
+  ctx.lineTo(0, height / 2);
+  ctx.lineTo(-width * 0.4, height * 0.38);
+  ctx.lineTo(-width / 2, -height * 0.16);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.86)";
+  ctx.lineWidth = 1.5;
+  for (let shard = 0; shard < 6; shard += 1) {
+    const x = -width * 0.33 + shard * width * 0.13;
+    ctx.beginPath();
+    ctx.moveTo(x, -height * 0.35);
+    ctx.lineTo(x + Math.sin(game.tick * 0.04 + shard) * 9, height * 0.34);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawFighter(fighter) {
   if (fighter.phaseTime > 0 && fighter.kind === "swordsman") return;
   ctx.save();
@@ -9512,6 +9637,7 @@ function drawFighter(fighter) {
     ctx.restore();
   });
   ctx.restore();
+  if (fighter.frozenTime > 0) drawFrozenPrison(fighter);
   if ((fighter.demonMarkCount || 0) > 0) drawDemonMark(fighter);
   drawMageElementOrbs(fighter);
   drawFighterName(fighter);
@@ -9903,12 +10029,13 @@ function castSnowAngel(owner) {
   const target = opponentOf(owner);
   if (target.slowTime > 0) {
     target.stunTime = Math.max(target.stunTime, 180);
+    target.frozenTime = Math.max(target.frozenTime || 0, 180);
     addVisualEffect({
-      type: "skill-pulse",
+      type: "ice-prison-burst",
       fighter: target,
       color: "#bfdbfe",
-      life: 42,
-      maxLife: 42
+      life: 72,
+      maxLife: 72
     });
   }
   owner.skillTimer = 720;
@@ -9930,7 +10057,117 @@ function drawFighterHealthBar(fighter) {
   ctx.strokeRect(x, y, width, height);
 }
 
+function drawGunProjectile(ball) {
+  const angle = Math.atan2(ball.vy, ball.vx);
+  const speed = Math.hypot(ball.vx, ball.vy) || 1;
+  ctx.save();
+  ctx.translate(ball.x, ball.y);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowColor = ball.color || "#f8fafc";
+  ctx.shadowBlur = 18;
+  const trail = ctx.createLinearGradient(-42, 0, 10, 0);
+  trail.addColorStop(0, "rgba(249,115,22,0)");
+  trail.addColorStop(0.45, "rgba(249,115,22,0.36)");
+  trail.addColorStop(1, "rgba(255,255,255,0.9)");
+  ctx.strokeStyle = trail;
+  ctx.lineWidth = ball.radius * 1.1;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-Math.min(52, speed * 2.8), 0);
+  ctx.lineTo(7, 0);
+  ctx.stroke();
+  const body = ctx.createLinearGradient(-8, 0, 16, 0);
+  body.addColorStop(0, "#92400e");
+  body.addColorStop(0.45, "#f97316");
+  body.addColorStop(1, "#fff7ed");
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.roundRect(-8, -ball.radius * 0.55, 24, ball.radius * 1.1, ball.radius * 0.45);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(16, 0);
+  ctx.lineTo(4, -ball.radius * 0.75);
+  ctx.lineTo(4, ball.radius * 0.75);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawIceProjectile(ball) {
+  const angle = Math.atan2(ball.vy, ball.vx);
+  const isCore = ball.blizzardCore;
+  ctx.save();
+  ctx.translate(ball.x, ball.y);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowColor = isCore ? "#bae6fd" : "#7dd3fc";
+  ctx.shadowBlur = isCore ? 38 : 22;
+  const trail = ctx.createLinearGradient(-76, 0, 18, 0);
+  trail.addColorStop(0, "rgba(14,165,233,0)");
+  trail.addColorStop(0.34, isCore ? "rgba(99,102,241,0.22)" : "rgba(125,211,252,0.18)");
+  trail.addColorStop(0.75, "rgba(186,230,253,0.55)");
+  trail.addColorStop(1, "rgba(255,255,255,0.95)");
+  ctx.strokeStyle = trail;
+  ctx.lineCap = "round";
+  ctx.lineWidth = isCore ? 18 : 8;
+  ctx.beginPath();
+  ctx.moveTo(isCore ? -92 : -52, 0);
+  ctx.lineTo(8, 0);
+  ctx.stroke();
+  if (isCore) {
+    for (let ring = 0; ring < 3; ring += 1) {
+      ctx.save();
+      ctx.rotate(game.tick * 0.035 + ring * Math.PI / 3);
+      ctx.strokeStyle = ring === 1 ? "#ffffff" : "#7dd3fc";
+      ctx.globalAlpha = 0.78 - ring * 0.14;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, ball.radius * (1.25 + ring * 0.34), ball.radius * (0.42 + ring * 0.08), 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  const length = isCore ? 42 : 28;
+  const half = isCore ? 17 : 9;
+  const crystal = ctx.createLinearGradient(-length * 0.35, -half, length, half);
+  crystal.addColorStop(0, "#0f172a");
+  crystal.addColorStop(0.18, "#38bdf8");
+  crystal.addColorStop(0.55, "#e0f2fe");
+  crystal.addColorStop(1, "#ffffff");
+  ctx.fillStyle = crystal;
+  ctx.strokeStyle = "#e0f2fe";
+  ctx.lineWidth = isCore ? 3 : 2;
+  ctx.beginPath();
+  ctx.moveTo(length, 0);
+  ctx.lineTo(8, -half);
+  ctx.lineTo(-length * 0.55, -half * 0.55);
+  ctx.lineTo(-length * 0.75, 0);
+  ctx.lineTo(-length * 0.55, half * 0.55);
+  ctx.lineTo(8, half);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.beginPath();
+  ctx.moveTo(length * 0.65, 0);
+  ctx.lineTo(4, -half * 0.35);
+  ctx.lineTo(4, half * 0.35);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawBall(ball) {
+  if (ball.gunBullet) {
+    drawGunProjectile(ball);
+    return;
+  }
+  if (ball.freezeBullet) {
+    drawIceProjectile(ball);
+    return;
+  }
   drawCheapTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, ball.color, ball.star ? 0.78 : 0.46);
   if (ball.summonArrow) {
     ctx.save();
