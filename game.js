@@ -47,11 +47,16 @@ const ui = {
   patchNoteButton: document.getElementById("patchNoteButton"),
   patchNoteModal: document.getElementById("patchNoteModal"),
   patchNoteCloseButton: document.getElementById("patchNoteCloseButton"),
+  patchVersionTitle: document.getElementById("patchVersionTitle"),
+  patchVersionContent: document.getElementById("patchVersionContent"),
+  patchVersionButtons: document.querySelectorAll("[data-patch-version]"),
   mailboxButton: document.getElementById("mailboxButton"),
   mailboxModal: document.getElementById("mailboxModal"),
   mailboxCloseButton: document.getElementById("mailboxCloseButton"),
   mailboxRewardItem: document.getElementById("mailboxRewardItem"),
   mailboxEmpty: document.getElementById("mailboxEmpty"),
+  mailboxList: document.getElementById("mailboxList"),
+  mailboxAlertBadge: document.getElementById("mailboxAlertBadge"),
   claimMailboxRewardButton: document.getElementById("claimMailboxRewardButton"),
   mailboxMessage: document.getElementById("mailboxMessage"),
   openSignupButton: document.getElementById("openSignupButton"),
@@ -84,6 +89,8 @@ const ui = {
   matchOverlayText: document.getElementById("matchOverlayText"),
   playerList: document.getElementById("playerList"),
   inventoryGrid: document.getElementById("inventoryGrid"),
+  titleInventoryGrid: document.getElementById("titleInventoryGrid"),
+  inventoryTabButtons: document.querySelectorAll("[data-inventory-tab]"),
   codexCharacterList: document.getElementById("codexCharacterList"),
   codexArchiveLabel: document.getElementById("codexArchiveLabel"),
   codexTypeButtons: document.querySelectorAll("[data-codex-type]"),
@@ -184,9 +191,12 @@ const ui = {
   selectTitle: document.getElementById("selectTitle"),
   selectP1Label: document.getElementById("selectP1Label"),
   selectP2Label: document.getElementById("selectP2Label"),
+  selectMatchNames: document.getElementById("selectMatchNames"),
   banPickStatus: document.getElementById("banPickStatus"),
   p1BanList: document.getElementById("p1BanList"),
   p2BanList: document.getElementById("p2BanList"),
+  p1BanHeader: document.getElementById("p1BanHeader"),
+  p2BanHeader: document.getElementById("p2BanHeader"),
   banTurnText: document.getElementById("banTurnText"),
   toBetButton: document.getElementById("toBetButton"),
   timerLeftBar: document.getElementById("timerLeftBar"),
@@ -227,6 +237,43 @@ const ui = {
   resultHealing: document.getElementById("resultHealing"),
   resultHealth: document.getElementById("resultHealth"),
   resultTime: document.getElementById("resultTime")
+};
+
+const patchNoticeVersions = {
+  "v1.0": {
+    title: "V1.0 업데이트",
+    items: [
+      "신규 캐릭터 - 우주의 힘쓰는 색히",
+      "스킬 리메이크 - 그림그리는 색히, 대마법쓰는 색히, 맨몸격투하는 색히",
+      "랭크전 밴 타이머 수정",
+      "도감 UI 대폭 변경 - 상세 설명 추가, 스킬마다 미리보기 가능"
+    ]
+  },
+  "v0.9": {
+    title: "V0.9",
+    items: ["이전 공지 내용은 준비 중입니다."]
+  },
+  "v0.8": {
+    title: "V0.8",
+    items: ["이전 공지 내용은 준비 중입니다."]
+  },
+  "v0.7": {
+    title: "V0.7",
+    items: ["이전 공지 내용은 준비 중입니다."]
+  }
+};
+
+const titleCatalog = {
+  m_beginner: { name: "m짱 초보자", condition: "랭크/일반게임 누적 5회 플레이", tier: "basic", check: user => user.pvpPlayCount >= 5 },
+  m_skilled: { name: "m짱 숙련자", condition: "랭크/일반게임 누적 20회 플레이", tier: "basic", check: user => user.pvpPlayCount >= 20 },
+  m_expert: { name: "m짱 고수", condition: "랭크/일반게임 누적 50회 플레이", tier: "expert", check: user => user.pvpPlayCount >= 50 },
+  m_progamer: { name: "m짱 프로게이머", condition: "랭크/일반게임 누적 100회 플레이", tier: "pro", check: user => user.pvpPlayCount >= 100 },
+  pve_progamer: { name: "PVE 프로게이머", condition: "PVE 모드 하드모드 클리어", tier: "pro", check: user => Boolean(user.pveHardCleared) },
+  challenger: { name: "challenger", condition: "챌린저 티어 달성", tier: "challenger", check: user => user.lp >= 2700 && user.rankPosition === 1 },
+  all_collect: { name: "올컬렉트", condition: "모든 캐릭터 보유", tier: "collect", check: user => gachaPool.every(kind => user.ownedCharacters?.includes(kind)) },
+  million_left: { name: "내왼손에는 백만원", condition: "코인 1000C 이상 보유", tier: "gold", check: user => user.coins >= 1000 },
+  million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "gold", check: user => user.coins >= 10000 },
+  god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 }
 };
 
 const characters = {
@@ -503,7 +550,7 @@ const characterGuide = {
   },
   cosmic: {
     attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
-    normal: ["초신성", "10초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 12개를 소모합니다."],
+    normal: ["초신성", "14초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 15개를 소모합니다."],
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3의 피해를 주고 초당 별가루 8개를 소모합니다."]
   }
 };
@@ -600,6 +647,7 @@ let appSessionToken = localStorage.getItem(APP_SESSION_KEY) || "";
 let currentRoom = null;
 let players = [];
 let mailboxJustClaimed = false;
+let activeInventoryTab = "characters";
 let matchPlayers = {
   p1: "",
   p2: ""
@@ -1065,14 +1113,13 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     addCodexPreviewEvent(previewGame, 75, () => triggerUltimate(caster));
     return;
   }
+  if (kind === "swordsman" && skillIndex === 0) {
+    addCodexPreviewEvent(previewGame, 10, () => useSwordBasic(caster));
+    addCodexPreviewEvent(previewGame, 160, () => useSwordBasic(caster));
+    return;
+  }
   if (kind === "swordsman" && skillIndex === 1) {
     addCodexPreviewEvent(previewGame, 5, () => triggerNormalSkill(caster));
-    addCodexPreviewEvent(previewGame, 155, () => {
-      caster.swordDanceTime = 0;
-      caster.swordDanceHits = 0;
-      useSwordBasic(caster);
-    });
-    addCodexPreviewEvent(previewGame, 305, () => useSwordBasic(caster));
     return;
   }
   if (kind === "demon") {
@@ -2240,6 +2287,12 @@ function normalizePlayer(user) {
     lp: user.lp ?? 1000,
     pveDamageTotal: Number(user.pveDamageTotal ?? user.pve_damage_total ?? 0),
     noticeRewardClaimed: Boolean(user.noticeRewardClaimed ?? user.notice_reward_claimed),
+    pvpPlayCount: Number(user.pvpPlayCount ?? user.pvp_play_count ?? 0),
+    pveHardCleared: Boolean(user.pveHardCleared ?? user.pve_hard_cleared),
+    ownedTitles: [...new Set(user.ownedTitles || user.owned_titles || [])],
+    equippedTitle: user.equippedTitle ?? user.equipped_title ?? "",
+    rankPosition: Number(user.rankPosition ?? user.rank_position ?? 0) || null,
+    pveRankPosition: Number(user.pveRankPosition ?? user.pve_rank_position ?? 0) || null,
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
 }
@@ -2439,7 +2492,23 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
+function renderPatchNotice(version = "v1.0") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["v1.0"];
+  if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
+
+  ui.patchVersionTitle.textContent = notice.title;
+  ui.patchVersionContent.innerHTML = `
+    <ul>
+      ${notice.items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+    </ul>
+  `;
+  ui.patchVersionButtons?.forEach(button => {
+    button.classList.toggle("is-active", button.dataset.patchVersion === version);
+  });
+}
+
 function setPatchNotesOpen(open) {
+  if (open) renderPatchNotice("v1.0");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -2451,20 +2520,82 @@ function setMailboxOpen(open) {
   else mailboxJustClaimed = false;
 }
 
+function titleDisplayName(key) {
+  return titleCatalog[key]?.name || key || "";
+}
+
+function titleTierClass(key) {
+  return `title-${titleCatalog[key]?.tier || "basic"}`;
+}
+
+function equippedTitleMarkup(player) {
+  const key = player?.equippedTitle;
+  if (!key || !titleCatalog[key]) return "";
+  return `<small class="equipped-title ${titleTierClass(key)}">${escapeHtml(titleDisplayName(key))}</small>`;
+}
+
+function claimableTitleKeys(user = currentUser) {
+  if (!user) return [];
+  const owned = new Set(user.ownedTitles || []);
+  return Object.entries(titleCatalog)
+    .filter(([key, title]) => !owned.has(key) && title.check(user))
+    .map(([key]) => key);
+}
+
+function hasMailboxRewards(user = currentUser) {
+  if (!user) return false;
+  return !user.noticeRewardClaimed || claimableTitleKeys(user).length > 0;
+}
+
+function updateMailboxBadge() {
+  ui.mailboxAlertBadge?.classList.toggle("is-hidden", !hasMailboxRewards());
+}
+
 function updateMailboxUi() {
-  if (!ui.claimMailboxRewardButton || !currentUser) return;
-  const claimed = Boolean(currentUser.noticeRewardClaimed);
-  const showReward = !claimed || mailboxJustClaimed;
-  ui.mailboxRewardItem?.classList.toggle("is-hidden", !showReward);
-  ui.mailboxEmpty?.classList.toggle("is-hidden", showReward);
-  ui.claimMailboxRewardButton.disabled = claimed;
-  ui.claimMailboxRewardButton.textContent = claimed ? "수령 완료" : "받기";
+  if (!ui.mailboxList || !currentUser) return;
+  const rewards = [];
+  if (!currentUser.noticeRewardClaimed) {
+    rewards.push({
+      type: "coin",
+      title: "업데이트 보상",
+      message: "업데이트 기념 지원 코인입니다.",
+      reward: "100C"
+    });
+  }
+  claimableTitleKeys().forEach(key => {
+    rewards.push({
+      type: "title",
+      titleKey: key,
+      title: titleDisplayName(key),
+      message: titleCatalog[key].condition,
+      reward: "칭호"
+    });
+  });
+
+  ui.mailboxList.innerHTML = rewards.length
+    ? rewards.map(reward => {
+      const titleClass = reward.type === "title" ? ` ${titleTierClass(reward.titleKey)}` : "";
+      const buttonAttrs = reward.type === "title"
+        ? `data-mail-type="title" data-title-key="${escapeHtml(reward.titleKey)}"`
+        : `data-mail-type="coin"`;
+      return `
+        <article class="mailbox-item">
+          <div>
+            <strong class="${titleClass.trim()}">${escapeHtml(reward.title)}</strong>
+            <small>${escapeHtml(reward.message)}</small>
+            <span>${escapeHtml(reward.reward)}</span>
+          </div>
+          <button class="primary-button" type="button" ${buttonAttrs}>받기</button>
+        </article>
+      `;
+    }).join("")
+    : `<p class="mailbox-empty">우편이 없습니다.</p>`;
+  updateMailboxBadge();
   if (ui.mailboxMessage && !mailboxJustClaimed) ui.mailboxMessage.textContent = "";
 }
 
 async function claimMailboxReward() {
-  if (!currentUser || !appSessionToken || !ui.claimMailboxRewardButton) return;
-  ui.claimMailboxRewardButton.disabled = true;
+  if (!currentUser || !appSessionToken) return;
   ui.mailboxMessage.textContent = "수령 중...";
   try {
     const data = await rpc("claim_notice_mail_reward", { session_token: appSessionToken });
@@ -2474,6 +2605,26 @@ async function claimMailboxReward() {
     mailboxJustClaimed = true;
     updateMailboxUi();
     ui.mailboxMessage.textContent = "100C를 받았습니다.";
+  } catch (error) {
+    ui.mailboxMessage.textContent = `수령 실패: ${error.message}`;
+    updateMailboxUi();
+  }
+}
+
+async function claimTitleReward(titleKey) {
+  if (!currentUser || !appSessionToken || !titleKey) return;
+  ui.mailboxMessage.textContent = "칭호 수령 중...";
+  try {
+    const data = await rpc("claim_title_reward", {
+      session_token: appSessionToken,
+      title_key: titleKey
+    });
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    mailboxJustClaimed = true;
+    renderLobby();
+    updateMailboxUi();
+    ui.mailboxMessage.textContent = `${titleDisplayName(titleKey)} 칭호를 받았습니다.`;
   } catch (error) {
     ui.mailboxMessage.textContent = `수령 실패: ${error.message}`;
     updateMailboxUi();
@@ -2694,6 +2845,17 @@ function characterInitial(kind) {
 
 function renderInventory() {
   if (!ui.inventoryGrid || !currentUser) return;
+  ui.inventoryTabButtons?.forEach(button => {
+    button.classList.toggle("is-active", button.dataset.inventoryTab === activeInventoryTab);
+  });
+  ui.inventoryGrid.classList.toggle("is-hidden", activeInventoryTab !== "characters");
+  ui.titleInventoryGrid?.classList.toggle("is-hidden", activeInventoryTab !== "titles");
+
+  if (activeInventoryTab === "titles") {
+    renderTitleInventory();
+    return;
+  }
+
   const owned = currentUser.ownedCharacters || [];
   ui.inventoryGrid.innerHTML = "";
 
@@ -2713,6 +2875,44 @@ function renderInventory() {
     `;
     ui.inventoryGrid.appendChild(card);
   });
+}
+
+function renderTitleInventory() {
+  if (!ui.titleInventoryGrid || !currentUser) return;
+  const ownedTitles = new Set(currentUser.ownedTitles || []);
+  const equipped = currentUser.equippedTitle || "";
+  ui.titleInventoryGrid.innerHTML = Object.entries(titleCatalog).map(([key, title]) => {
+    const owned = ownedTitles.has(key);
+    const canClaim = !owned && title.check(currentUser);
+    const isEquipped = equipped === key;
+    const action = owned
+      ? `<button class="ghost-button title-equip-button" type="button" data-equip-title="${escapeHtml(key)}" ${isEquipped ? "disabled" : ""}>${isEquipped ? "장착중" : "장착"}</button>`
+      : `<span class="title-lock-state">${canClaim ? "우편함에서 수령 가능" : "미획득"}</span>`;
+    return `
+      <article class="title-card ${owned ? "is-owned" : "is-locked"} ${titleTierClass(key)}">
+        <div>
+          <strong class="equipped-title ${titleTierClass(key)}">${escapeHtml(title.name)}</strong>
+          <span>${escapeHtml(title.condition)}</span>
+        </div>
+        ${action}
+      </article>
+    `;
+  }).join("");
+}
+
+async function equipTitle(titleKey) {
+  if (!currentUser || !appSessionToken) return;
+  try {
+    const data = await rpc("equip_title", {
+      session_token: appSessionToken,
+      title_key: titleKey
+    });
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    renderLobby();
+  } catch (error) {
+    if (ui.mailboxMessage) ui.mailboxMessage.textContent = `칭호 장착 실패: ${error.message}`;
+  }
 }
 
 function renderCodex(selectedKind = null) {
@@ -3619,9 +3819,17 @@ function renderBanPickStatus() {
   const bans = banListsFromPrep(prep);
   const turnSlot = currentBanSlot(prep);
   const mySlot = myMatchSlot();
+  const p1 = getPlayer(matchPlayers.p1);
+  const p2 = getPlayer(matchPlayers.p2);
   if (ui.selectTitle) ui.selectTitle.textContent = banPhase ? "캐릭터 밴" : "캐릭터 선택";
   ui.banPickStatus?.classList.toggle("is-hidden", Boolean(prep.casual));
   screens.select?.classList.toggle("is-ban-phase", banPhase);
+  if (ui.p1BanHeader && p1) {
+    ui.p1BanHeader.innerHTML = `PLAYER 1 BAN <b>${escapeHtml(p1.name)}</b>${equippedTitleMarkup(p1)}`;
+  }
+  if (ui.p2BanHeader && p2) {
+    ui.p2BanHeader.innerHTML = `PLAYER 2 BAN <b>${escapeHtml(p2.name)}</b>${equippedTitleMarkup(p2)}`;
+  }
   const renderList = (target, list) => {
     if (!target) return;
     target.innerHTML = [0, 1].map(index => {
@@ -3665,8 +3873,17 @@ function prepareCharacterSelect() {
     });
     return false;
   }
-  ui.selectP1Label.textContent = `PLAYER 1 - ${p1.name}`;
-  ui.selectP2Label.textContent = `PLAYER 2 - ${p2.name}`;
+  const p1Name = `PLAYER 1 - ${escapeHtml(p1.name)}${equippedTitleMarkup(p1)}`;
+  const p2Name = `PLAYER 2 - ${escapeHtml(p2.name)}${equippedTitleMarkup(p2)}`;
+  ui.selectP1Label.innerHTML = p1Name;
+  ui.selectP2Label.innerHTML = p2Name;
+  if (ui.selectMatchNames) {
+    ui.selectMatchNames.innerHTML = `
+      <div>${p1Name}</div>
+      <span>VS</span>
+      <div>${p2Name}</div>
+    `;
+  }
   document.querySelectorAll(".select-panel").forEach(panel => {
     const label = panel.querySelector(".player-label");
     const isMine = label?.id === (mySlot === "p1" ? "selectP1Label" : "selectP2Label");
@@ -3846,7 +4063,7 @@ function normalSkillCooldown(kind) {
     believer: 1200,
     archmage: 660,
     gambler: 480,
-    cosmic: 600
+    cosmic: 840
   }[kind] ?? Infinity;
 }
 
@@ -5812,7 +6029,7 @@ function skillAvailable(fighter, type) {
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
-    if (fighter.kind === "cosmic" && fighter.cosmicDust < 12) return false;
+    if (fighter.kind === "cosmic" && fighter.cosmicDust < 15) return false;
     return true;
   }
   if (fighter.kind === "wild") return false;
@@ -5915,7 +6132,7 @@ function updateSkillHud() {
   ui.normalSkillButton.removeAttribute("data-cost");
   ui.ultimateSkillButton.removeAttribute("data-cost");
   if (fighter.kind === "cosmic") {
-    ui.normalSkillButton.setAttribute("data-cost", "별가루 12");
+    ui.normalSkillButton.setAttribute("data-cost", "별가루 15");
     ui.ultimateSkillButton.setAttribute("data-cost", "초당 8");
     ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
     ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "종료" : "";
@@ -6868,8 +7085,8 @@ function spawnCosmicDust(owner) {
 }
 
 function castSupernova(owner) {
-  if (owner.cosmicDust < 12) return;
-  owner.cosmicDust -= 12;
+  if (owner.cosmicDust < 15) return;
+  owner.cosmicDust -= 15;
   const radius = 250;
   game.areaAttacks.push({
     type: "supernova",
@@ -13796,7 +14013,8 @@ async function finishSurvivalPve(cleared = false) {
         run_id: pveGame.runId,
         client_seconds: elapsedSeconds,
         bonus_coins: Math.floor(pveGame.bonusCoins + baseReward * (rewardMultiplier - 1)),
-        damage_dealt: Math.floor(player.damageDealt || 0)
+        damage_dealt: Math.floor(player.damageDealt || 0),
+        difficulty: pveGame.difficultyId || "normal"
       });
     } catch {
       data = await rpc("complete_pve_run", {
@@ -13881,6 +14099,9 @@ ui.accountCancelButton.addEventListener("click", () => setAccountModalOpen(false
 ui.accountSaveButton.addEventListener("click", saveAccountChanges);
 ui.patchNoteButton.addEventListener("click", () => setPatchNotesOpen(true));
 ui.patchNoteCloseButton.addEventListener("click", () => setPatchNotesOpen(false));
+ui.patchVersionButtons?.forEach(button => {
+  button.addEventListener("click", () => renderPatchNotice(button.dataset.patchVersion));
+});
 ui.patchNoteModal.addEventListener("click", event => {
   if (event.target === ui.patchNoteModal) setPatchNotesOpen(false);
 });
@@ -13889,7 +14110,24 @@ ui.mailboxCloseButton?.addEventListener("click", () => setMailboxOpen(false));
 ui.mailboxModal?.addEventListener("click", event => {
   if (event.target === ui.mailboxModal) setMailboxOpen(false);
 });
-ui.claimMailboxRewardButton?.addEventListener("click", claimMailboxReward);
+ui.mailboxList?.addEventListener("click", event => {
+  const button = event.target.closest("button[data-mail-type]");
+  if (!button) return;
+  button.disabled = true;
+  if (button.dataset.mailType === "title") claimTitleReward(button.dataset.titleKey);
+  else claimMailboxReward();
+});
+ui.inventoryTabButtons?.forEach(button => {
+  button.addEventListener("click", () => {
+    activeInventoryTab = button.dataset.inventoryTab || "characters";
+    renderInventory();
+  });
+});
+ui.titleInventoryGrid?.addEventListener("click", event => {
+  const button = event.target.closest("[data-equip-title]");
+  if (!button) return;
+  equipTitle(button.dataset.equipTitle);
+});
 ui.signupButton.addEventListener("click", () => authenticate("signup"));
 ui.openSignupButton.addEventListener("click", () => showScreen("signup"));
 ui.backToLoginButton.addEventListener("click", () => showScreen("auth"));

@@ -10,7 +10,7 @@
   <main class="app">
     <div class="notice-actions">
       <button id="patchNoteButton" class="patch-note-button" type="button"><span aria-hidden="true">📣</span> 공지사항</button>
-      <button id="mailboxButton" class="mailbox-button" type="button"><span aria-hidden="true">✉</span> 우편함</button>
+      <button id="mailboxButton" class="mailbox-button" type="button"><span aria-hidden="true">✉</span> 우편함<i id="mailboxAlertBadge" class="mailbox-alert-badge is-hidden">!</i></button>
     </div>
     <div id="coinBadge" class="coin-badge">COIN <strong><span id="globalCoinAmount">0</span>C</strong></div>
     <div id="patchNoteModal" class="patch-note-modal" aria-hidden="true">
@@ -19,15 +19,26 @@
         <div class="patch-note-heading">
           <h2>공지사항</h2>
         </div>
-        <div class="patch-note-list">
-          <article class="patch-note-entry">
-            <strong>M짱 V1.0 패치노트</strong>
-            <ul>
-              <li>신규 캐릭터 - 우주의 힘쓰는 색히</li>
-              <li>스킬 리메이크 - 그림그리는 색히, 맨몸격투하는 색히</li>
-              <li>랭크전 밴 타이머 수정</li>
-            </ul>
-          </article>
+        <div class="patch-note-layout">
+          <aside class="patch-version-panel" aria-label="버전 선택">
+            <strong>버전 선택</strong>
+            <button class="patch-version-button is-active" type="button" data-patch-version="v1.0">V1.0</button>
+            <button class="patch-version-button" type="button" data-patch-version="v0.9">V0.9</button>
+            <button class="patch-version-button" type="button" data-patch-version="v0.8">V0.8</button>
+            <button class="patch-version-button" type="button" data-patch-version="v0.7">V0.7</button>
+            <span class="patch-version-more">...</span>
+          </aside>
+          <section class="patch-content-panel">
+            <h3 id="patchVersionTitle">V1.0 업데이트</h3>
+            <div id="patchVersionContent" class="patch-version-content">
+              <ul>
+                <li>신규 캐릭터 - 우주의 힘쓰는 색히</li>
+                <li>스킬 리메이크 - 그림그리는 색히, 대마법쓰는 색히, 맨몸격투하는 색히</li>
+                <li>랭크전 밴 타이머 수정</li>
+                <li>도감 UI 대폭 변경 - 상세 설명 추가, 스킬마다 미리보기 가능</li>
+              </ul>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -157,7 +168,12 @@
         <div class="lobby-tab-panel" data-lobby-panel="inventory">
           <div class="panel inventory-panel">
             <h2>인벤토리</h2>
+            <div class="inventory-tabs" role="tablist" aria-label="인벤토리 종류">
+              <button class="inventory-tab-button is-active" type="button" data-inventory-tab="characters">캐릭터</button>
+              <button class="inventory-tab-button" type="button" data-inventory-tab="titles">칭호</button>
+            </div>
             <div id="inventoryGrid" class="inventory-grid"></div>
+            <div id="titleInventoryGrid" class="title-inventory-grid is-hidden"></div>
           </div>
         </div>
 
@@ -540,14 +556,16 @@
         <strong><span id="selectTimerText">30</span>초</strong>
       </div>
 
+      <div id="selectMatchNames" class="select-match-names"></div>
+
       <div id="banPickStatus" class="ban-pick-status is-hidden">
         <div class="ban-side left">
-          <span>PLAYER 1 BAN</span>
+          <span id="p1BanHeader">PLAYER 1 BAN</span>
           <div id="p1BanList" class="ban-list"></div>
         </div>
         <strong id="banTurnText">밴할 캐릭터를 선택하세요</strong>
         <div class="ban-side right">
-          <span>PLAYER 2 BAN</span>
+          <span id="p2BanHeader">PLAYER 2 BAN</span>
           <div id="p2BanList" class="ban-list"></div>
         </div>
       </div>

@@ -9,6 +9,10 @@ create table if not exists public.app_users (
   lp integer not null default 1000 check (lp >= 0),
   pve_damage_total numeric not null default 0 check (pve_damage_total >= 0),
   notice_reward_claimed boolean not null default false,
+  pvp_play_count integer not null default 0 check (pvp_play_count >= 0),
+  pve_hard_cleared boolean not null default false,
+  owned_titles text[] not null default array[]::text[],
+  equipped_title text,
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
@@ -21,6 +25,18 @@ add column if not exists pve_damage_total numeric not null default 0 check (pve_
 
 alter table public.app_users
 add column if not exists notice_reward_claimed boolean not null default false;
+
+alter table public.app_users
+add column if not exists pvp_play_count integer not null default 0 check (pvp_play_count >= 0);
+
+alter table public.app_users
+add column if not exists pve_hard_cleared boolean not null default false;
+
+alter table public.app_users
+add column if not exists owned_titles text[] not null default array[]::text[];
+
+alter table public.app_users
+add column if not exists equipped_title text;
 
 alter table public.app_users
 alter column coins set default 0;
@@ -145,6 +161,26 @@ as $$
     'lp', target_user.lp,
     'pveDamageTotal', target_user.pve_damage_total,
     'noticeRewardClaimed', target_user.notice_reward_claimed,
+    'pvpPlayCount', target_user.pvp_play_count,
+    'pveHardCleared', target_user.pve_hard_cleared,
+    'ownedTitles', target_user.owned_titles,
+    'equippedTitle', target_user.equipped_title,
+    'rankPosition', (
+      select ranked.rank_position
+      from (
+        select id, row_number() over (order by lp desc, username asc) as rank_position
+        from public.app_users
+      ) ranked
+      where ranked.id = target_user.id
+    ),
+    'pveRankPosition', (
+      select ranked.rank_position
+      from (
+        select id, row_number() over (order by pve_damage_total desc, username asc) as rank_position
+        from public.app_users
+      ) ranked
+      where ranked.id = target_user.id
+    ),
     'ownedCharacters', target_user.owned_characters
   );
 $$;
@@ -551,9 +587,8 @@ begin
     min_index := 1;
     max_index := array_length(tiers, 1);
   else
-    tier_index := array_position(tiers, active_tier);
-    min_index := greatest(1, tier_index - floor(elapsed_seconds / 30)::int);
-    max_index := least(array_length(tiers, 1), tier_index + floor(elapsed_seconds / 30)::int);
+    min_index := 1;
+    max_index := array_length(tiers, 1);
   end if;
 
   select u.* into opponent
@@ -1149,6 +1184,121 @@ $$;
 
 grant execute on function public.claim_notice_mail_reward(text) to anon, authenticated;
 
+create or replace function public.claim_title_reward(session_token text, title_key text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_key text := trim(title_key);
+  eligible boolean := false;
+  rank_position integer;
+  pve_rank_position integer;
+  all_characters text[] := array[
+    'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer', 'tank', 'beamer',
+    'wild', 'vampire', 'brawler', 'timekeeper', 'riftmaker', 'summoner', 'swordsman',
+    'demon', 'artist', 'believer', 'archmage', 'gambler', 'cosmic'
+  ];
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select * into active_user
+  from public.app_users
+  where id = active_user.id
+  for update;
+
+  if normalized_key = any(active_user.owned_titles) then
+    raise exception 'title already claimed';
+  end if;
+
+  select ranked.rank_position into rank_position
+  from (
+    select id, row_number() over (order by lp desc, username asc) as rank_position
+    from public.app_users
+  ) ranked
+  where ranked.id = active_user.id;
+
+  select ranked.rank_position into pve_rank_position
+  from (
+    select id, row_number() over (order by pve_damage_total desc, username asc) as rank_position
+    from public.app_users
+  ) ranked
+  where ranked.id = active_user.id;
+
+  eligible := case normalized_key
+    when 'm_beginner' then active_user.pvp_play_count >= 5
+    when 'm_skilled' then active_user.pvp_play_count >= 20
+    when 'm_expert' then active_user.pvp_play_count >= 50
+    when 'm_progamer' then active_user.pvp_play_count >= 100
+    when 'pve_progamer' then active_user.pve_hard_cleared
+    when 'challenger' then active_user.lp >= 2700 and rank_position = 1
+    when 'all_collect' then all_characters <@ active_user.owned_characters
+    when 'million_left' then active_user.coins >= 1000
+    when 'million_right' then active_user.coins >= 10000
+    when 'god_pve' then active_user.pve_damage_total > 0 and pve_rank_position = 1
+    else false
+  end;
+
+  if not eligible then
+    raise exception 'title condition not met';
+  end if;
+
+  update public.app_users
+  set owned_titles = array_append(owned_titles, normalized_key),
+      equipped_title = coalesce(equipped_title, normalized_key)
+  where id = active_user.id
+  returning * into active_user;
+
+  return jsonb_build_object(
+    'title', normalized_key,
+    'user', public.app_user_json(active_user)
+  );
+end;
+$$;
+
+create or replace function public.equip_title(session_token text, title_key text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_key text := nullif(trim(coalesce(title_key, '')), '');
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select * into active_user
+  from public.app_users
+  where id = active_user.id
+  for update;
+
+  if normalized_key is not null and not normalized_key = any(active_user.owned_titles) then
+    raise exception 'title not owned';
+  end if;
+
+  update public.app_users
+  set equipped_title = normalized_key
+  where id = active_user.id
+  returning * into active_user;
+
+  return jsonb_build_object('user', public.app_user_json(active_user));
+end;
+$$;
+
+grant execute on function public.claim_title_reward(text, text) to anon, authenticated;
+grant execute on function public.equip_title(text, text) to anon, authenticated;
+
 create or replace function public.begin_pve_run(session_token text, stage_code text)
 returns jsonb
 language plpgsql
@@ -1198,13 +1348,15 @@ end;
 $$;
 
 drop function if exists public.complete_survival_run(text, uuid, integer, integer);
+drop function if exists public.complete_survival_run(text, uuid, integer, integer, numeric);
 
 create or replace function public.complete_survival_run(
   session_token text,
   run_id uuid,
   client_seconds integer default 0,
   bonus_coins integer default 0,
-  damage_dealt numeric default 0
+  damage_dealt numeric default 0,
+  difficulty text default 'normal'
 )
 returns jsonb
 language plpgsql
@@ -1263,7 +1415,9 @@ begin
 
   update public.app_users
   set coins = coins + survival_reward,
-      pve_damage_total = pve_damage_total + safe_damage
+      pve_damage_total = pve_damage_total + safe_damage,
+      pve_hard_cleared = pve_hard_cleared
+        or (coalesce(difficulty, '') = 'hard' and elapsed_seconds >= 900)
   where id = active_user.id
   returning * into updated_user;
 
@@ -1635,9 +1789,15 @@ begin
 
   if casual_match then
     update public.app_users
-    set coins = coins + 10
+    set coins = coins + 10,
+        pvp_play_count = pvp_play_count + 1
     where id = winner_id
     returning * into winner_user;
+
+    update public.app_users
+    set pvp_play_count = pvp_play_count + 1
+    where id = loser_id
+    returning * into loser_user;
 
     update public.app_rooms
     set prep_state = room_state || jsonb_build_object(
@@ -1720,12 +1880,14 @@ begin
 
   update public.app_users
   set lp = lp + lp_gain,
-      coins = coins + promotion_reward
+      coins = coins + promotion_reward,
+      pvp_play_count = pvp_play_count + 1
   where id = winner_id
   returning * into winner_user;
 
   update public.app_users
-  set lp = greatest(0, lp - lp_loss)
+  set lp = greatest(0, lp - lp_loss),
+      pvp_play_count = pvp_play_count + 1
   where id = loser_id
   returning * into loser_user;
 
@@ -1773,7 +1935,7 @@ grant execute on function public.get_room(text, text) to anon, authenticated;
 grant execute on function public.draw_gacha(text) to anon, authenticated;
 grant execute on function public.begin_pve_run(text, text) to anon, authenticated;
 grant execute on function public.get_pve_progress(text) to anon, authenticated;
-grant execute on function public.complete_survival_run(text, uuid, integer, integer, numeric) to anon, authenticated;
+grant execute on function public.complete_survival_run(text, uuid, integer, integer, numeric, text) to anon, authenticated;
 grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;
 grant execute on function public.get_rankings(text) to anon, authenticated;
 grant execute on function public.get_pve_rankings(text) to anon, authenticated;
