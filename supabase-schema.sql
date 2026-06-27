@@ -1321,7 +1321,7 @@ begin
     raise exception 'login required';
   end if;
 
-  if normalized_code not in ('wjdgmltjr1115', 'noob_coin') then
+  if normalized_code not in ('wjdgmltjr1115', 'beta_sex', 'noob_coin') then
     raise exception 'invalid code';
   end if;
 
@@ -1334,8 +1334,11 @@ begin
     raise exception 'already used code';
   end if;
 
-  if normalized_code = 'wjdgmltjr1115' then
-    title_key := 'developer';
+  if normalized_code in ('wjdgmltjr1115', 'beta_sex') then
+    title_key := case
+      when normalized_code = 'wjdgmltjr1115' then 'developer'
+      else 'beta_tester'
+    end;
     update public.app_users
     set owned_titles = case when title_key = any(owned_titles) then owned_titles else array_append(owned_titles, title_key) end,
         equipped_title = coalesce(equipped_title, title_key),

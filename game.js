@@ -277,6 +277,7 @@ const titleCatalog = {
   million_left: { name: "내왼손에는 백만원", condition: "코인 1000C 이상 보유", tier: "gold", check: user => user.coins >= 1000 },
   million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "grand-gold", check: user => user.coins >= 10000 },
   god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 },
+  beta_tester: { name: "베타테스터", condition: "베타 코드 입력", tier: "beta", check: () => false },
   developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false }
 };
 
@@ -5508,7 +5509,7 @@ function applyMageElement(owner, target, element) {
   }
   target.mageElements = {
     ...elements,
-    [element]: 300
+    [element]: 180
   };
   target.mageLastElement = element;
   addFloatingText(target.x, target.y - target.radius - 36, mageElementLabels[element], mageElementColors[element]);

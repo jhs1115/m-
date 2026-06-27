@@ -982,6 +982,50 @@ body:not(.is-authenticated) .notice-actions {
     inset 0 0 14px rgba(255, 255, 255, 0.05);
 }
 
+.title-card.is-equipped::after {
+  content: "장착중";
+}
+
+.title-equip-button {
+  position: relative;
+  z-index: 2;
+  min-width: 76px;
+  flex: 0 0 auto;
+  color: #f8fafc !important;
+  background: rgba(30, 41, 59, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.34) !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: none !important;
+}
+
+.title-card.title-developer {
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+}
+
+.title-card.title-developer strong.title-developer,
+.mailbox-item strong.title-developer,
+.equipped-title.title-developer {
+  color: #d8b4fe;
+  background: linear-gradient(90deg, #a78bfa, #67e8f9, #f0abfc, #c4b5fd);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow:
+    0 0 12px rgba(167, 139, 250, 0.58),
+    0 0 24px rgba(34, 211, 238, 0.28);
+  animation: developer-title-shine 2.4s linear infinite;
+}
+
+.title-card.title-developer .title-equip-button {
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96)) !important;
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.16);
+}
+
 @keyframes title-shine {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.45); }
