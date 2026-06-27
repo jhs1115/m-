@@ -7987,7 +7987,21 @@ function updateBalls(dt) {
       if (ball.blood || ball.riftShot || ball.summonArrow || ball.rouletteShot || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
       }
-      if (ball.gunBullet || ball.freezeBullet) return false;
+      if (ball.gunBullet || (ball.freezeBullet && !ball.blizzardCore)) return false;
+      if (ball.blizzardCore) {
+        summonTarget.slowTime = Math.max(summonTarget.slowTime || 0, 90);
+        addVisualEffect({
+          type: "ice-field",
+          x: ball.x,
+          y: ball.y,
+          radius: 58,
+          color: "#93c5fd",
+          life: 84,
+          maxLife: 84
+        });
+        ball.hitCooldown = 24;
+        return true;
+      }
       const angle = Math.atan2(summonTarget.y - ball.y, summonTarget.x - ball.x);
       const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
       ball.vx = -Math.cos(angle) * speed;
@@ -8023,7 +8037,20 @@ function updateBalls(dt) {
           }
           damage(target, hitDamage, ball.owner);
           if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || ball.riftShot || ball.rouletteShot || ball.gunBullet || ball.freezeBullet || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.blood || ball.riftShot || ball.rouletteShot || ball.gunBullet || (ball.freezeBullet && !ball.blizzardCore) || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.blizzardCore) {
+            addVisualEffect({
+              type: "ice-field",
+              x: ball.x,
+              y: ball.y,
+              radius: 64,
+              color: "#93c5fd",
+              life: 96,
+              maxLife: 96
+            });
+            ball.hitCooldown = 30;
+            break;
+          }
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -8434,12 +8461,13 @@ function drawArena() {
   drawRifts();
   drawArtOrbs();
   drawCosmicDusts();
-  game.balls.forEach(drawBall);
+  game.balls.filter(ball => !ball.blizzardCore).forEach(drawBall);
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
   game.fighters
     .filter((fighter, index) => !game.easterEgg?.revealed || index === game.easterEgg.winnerIndex)
     .forEach(drawFighter);
+  game.balls.filter(ball => ball.blizzardCore).forEach(drawBall);
   game.summons.forEach(drawSummon);
   game.visualEffects.filter(effect => effect.type === "assassinate-slash").forEach(drawVisualEffect);
   game.damageTexts.forEach(drawDamageText);
@@ -10023,6 +10051,17 @@ function fireIcicle(owner, blizzard = false) {
     freezeBullet: true,
     blizzardCore: blizzard
   });
+  if (blizzard) {
+    addVisualEffect({
+      type: "ice-field",
+      x: owner.x + owner.facingX * (owner.radius + 28),
+      y: owner.y + owner.facingY * (owner.radius + 28),
+      radius: 78,
+      color: "#93c5fd",
+      life: 84,
+      maxLife: 84
+    });
+  }
 }
 
 function castSnowAngel(owner) {
