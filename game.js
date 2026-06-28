@@ -247,6 +247,17 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.2": {
+    title: "beta v1.2 업데이트",
+    items: [
+      "신규 캐릭터 - 총쏘는 색히, 얼리는 색히, 폭발하는 색히, 로프타는 색히",
+      "1 VS 1 VS 1 모드 추가 - 세 명이 동시에 싸우는 일반 매치가 추가되었습니다.",
+      "숙련도 시스템 추가 - 캐릭터 플레이로 숙련도를 올리고 전용 칭호를 획득할 수 있습니다.",
+      "픽창 개선 - 캐릭터 목록을 스크롤 방식으로 바꾸고 신규 캐릭터를 선택할 수 있게 했습니다.",
+      "폭발하는 색히와 로프타는 색히 전투 연출 및 판정을 조정했습니다.",
+      "3인전 HUD는 자신의 체력만 보이도록 정리했습니다."
+    ]
+  },
   "beta-v1.1": {
     title: "beta v1.1 업데이트",
     items: [
@@ -283,7 +294,7 @@ const masteryTitleNames = {
   riftmaker: "균열 생성기",
   summoner: "일어나라.",
   swordsman: "절공 검무(絕空 劍舞)",
-  demon: "내면의 악마",
+  demon: "AKUMA",
   artist: "예술가의 혼",
   believer: "아멘",
   archmage: "속성의 대가",
@@ -322,6 +333,41 @@ const masteryCharacterNames = {
   bomberman: "폭발하는 색히",
   roper: "로프타는 색히"
 };
+
+const masteryTitleColors = {
+  thrower: ["#38f7ff", "#7bd88f"],
+  charger: ["#ff3b6b", "#ffd166"],
+  grabber: ["#a78bfa", "#f7fbff"],
+  poker: ["#f7f4eb", "#fb7185"],
+  stealth: ["#8b5cf6", "#22d3ee"],
+  enhancer: ["#f59e0b", "#fde68a"],
+  tank: ["#cbd5e1", "#64748b"],
+  beamer: ["#67e8f9", "#ffffff"],
+  wild: ["#a3e635", "#22c55e"],
+  vampire: ["#e11d48", "#fda4af"],
+  brawler: ["#fb923c", "#fef3c7"],
+  timekeeper: ["#60a5fa", "#c4b5fd"],
+  riftmaker: ["#7c3aed", "#22d3ee"],
+  summoner: ["#84cc16", "#facc15"],
+  swordsman: ["#e0f2fe", "#fca5a5"],
+  demon: ["#1d4ed8", "#7f1d1d"],
+  artist: ["#f9a8d4", "#38bdf8"],
+  believer: ["#fde68a", "#fb7185"],
+  archmage: ["#facc15", "#38bdf8"],
+  gunner: ["#d6a25f", "#94a3b8"],
+  freezer: ["#bae6fd", "#38bdf8"],
+  gambler: ["#f97316", "#ec4899"],
+  cosmic: ["#111827", "#93c5fd"],
+  bomberman: ["#f97316", "#facc15"],
+  roper: ["#d6a25f", "#fef3c7"]
+};
+
+const forbiddenNamePatterns = [
+  "애미", "느금", "니애", "니엄", "엄창", "패드립",
+  "보지", "자지", "섹스", "sex", "sexo", "porn", "야동", "강간",
+  "씨발", "시발", "ㅅㅂ", "ㅆㅂ", "병신", "븅신", "ㅂㅅ", "좆", "존나", "ㅈㄴ",
+  "개새", "개색", "새끼", "색기", "닥쳐", "꺼져", "죽어", "엿먹", "fuck", "shit", "bitch"
+];
 
 const titleCatalog = {
   m_beginner: { name: "m짱 초보자", condition: "랭크/일반게임 누적 5회 플레이", tier: "basic", check: user => user.pvpPlayCount >= 5 },
@@ -2495,6 +2541,7 @@ function normalizePlayer(user) {
   return {
     id: String(user.id),
     name: user.username ?? user.name,
+    usernameNeedsChange: Boolean(user.usernameNeedsChange ?? user.username_needs_change ?? containsForbiddenNickname(user.username ?? user.name ?? "")),
     coins: user.coins,
     lp: user.lp ?? 1000,
     pveDamageTotal: Number(user.pveDamageTotal ?? user.pve_damage_total ?? 0),
@@ -2508,6 +2555,15 @@ function normalizePlayer(user) {
     pveRankPosition: Number(user.pveRankPosition ?? user.pve_rank_position ?? 0) || null,
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
   };
+}
+
+function containsForbiddenNickname(name = "") {
+  const normalized = String(name).toLowerCase().replace(/[\s._\-~!@#$%^&*()[\]{}|\\:;"'<>,.?/+=`]/g, "");
+  return forbiddenNamePatterns.some(pattern => normalized.includes(pattern.toLowerCase()));
+}
+
+function maskedNickname(name = "PLAYER") {
+  return containsForbiddenNickname(name) ? "***" : name;
 }
 
 function masteryLevel(points = 0) {
@@ -2721,8 +2777,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "beta-v1.1") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.1"];
+function renderPatchNotice(version = "beta-v1.2") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.2"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -2737,7 +2793,7 @@ function renderPatchNotice(version = "beta-v1.1") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("beta-v1.1");
+  if (open) renderPatchNotice("beta-v1.2");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -2757,14 +2813,23 @@ function titleTierClass(key) {
   return `title-${titleCatalog[key]?.tier || "basic"}`;
 }
 
+function titleInlineStyle(key) {
+  if (!key?.startsWith("mastery_")) return "";
+  const kind = key.replace("mastery_", "");
+  const colors = masteryTitleColors[kind];
+  return colors ? ` style="--title-a:${colors[0]};--title-b:${colors[1]};"` : "";
+}
+
 function equippedTitleMarkup(player) {
   const key = player?.equippedTitle;
   if (!key || !titleCatalog[key]) return "";
-  return `<small class="equipped-title ${titleTierClass(key)}">${escapeHtml(titleDisplayName(key))}</small>`;
+  return `<small class="equipped-title ${titleTierClass(key)}"${titleInlineStyle(key)}>${escapeHtml(titleDisplayName(key))}</small>`;
 }
 
-function playerNameWithTitle(player, fallback = "PLAYER") {
-  return `${escapeHtml(player?.name || player?.username || fallback)}${equippedTitleMarkup(player)}`;
+function playerNameWithTitle(player, fallback = "PLAYER", options = {}) {
+  const rawName = player?.name || player?.username || fallback;
+  const displayName = options.maskForbidden ? maskedNickname(rawName) : rawName;
+  return `${escapeHtml(displayName)}${equippedTitleMarkup(player)}`;
 }
 
 function playerTitleText(player) {
@@ -2989,6 +3054,12 @@ function resetLocalMatchState() {
   matchTransitionEntering = false;
   matchFoundSoundRoomCode = "";
   masteryRecordRequestedRoomCode = "";
+  settlementRequestedWinnerId = "";
+  if (settlementTimeoutId) {
+    clearTimeout(settlementTimeoutId);
+    settlementTimeoutId = null;
+  }
+  stopGame();
   if (matchTransitionTimeoutId) {
     clearTimeout(matchTransitionTimeoutId);
     matchTransitionTimeoutId = null;
@@ -3007,10 +3078,13 @@ function resetLocalMatchState() {
   players = currentUser ? [currentUser] : [];
   matchPlayers.p1 = currentUser?.id ?? "";
   matchPlayers.p2 = "";
-  selections = { p1: DEFAULT_CHARACTER, p2: DEFAULT_CHARACTER };
+  matchPlayers.p3 = "";
+  selections = { p1: DEFAULT_CHARACTER, p2: DEFAULT_CHARACTER, p3: DEFAULT_CHARACTER };
   ui.pvpModeButton.disabled = false;
   ui.pvpModeButton.classList.remove("is-selected");
   ui.cancelMatchButton.classList.add("is-hidden");
+  ui.resultOverlay.classList.remove("is-active");
+  ui.resultBox.classList.remove("is-promotion", "is-defeat");
   document.querySelectorAll(".select-panel").forEach(panel => panel.classList.remove("is-hidden"));
   showMatchOverlay("", false);
 }
@@ -3177,7 +3251,7 @@ function renderTitleInventory() {
     return `
       <article class="title-card ${owned ? "is-owned" : "is-locked"} ${canClaim ? "can-claim" : ""} ${isEquipped ? "is-equipped" : ""} ${titleTierClass(key)}">
         <div>
-          <strong class="equipped-title ${owned ? titleTierClass(key) : ""}">${escapeHtml(shownName)}</strong>
+          <strong class="equipped-title ${owned ? titleTierClass(key) : ""}"${owned ? titleInlineStyle(key) : ""}>${escapeHtml(shownName)}</strong>
           <span>${escapeHtml(title.condition)}</span>
         </div>
         ${action}
@@ -3426,7 +3500,7 @@ function renderRankings(rankings, mode = "pvp") {
       <article class="ranking-row ${podiumClass} ${isMe ? "is-me" : ""}">
         <b>${rankMark}</b>
         <div>
-          <strong class="${tierClass}">${playerNameWithTitle(player, "unknown")}</strong>
+          <strong class="${tierClass}">${playerNameWithTitle(player, "unknown", { maskForbidden: true })}</strong>
           <span class="${tierClass}">${tier}</span>
         </div>
         <em>${scoreText}</em>
@@ -3459,7 +3533,7 @@ function renderRankingPodium(topPlayers, mode = "pvp") {
           <article class="podium-slot ${slot.className}">
             <div class="podium-player">
               <span>${slot.rank === 1 ? "♛" : "◆"}</span>
-              <strong class="${tierClass}">${playerNameWithTitle(slot.player, "unknown")}</strong>
+              <strong class="${tierClass}">${playerNameWithTitle(slot.player, "unknown", { maskForbidden: true })}</strong>
               <em>${scoreText}</em>
             </div>
             <div class="podium-block">
@@ -3555,6 +3629,17 @@ function openPvpSetup() {
 async function startMatchmaking(type = "ranked") {
   if (!currentUser) return;
   if (matchmakingActive) return;
+  if (currentUser.usernameNeedsChange || containsForbiddenNickname(currentUser.name)) {
+    const message = "닉네임을 먼저 변경해야 매칭을 시작할 수 있습니다.";
+    ui.modeMessage.textContent = message;
+    ui.modeMessage.classList.add("is-error");
+    if (ui.pvpQueueMessage) {
+      ui.pvpQueueMessage.textContent = message;
+      ui.pvpQueueMessage.classList.add("is-error");
+    }
+    enforceNicknameChangeIfNeeded();
+    return;
+  }
   const requestedType = type === "triple" ? "triple" : type === "casual" ? "casual" : "ranked";
   if (requestedType === "ranked" && (currentUser.ownedCharacters?.length || 0) < 5) {
     const message = "랭크게임을 입장하기 위해선 캐릭터 5개를 보유해야합니다.";
@@ -3721,6 +3806,10 @@ async function authenticate(mode) {
     message.textContent = "아이디와 비밀번호를 입력하세요.";
     return;
   }
+  if (mode === "signup" && containsForbiddenNickname(username)) {
+    message.textContent = "사용할 수 없는 닉네임입니다. 다른 닉네임으로 가입하세요.";
+    return;
+  }
 
   try {
     if (mode === "signup") {
@@ -3734,6 +3823,7 @@ async function authenticate(mode) {
       matchPlayers.p3 = "";
       renderLobby();
       showScreen("lobby");
+      enforceNicknameChangeIfNeeded();
       return;
     }
 
@@ -3742,8 +3832,11 @@ async function authenticate(mode) {
     localStorage.setItem(APP_SESSION_KEY, appSessionToken);
     await loadCurrentUser();
     showScreen("lobby");
+    enforceNicknameChangeIfNeeded();
   } catch (error) {
-    message.textContent = error.message;
+    message.textContent = String(error.message || "").includes("forbidden username")
+      ? "사용할 수 없는 닉네임입니다. 다른 닉네임을 입력하세요."
+      : error.message;
   }
 }
 
@@ -3759,6 +3852,14 @@ async function loadCurrentUser() {
     matchPlayers.p3 = "";
   }
   renderLobby();
+  enforceNicknameChangeIfNeeded();
+}
+
+function enforceNicknameChangeIfNeeded() {
+  if (!currentUser?.usernameNeedsChange) return false;
+  setAccountModalOpen(true);
+  ui.accountMessage.textContent = "사용할 수 없는 닉네임입니다. 새 닉네임으로 변경해야 게임을 이용할 수 있습니다.";
+  return true;
 }
 
 function applyRoom(room) {
@@ -3902,6 +4003,12 @@ function togglePassword(input, button) {
 }
 
 function setAccountModalOpen(open) {
+  if (!open && currentUser?.usernameNeedsChange) {
+    ui.accountModal.classList.add("is-active");
+    ui.accountModal.setAttribute("aria-hidden", "false");
+    ui.accountMessage.textContent = "닉네임을 변경해야 창을 닫을 수 있습니다.";
+    return;
+  }
   ui.accountModal.classList.toggle("is-active", open);
   ui.accountModal.setAttribute("aria-hidden", open ? "false" : "true");
   if (open) {
@@ -3931,6 +4038,10 @@ async function saveAccountChanges() {
     ui.accountMessage.textContent = "새 비밀번호 확인이 맞지 않습니다.";
     return;
   }
+  if (newUsername && containsForbiddenNickname(newUsername)) {
+    ui.accountMessage.textContent = "사용할 수 없는 닉네임입니다. 다른 닉네임을 입력하세요.";
+    return;
+  }
   if (!newUsername && !newPassword) {
     ui.accountMessage.textContent = "새 닉네임이나 새 비밀번호를 입력하세요.";
     return;
@@ -3951,9 +4062,11 @@ async function saveAccountChanges() {
     players = players.map(player => player.id === currentUser.id ? currentUser : player);
     renderLobby();
     ui.accountMessage.textContent = "변경 완료!";
-    setTimeout(() => setAccountModalOpen(false), 450);
+    if (!currentUser.usernameNeedsChange) setTimeout(() => setAccountModalOpen(false), 450);
   } catch (error) {
-    ui.accountMessage.textContent = error.message;
+    ui.accountMessage.textContent = String(error.message || "").includes("forbidden username")
+      ? "사용할 수 없는 닉네임입니다. 다른 닉네임을 입력하세요."
+      : error.message;
   } finally {
     ui.accountSaveButton.disabled = false;
   }
@@ -4673,12 +4786,13 @@ function resetGame() {
   pendingSkillUse = false;
 
   ui.currentBet.textContent = "";
-  ui.hudP1Label.innerHTML = playerNameWithTitle(p1, "PLAYER 1");
-  ui.hudP2Label.innerHTML = triple
-    ? `${playerNameWithTitle(p2, "PLAYER 2")} / ${playerNameWithTitle(p3, "PLAYER 3")}`
-    : playerNameWithTitle(p2, "PLAYER 2");
-  ui.playerOneName.textContent = game.fighters[0].name;
-  ui.playerTwoName.textContent = triple ? "상대 2명" : game.fighters[1].name;
+  const local = myFighter() || game.fighters[0];
+  const localPlayer = getPlayer(local.ownerId) || p1;
+  ui.hudP1Label.innerHTML = triple ? playerNameWithTitle(localPlayer, "PLAYER") : playerNameWithTitle(p1, "PLAYER 1");
+  ui.hudP2Label.innerHTML = triple ? "" : playerNameWithTitle(p2, "PLAYER 2");
+  ui.playerOneName.textContent = triple ? local.name : game.fighters[0].name;
+  ui.playerTwoName.textContent = triple ? "" : game.fighters[1].name;
+  ui.hudP2Label.closest(".hud-card")?.classList.toggle("is-hidden", triple);
   ui.resultOverlay.classList.remove("is-active");
   updateHud();
 }
@@ -4706,14 +4820,18 @@ function updateHud() {
   if (codexPreviewMode) return;
   if (resimulatingGame) return;
   const local = myFighter() || game.fighters[0];
+  const triple = game.fighters.length >= 3;
   const opponents = game.fighters.filter(fighter => fighter !== local);
   const mainOpponent = opponents.find(fighter => fighter.hp > 0) || opponents[0] || game.fighters[1];
   const p1Hp = clamp(local.hp, 0, local.maxHp);
-  const p2Hp = clamp(mainOpponent.hp, 0, mainOpponent.maxHp);
   ui.playerOneHealthText.textContent = Math.ceil(p1Hp);
-  ui.playerTwoHealthText.textContent = Math.ceil(p2Hp);
   ui.playerOneHealthBar.style.width = `${(p1Hp / local.maxHp) * 100}%`;
-  ui.playerTwoHealthBar.style.width = `${(p2Hp / mainOpponent.maxHp) * 100}%`;
+  ui.hudP2Label.closest(".hud-card")?.classList.toggle("is-hidden", triple);
+  if (!triple && mainOpponent) {
+    const p2Hp = clamp(mainOpponent.hp, 0, mainOpponent.maxHp);
+    ui.playerTwoHealthText.textContent = Math.ceil(p2Hp);
+    ui.playerTwoHealthBar.style.width = `${(p2Hp / mainOpponent.maxHp) * 100}%`;
+  }
 }
 
 function damage(fighter, amount, attacker = null) {

@@ -155,6 +155,41 @@ as $$
   select encode(extensions.digest(raw_password || ':' || salt, 'sha256'), 'hex');
 $$;
 
+create or replace function public.is_forbidden_username(user_name text)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  normalized text := lower(translate(coalesce(user_name, ''), ' ._-~!@#$%^&*()[]{}|\:;"''<>,.?/+=`', ''));
+  banned text[] := array[
+    U&'\C560\BBF8', U&'\BCF4\C9C0', U&'\C790\C9C0', U&'\C139\C2A4',
+    U&'\C528\BC1C', U&'\C2DC\BC1C', U&'\BCD1\C2E0', U&'\C886', U&'\C874\B098',
+    U&'\AC1C\C0C8', U&'\C0C8\B07C', 'sex', 'porn', 'fuck', 'shit', 'bitch'
+  ];
+  item text;
+begin
+  foreach item in array banned loop
+    if normalized like '%' || lower(item) || '%' then
+      return true;
+    end if;
+  end loop;
+  return false;
+end;
+$$;
+
+create or replace function public.safe_display_username(user_name text)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case when public.is_forbidden_username(user_name) then '***' else user_name end;
+$$;
+
 create or replace function public.app_user_json(target_user public.app_users)
 returns jsonb
 language sql
@@ -165,6 +200,7 @@ as $$
   select jsonb_build_object(
     'id', target_user.id,
     'username', target_user.username,
+    'usernameNeedsChange', public.is_forbidden_username(target_user.username),
     'coins', target_user.coins,
     'lp', target_user.lp,
     'pveDamageTotal', target_user.pve_damage_total,
@@ -233,13 +269,13 @@ security definer
 set search_path = public
 as $$
   select case
-    when score >= 2200 then '다이아'
-    when score >= 1800 then '플레'
-    when score >= 1500 then '골드'
-    when score >= 1200 then '실버'
-    when score >= 1000 then '브론즈'
-    when score >= 500 then '아이언'
-    else '구리'
+    when score >= 2200 then U&'\B2E4\C774\C544'
+    when score >= 1800 then U&'\D50C\B808'
+    when score >= 1500 then U&'\ACE8\B4DC'
+    when score >= 1200 then U&'\C2E4\BC84'
+    when score >= 1000 then U&'\BE0C\B860\C988'
+    when score >= 500 then U&'\C544\C774\C5B8'
+    else U&'\AD6C\B9AC'
   end;
 $$;
 
@@ -305,6 +341,10 @@ declare
 begin
   if clean_name = '' or raw_password = '' then
     raise exception 'username and password required';
+  end if;
+
+  if public.is_forbidden_username(clean_name) then
+    raise exception 'forbidden username';
   end if;
 
   if length(raw_password) < 6 then
@@ -410,6 +450,10 @@ begin
 
   if clean_new_name = '' then
     clean_new_name := active_user.username;
+  end if;
+
+  if public.is_forbidden_username(clean_new_name) then
+    raise exception 'forbidden username';
   end if;
 
   if next_password <> confirm_password then
@@ -562,7 +606,7 @@ declare
   min_index integer;
   max_index integer;
   new_code text;
-  tiers text[] := array['구리', '아이언', '브론즈', '실버', '골드', '플레', '다이아'];
+  tiers text[] := array[U&'\AD6C\B9AC', U&'\C544\C774\C5B8', U&'\BE0C\B860\C988', U&'\C2E4\BC84', U&'\ACE8\B4DC', U&'\D50C\B808', U&'\B2E4\C774\C544'];
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -1804,15 +1848,15 @@ begin
     select jsonb_agg(
       jsonb_build_object(
         'id', ranked.id,
-        'name', ranked.username,
+        'name', public.safe_display_username(ranked.username),
         'lp', ranked.lp,
         'coins', ranked.coins,
         'equippedTitle', ranked.equipped_title,
         'tier', case
           when ranked.lp < 2700 then public.lp_tier(ranked.lp)
-          when ranked.rank_position = 1 then '챌린저'
-          when ranked.rank_position in (2, 3) then '그마'
-          when ranked.lp >= 2700 and ranked.rank_position between 4 and 7 then '마스터'
+          when ranked.rank_position = 1 then U&'\CC4C\B9B0\C800'
+          when ranked.rank_position in (2, 3) then U&'\ADF8\B9C8'
+          when ranked.lp >= 2700 and ranked.rank_position between 4 and 7 then U&'\B9C8\C2A4\D130'
           else public.lp_tier(ranked.lp)
         end
       )
@@ -1830,7 +1874,6 @@ begin
   ), '[]'::jsonb);
 end;
 $$;
-
 create or replace function public.get_pve_rankings(session_token text)
 returns jsonb
 language plpgsql
@@ -1850,7 +1893,7 @@ begin
     select jsonb_agg(
       jsonb_build_object(
         'id', ranked.id,
-        'name', ranked.username,
+        'name', public.safe_display_username(ranked.username),
         'lp', ranked.lp,
         'coins', ranked.coins,
         'equippedTitle', ranked.equipped_title,
@@ -2108,22 +2151,22 @@ begin
   lp_gain := greatest(10, least(20, 15 + tier_difference * 2));
   lp_loss := greatest(3, least(7, 4 + tier_difference));
   old_tier := case
-    when old_lp >= 2200 then '다이아'
-    when old_lp >= 1800 then '플레'
-    when old_lp >= 1500 then '골드'
-    when old_lp >= 1200 then '실버'
-    when old_lp >= 1000 then '브론즈'
-    when old_lp >= 500 then '아이언'
-    else '구리'
+    when old_lp >= 2200 then U&'\B2E4\C774\C544'
+    when old_lp >= 1800 then U&'\D50C\B808'
+    when old_lp >= 1500 then U&'\ACE8\B4DC'
+    when old_lp >= 1200 then U&'\C2E4\BC84'
+    when old_lp >= 1000 then U&'\BE0C\B860\C988'
+    when old_lp >= 500 then U&'\C544\C774\C5B8'
+    else U&'\AD6C\B9AC'
   end;
   new_tier := case
-    when old_lp + 14 >= 2200 then '다이아'
-    when old_lp + 14 >= 1800 then '플레'
-    when old_lp + 14 >= 1500 then '골드'
-    when old_lp + 14 >= 1200 then '실버'
-    when old_lp + 14 >= 1000 then '브론즈'
-    when old_lp + 14 >= 500 then '아이언'
-    else '구리'
+    when old_lp + 14 >= 2200 then U&'\B2E4\C774\C544'
+    when old_lp + 14 >= 1800 then U&'\D50C\B808'
+    when old_lp + 14 >= 1500 then U&'\ACE8\B4DC'
+    when old_lp + 14 >= 1200 then U&'\C2E4\BC84'
+    when old_lp + 14 >= 1000 then U&'\BE0C\B860\C988'
+    when old_lp + 14 >= 500 then U&'\C544\C774\C5B8'
+    else U&'\AD6C\B9AC'
   end;
   old_tier := public.lp_tier(old_lp);
   new_tier := public.lp_tier(old_lp + lp_gain);
