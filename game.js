@@ -2511,17 +2511,18 @@ function normalizePlayer(user) {
 }
 
 function masteryLevel(points = 0) {
-  return clamp(Math.floor((Number(points) || 0) / 10) + 1, 1, 10);
+  return clamp(Math.floor((Number(points) || 0) / 15) + 1, 1, 10);
 }
 
 function masteryProgress(points = 0) {
-  const value = clamp(Number(points) || 0, 0, 90);
+  const value = clamp(Number(points) || 0, 0, 135);
   const level = masteryLevel(value);
+  const levelProgress = value % 15;
   return {
     value,
     level,
-    percent: level >= 10 ? 100 : (value % 10) * 10,
-    next: level >= 10 ? "MAX" : `${value % 10} / 10`
+    percent: level >= 10 ? 100 : (levelProgress / 15) * 100,
+    next: level >= 10 ? "MAX" : `${levelProgress} / 15`
   };
 }
 
@@ -2887,7 +2888,9 @@ async function redeemMailboxCode() {
     ui.mailboxCodeInput.value = "";
     renderLobby();
     updateMailboxUi();
-    if (data.title) {
+    if (data.title === "all_titles") {
+      ui.mailboxMessage.textContent = "모든 칭호를 받았습니다.";
+    } else if (data.title) {
       ui.mailboxMessage.textContent = `${titleDisplayName(data.title)} 칭호를 받았습니다.`;
     } else {
       ui.mailboxMessage.textContent = `${data.coins ?? 100}C를 받았습니다.`;
@@ -3504,7 +3507,7 @@ function setMatchPlayer(slot, playerId) {
 }
 
 function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2, previousP3 = matchPlayers.p3) {
-  if (matchSelectionTouched && getPlayer(matchPlayers.p1) && getPlayer(matchPlayers.p2)) return;
+  if (matchSelectionTouched && getPlayer(matchPlayers.p1) && getPlayer(matchPlayers.p2) && (!matchPlayers.p3 || getPlayer(matchPlayers.p3))) return;
   matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
   matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
     ? previousP2
@@ -4205,6 +4208,7 @@ function refreshCharacterSelectState() {
   if (!currentRoom) return;
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  const p3 = getPlayer(matchPlayers.p3);
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
   syncSelectTimerFromPrep(false);
@@ -4545,6 +4549,12 @@ function makeCharacterCombatState(kind) {
     houserSelfDamagePending: false,
     roperAngle: 0,
     roperDashTimer: kind === "roper" ? 150 : Infinity,
+    roperStrikeWindup: 0,
+    roperStrikeCharge: 0,
+    roperStrikeStun: false,
+    roperStrikeTargetId: "",
+    roperStrikeHit: false,
+    roperLeashStretch: 0,
     roperRushHits: 0,
     roperRushTimer: 0,
     ropeThrowTime: 0,
@@ -6470,7 +6480,7 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
-  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperRushHits > 0 || fighter.ropeThrowTime > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0 || fighter.roperRushHits > 0 || fighter.ropeThrowTime > 0) return false;
   if (type === "attack") {
     return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
   }
@@ -6862,11 +6872,18 @@ function moveFighter(fighter, dt) {
     fighter.vx = 0;
     fighter.vy = 0;
     fighter.phaseTime = Math.max(fighter.phaseTime, 3);
+    fighter.houserStrikeTick -= dt;
+    while (fighter.houserAirTime > 0 && fighter.houserStrikeTick <= 0 && !game.over) {
+      createHouserStrike(fighter);
+      fighter.houserStrikeTick += 6;
+    }
     updateSkills(fighter, dt);
     if (fighter.houserAirTime <= 0) {
-      fighter.houserStrikeTime = 180;
-      fighter.houserStrikeTick = 1;
-      fighter.houserSelfDamagePending = true;
+      if (fighter.houserSelfDamagePending) {
+        fighter.houserSelfDamagePending = false;
+        selfDamage(fighter, 12);
+        fighter.slowTime = Math.max(fighter.slowTime, 180);
+      }
     }
     return;
   }
@@ -6888,13 +6905,18 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
+  if (fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0) {
+    updateRoperStrikeMotion(fighter, dt);
+    updateSkills(fighter, dt);
+    return;
+  }
   if (fighter.roperRushHits > 0) {
     fighter.roperRushTimer -= dt;
     fighter.vx = 0;
     fighter.vy = 0;
     updateSkills(fighter, dt);
     while (fighter.roperRushHits > 0 && fighter.roperRushTimer <= 0 && !game.over) {
-      roperStrike(fighter, false);
+      queueRoperStrike(fighter, false);
       fighter.roperRushHits -= 1;
       fighter.roperRushTimer += 12;
     }
@@ -9224,21 +9246,31 @@ function drawRopeLinks() {
     .forEach(fighter => {
       const target = opponentOf(fighter);
       if (!target || target.hp <= 0) return;
+      const charge = fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0;
+      const stretch = fighter.roperLeashStretch || 0;
       ctx.save();
-      ctx.globalAlpha = 0.72;
+      ctx.globalAlpha = charge ? 0.95 : 0.72;
       ctx.strokeStyle = "#fef3c7";
       ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = 12;
-      ctx.lineWidth = 3;
-      ctx.setLineDash([10, 8]);
+      ctx.shadowBlur = charge ? 22 : 12;
+      ctx.lineWidth = charge ? 5 : 3;
+      ctx.setLineDash(charge ? [18, 5] : [12, 9]);
       ctx.beginPath();
       ctx.moveTo(fighter.x, fighter.y);
       ctx.quadraticCurveTo(
-        (fighter.x + target.x) / 2 + Math.sin(game.tick * 0.09) * 22,
-        (fighter.y + target.y) / 2 + Math.cos(game.tick * 0.08) * 18,
+        (fighter.x + target.x) / 2 + Math.sin(game.tick * 0.09) * (26 + stretch * 0.22),
+        (fighter.y + target.y) / 2 + Math.cos(game.tick * 0.08) * (20 + stretch * 0.18),
         target.x,
         target.y
       );
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha *= 0.45;
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = "rgba(254, 243, 199, 0.22)";
+      ctx.beginPath();
+      ctx.moveTo(fighter.x, fighter.y);
+      ctx.lineTo(target.x, target.y);
       ctx.stroke();
       ctx.restore();
     });
@@ -10644,7 +10676,7 @@ function triggerExplosionBoost(owner) {
     knockback: 24,
     affectsOwner: true
   });
-  selfDamage(owner, 3);
+  selfDamage(owner, 5);
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
 }
@@ -10669,12 +10701,14 @@ function detonateMegaBoom(owner) {
     knockback: 34,
     visualLife: 64
   });
-  selfDamage(owner, 9);
+  selfDamage(owner, 10);
 }
 
 function beginHouserImpact(owner) {
   owner.houserAirTime = 180;
   owner.houserStrikeTime = 0;
+  owner.houserStrikeTick = 1;
+  owner.houserSelfDamagePending = true;
   owner.ultimateTimer = 2100;
   owner.phaseTime = 180;
   addSkillPulse(owner, "#f97316");
@@ -10701,37 +10735,110 @@ function createHouserStrike(owner) {
 
 function updateRoperOrbit(owner, target, dt) {
   owner.roperAngle += 0.045 * dt;
-  const orbit = target.radius + owner.radius + 44;
-  owner.x = clamp(target.x + Math.cos(owner.roperAngle) * orbit, owner.radius, canvas.width - owner.radius);
-  owner.y = clamp(target.y + Math.sin(owner.roperAngle) * orbit, owner.radius, canvas.height - owner.radius);
-  owner.vx = 0;
-  owner.vy = 0;
+  owner.roperLeashStretch = Math.max(0, owner.roperLeashStretch - dt * 0.05);
+  const orbit = target.radius + owner.radius + 72 + Math.sin(game.tick * 0.08 + owner.roperAngle) * 10 + owner.roperLeashStretch;
+  const desiredX = clamp(target.x + Math.cos(owner.roperAngle) * orbit, owner.radius, canvas.width - owner.radius);
+  const desiredY = clamp(target.y + Math.sin(owner.roperAngle) * orbit, owner.radius, canvas.height - owner.radius);
+  owner.vx = (desiredX - owner.x) * 0.24;
+  owner.vy = (desiredY - owner.y) * 0.24;
+  owner.x += owner.vx * dt;
+  owner.y += owner.vy * dt;
+  bounceOnWalls(owner);
   owner.roperDashTimer -= dt;
   if (owner.roperDashTimer <= 0) {
-    roperStrike(owner, true);
+    queueRoperStrike(owner, true);
     owner.roperDashTimer = 150;
   }
 }
 
-function roperStrike(owner, applyStun = true) {
+function queueRoperStrike(owner, applyStun = true) {
+  if (owner.roperStrikeWindup > 0 || owner.roperStrikeCharge > 0) return;
   const target = opponentOf(owner);
-  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
-  const startX = owner.x;
-  const startY = owner.y;
-  owner.x = clamp(target.x - Math.cos(angle) * (target.radius + owner.radius + 8), owner.radius, canvas.width - owner.radius);
-  owner.y = clamp(target.y - Math.sin(angle) * (target.radius + owner.radius + 8), owner.radius, canvas.height - owner.radius);
-  damage(target, 5, owner);
-  if (applyStun) target.stunTime = Math.max(target.stunTime || 0, 30);
+  owner.roperStrikeTargetId = target.ownerId;
+  owner.roperStrikeStun = applyStun;
+  owner.roperStrikeWindup = 12;
+  owner.roperStrikeCharge = 0;
+  owner.roperStrikeHit = false;
+  owner.vx *= 0.25;
+  owner.vy *= 0.25;
+  owner.roperLeashStretch = 24;
   addVisualEffect({
     type: "rope-hit",
-    x1: startX,
-    y1: startY,
+    x1: owner.x,
+    y1: owner.y,
     x2: target.x,
     y2: target.y,
-    color: owner.accent,
-    life: 24,
-    maxLife: 24
+    color: "#fef3c7",
+    life: 16,
+    maxLife: 16
   });
+}
+
+function roperStrike(owner, applyStun = true) {
+  queueRoperStrike(owner, applyStun);
+}
+
+function updateRoperStrikeMotion(owner, dt) {
+  const target = game.fighters.find(fighter => fighter.ownerId === owner.roperStrikeTargetId && fighter.hp > 0) || opponentOf(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  if (owner.roperStrikeWindup > 0) {
+    owner.roperStrikeWindup -= dt;
+    owner.vx = -Math.cos(angle) * 1.6;
+    owner.vy = -Math.sin(angle) * 1.6;
+    owner.roperLeashStretch = Math.min(54, owner.roperLeashStretch + dt * 1.7);
+    if (owner.roperStrikeWindup <= 0) {
+      owner.roperStrikeCharge = 18;
+      owner.vx = Math.cos(angle) * 28;
+      owner.vy = Math.sin(angle) * 28;
+      addVisualEffect({
+        type: "rope-hit",
+        x1: owner.x,
+        y1: owner.y,
+        x2: target.x,
+        y2: target.y,
+        color: owner.accent,
+        life: 20,
+        maxLife: 20
+      });
+    }
+    owner.x = clamp(owner.x + owner.vx * dt, owner.radius, canvas.width - owner.radius);
+    owner.y = clamp(owner.y + owner.vy * dt, owner.radius, canvas.height - owner.radius);
+    return;
+  }
+  owner.roperStrikeCharge -= dt;
+  owner.x += owner.vx * dt;
+  owner.y += owner.vy * dt;
+  bounceOnWalls(owner);
+  const distance = Math.hypot(target.x - owner.x, target.y - owner.y);
+  if (!owner.roperStrikeHit && distance <= target.radius + owner.radius + 12) {
+    owner.roperStrikeHit = true;
+    damage(target, 5, owner);
+    if (owner.roperStrikeStun) target.stunTime = Math.max(target.stunTime || 0, 30);
+    const hitAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
+    target.vx += Math.cos(hitAngle) * 7;
+    target.vy += Math.sin(hitAngle) * 7;
+    owner.vx = -Math.cos(hitAngle) * 12;
+    owner.vy = -Math.sin(hitAngle) * 12;
+    owner.roperLeashStretch = 64;
+    addVisualEffect({
+      type: "rope-hit",
+      x1: owner.x,
+      y1: owner.y,
+      x2: target.x,
+      y2: target.y,
+      color: owner.accent,
+      life: 30,
+      maxLife: 30
+    });
+  }
+  if (owner.roperStrikeCharge <= 0 || owner.roperStrikeHit) {
+    owner.roperStrikeWindup = 0;
+    owner.roperStrikeCharge = 0;
+    owner.roperStrikeTargetId = "";
+    owner.roperStrikeHit = false;
+    owner.vx *= 0.55;
+    owner.vy *= 0.55;
+  }
 }
 
 function throwRopedTarget(owner) {
@@ -10760,7 +10867,7 @@ function beginStunRush(owner) {
   const target = opponentOf(owner);
   if (target.stunTime <= 0) return;
   owner.roperRushHits = 5;
-  owner.roperRushTimer = 1;
+  owner.roperRushTimer = 12;
   owner.ultimateTimer = 1800;
   addSkillPulse(owner, "#fef3c7");
 }

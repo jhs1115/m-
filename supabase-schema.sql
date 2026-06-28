@@ -218,7 +218,7 @@ begin
   set character_mastery = jsonb_set(
     coalesce(character_mastery, '{}'::jsonb),
     array[character_kind],
-    to_jsonb(least(90, current_points + amount)),
+    to_jsonb(least(135, current_points + amount)),
     true
   )
   where id = user_id;
@@ -822,7 +822,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
     'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
-    'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
+    'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
@@ -1042,7 +1042,7 @@ declare
   room_state jsonb;
   character_kind text;
   recorded jsonb;
-  mastery_amount integer := 10;
+  mastery_amount integer := 9;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -1067,7 +1067,7 @@ begin
 
   if coalesce(room_state->>'matchKind', 'duel') <> 'triple'
     and not coalesce((room_state->>'casual')::boolean, false) then
-    mastery_amount := 20;
+    mastery_amount := 18;
   end if;
 
   character_kind := room_state->'characterSelections'->>active_user.id::text;
@@ -1273,7 +1273,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
@@ -1389,7 +1389,7 @@ begin
   if normalized_key like 'mastery_%' then
     mastery_kind := substring(normalized_key from 9);
     eligible := mastery_kind = any(all_characters)
-      and coalesce((active_user.character_mastery->>mastery_kind)::integer, 0) >= 90;
+      and coalesce((active_user.character_mastery->>mastery_kind)::integer, 0) >= 135;
   else
     eligible := case normalized_key
       when 'm_beginner' then active_user.pvp_play_count >= 5
@@ -1478,7 +1478,7 @@ begin
     raise exception 'login required';
   end if;
 
-  if normalized_code not in ('wjdgmltjr1115', 'beta_sex', 'noob_coin') then
+  if normalized_code not in ('wjdgmltjr1115', 'beta_sex', 'noob_coin', 'all_wjdgmltjr') then
     raise exception 'invalid code';
   end if;
 
@@ -1499,6 +1499,28 @@ begin
     update public.app_users
     set owned_titles = case when title_key = any(owned_titles) then owned_titles else array_append(owned_titles, title_key) end,
         equipped_title = coalesce(equipped_title, title_key),
+        redeemed_codes = array_append(redeemed_codes, normalized_code)
+    where id = active_user.id
+    returning * into active_user;
+  elsif normalized_code = 'all_wjdgmltjr' then
+    title_key := 'all_titles';
+    update public.app_users
+    set owned_titles = (
+          select array_agg(distinct reward_title.key)
+          from unnest(owned_titles || array[
+            'm_beginner', 'm_skilled', 'm_expert', 'm_progamer', 'pve_progamer',
+            'challenger', 'all_collect', 'million_left', 'million_right', 'god_pve',
+            'beta_tester', 'developer',
+            'mastery_thrower', 'mastery_charger', 'mastery_grabber', 'mastery_poker',
+            'mastery_stealth', 'mastery_enhancer', 'mastery_tank', 'mastery_beamer',
+            'mastery_wild', 'mastery_vampire', 'mastery_brawler', 'mastery_timekeeper',
+            'mastery_riftmaker', 'mastery_summoner', 'mastery_swordsman', 'mastery_demon',
+            'mastery_artist', 'mastery_believer', 'mastery_archmage', 'mastery_gunner',
+            'mastery_freezer', 'mastery_gambler', 'mastery_cosmic', 'mastery_bomberman',
+            'mastery_roper'
+          ]::text[]) as reward_title(key)
+        ),
+        equipped_title = coalesce(equipped_title, 'developer'),
         redeemed_codes = array_append(redeemed_codes, normalized_code)
     where id = active_user.id
     returning * into active_user;
@@ -2016,8 +2038,8 @@ begin
   loser_character := room_state->'characterSelections'->>loser_id::text;
 
   if casual_match then
-    perform public.add_character_mastery(winner_id, winner_character, 10);
-    perform public.add_character_mastery(loser_id, loser_character, 10);
+    perform public.add_character_mastery(winner_id, winner_character, 9);
+    perform public.add_character_mastery(loser_id, loser_character, 9);
     update public.app_users
     set coins = coins + 10,
         pvp_play_count = pvp_play_count + 1
@@ -2108,8 +2130,8 @@ begin
   promoted := old_tier <> new_tier;
   promotion_reward := case when promoted then 200 else 0 end;
 
-  perform public.add_character_mastery(winner_id, winner_character, 20);
-  perform public.add_character_mastery(loser_id, loser_character, 20);
+  perform public.add_character_mastery(winner_id, winner_character, 18);
+  perform public.add_character_mastery(loser_id, loser_character, 18);
 
   update public.app_users
   set lp = lp + lp_gain,
