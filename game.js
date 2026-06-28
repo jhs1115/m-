@@ -178,6 +178,7 @@ const ui = {
   backFromPvpQueueButton: document.getElementById("backFromPvpQueueButton"),
   rankedMatchButton: document.getElementById("rankedMatchButton"),
   casualMatchButton: document.getElementById("casualMatchButton"),
+  tripleMatchButton: document.getElementById("tripleMatchButton"),
   pvpQueueMessage: document.getElementById("pvpQueueMessage"),
   matchSoundVolume: document.getElementById("matchSoundVolume"),
   matchSoundVolumeText: document.getElementById("matchSoundVolumeText"),
@@ -266,6 +267,62 @@ const patchNoticeVersions = {
   }
 };
 
+const masteryTitleNames = {
+  thrower: "습박 공던져",
+  charger: "멈출수 없는 힘",
+  grabber: "인간시대에 끝이 도래했다",
+  poker: "포커 vs 포 작아",
+  stealth: "쉬잇...",
+  enhancer: "깡!깡!깡!",
+  tank: "때리지마...",
+  beamer: "지이잉",
+  wild: "멍멍!!크르르...",
+  vampire: "쪼-옥",
+  brawler: "이건 입에서 나는 소리가 아니여",
+  timekeeper: "더 월드!!!",
+  riftmaker: "균열 생성기",
+  summoner: "일어나라.",
+  swordsman: "절공 검무(絕空 劍舞)",
+  demon: "내면의 악마",
+  artist: "예술가의 혼",
+  believer: "아멘",
+  archmage: "속성의 대가",
+  gunner: "땅땅땅빵",
+  freezer: "아이스 에이지",
+  gambler: "아 이번이 마지막이라니까?",
+  cosmic: "슈퍼 노바",
+  bomberman: "레제",
+  roper: "타잔"
+};
+
+const masteryCharacterNames = {
+  thrower: "공던지는 색히",
+  charger: "돌진하는 색히",
+  grabber: "그랩하는 색히",
+  poker: "포커하는 색히",
+  stealth: "은신하는 색히",
+  enhancer: "강화하는 색히",
+  tank: "개쳐맞는 색히",
+  beamer: "빔쏘는 색히",
+  wild: "야생의 힘쓰는 색히",
+  vampire: "피흡하는 색히",
+  brawler: "맨몸격투 하는 색히",
+  timekeeper: "시간다루는 색히",
+  riftmaker: "균열 일으키는 색히",
+  summoner: "소환하는 색히",
+  swordsman: "칼쓰는 색히",
+  demon: "악마의 힘쓰는 색히",
+  artist: "그림그리는 색히",
+  believer: "신앙하는 색히",
+  archmage: "대마법 쓰는 색히",
+  gunner: "총쏘는 색히",
+  freezer: "얼리는 색히",
+  gambler: "도박하는 색히",
+  cosmic: "우주의 힘쓰는 색히",
+  bomberman: "폭발하는 색히",
+  roper: "로프타는 색히"
+};
+
 const titleCatalog = {
   m_beginner: { name: "m짱 초보자", condition: "랭크/일반게임 누적 5회 플레이", tier: "basic", check: user => user.pvpPlayCount >= 5 },
   m_skilled: { name: "m짱 숙련자", condition: "랭크/일반게임 누적 20회 플레이", tier: "basic", check: user => user.pvpPlayCount >= 20 },
@@ -278,7 +335,16 @@ const titleCatalog = {
   million_right: { name: "오른손에는 천만원", condition: "코인 10000C 이상 보유", tier: "grand-gold", check: user => user.coins >= 10000 },
   god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 },
   beta_tester: { name: "베타테스터", condition: "베타 코드 입력", tier: "beta", check: () => false },
-  developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false }
+  developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false },
+  ...Object.fromEntries(Object.entries(masteryTitleNames).map(([kind, name]) => [
+    `mastery_${kind}`,
+    {
+      name,
+      condition: `${masteryCharacterNames[kind] || "캐릭터"} 숙련도 10레벨 달성`,
+      tier: kind === "cosmic" ? "pro" : "mastery",
+      check: user => masteryLevel(user.characterMastery?.[kind] || 0) >= 10
+    }
+  ]))
 };
 
 const characters = {
@@ -424,6 +490,18 @@ const characters = {
     accent: "#38bdf8",
     contactDamage: 0
   },
+  bomberman: {
+    name: "폭발하는 색히",
+    color: "#f97316",
+    accent: "#facc15",
+    contactDamage: 0
+  },
+  roper: {
+    name: "로프타는 색히",
+    color: "#d6a25f",
+    accent: "#fef3c7",
+    contactDamage: 0
+  },
   gambler: {
     name: "도박하는 색히",
     color: "#f2c14e",
@@ -438,7 +516,7 @@ const characters = {
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "gambler", "cosmic"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "gambler", "cosmic"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -462,6 +540,8 @@ const skillNames = {
   archmage: { attack: "벼락", normal: "작열", ultimate: "창해" },
   gunner: { normal: "기관총", ultimate: "리로드" },
   freezer: { normal: "스노우 엔젤", ultimate: "이터널 블리자드" },
+  bomberman: { normal: "메가 붐", ultimate: "하우저 임팩트" },
+  roper: { normal: "쓰로잉", ultimate: "스턴 러쉬" },
   gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" },
   cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" }
 };
@@ -568,9 +648,19 @@ const characterGuide = {
     ultimate: ["리로드", "3초", "앞으로 순간이동합니다. 순간이동한 위치에서 탄환을 발사하여 맞은 적에게 5의 피해를 입힙니다."]
   },
   freezer: {
-    attack: ["고드름", "3초", "적에게 고드름 3갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 여러 고드름이 모두 맞을 수 있습니다. 슬로우 중이면 추가 5, 스턴 중이면 추가 10 피해를 줍니다."],
+    attack: ["고드름", "3초", "적에게 고드름 2갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 두 고드름이 모두 맞을 수 있습니다. 슬로우 중이면 추가 2.5, 스턴 중이면 추가 7.5 피해를 줍니다."],
     normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 얼려 기절시키고 5의 피해를 줍니다."],
     ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 더 큰 얼음의 정수를 관통 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 6초 동안 유지되는 넓은 슬로우 장판이 남습니다."]
+  },
+  bomberman: {
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 15의 피해를 받습니다. 발동할 때마다 자신은 3의 피해를 받습니다."],
+    normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 9의 피해를 받습니다."],
+    ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
+  },
+  roper: {
+    attack: ["로프", "2.5초", "게임 시작 시 적에게 로프를 걸고 적 주변을 계속 돕니다. 일반공격 쿨타임마다 적에게 달려들어 5의 피해를 주고 기절시킵니다."],
+    normal: ["쓰로잉", "9초", "로프를 강하게 당겨 적을 던집니다. 던져진 적은 5의 피해를 입고, 벽에 닿으면 5의 추가 피해와 1초 기절을 받습니다."],
+    ultimate: ["스턴 러쉬", "30초", "기절 상태의 적에게만 사용할 수 있습니다. 기절한 적에게 0.2초마다 5번 로프 공격을 몰아칩니다. 이 공격에는 기절이 적용되지 않습니다."]
   },
   gambler: {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
@@ -679,11 +769,13 @@ let mailboxJustClaimed = false;
 let activeInventoryTab = "characters";
 let matchPlayers = {
   p1: "",
-  p2: ""
+  p2: "",
+  p3: ""
 };
 let selections = {
   p1: DEFAULT_CHARACTER,
-  p2: DEFAULT_CHARACTER
+  p2: DEFAULT_CHARACTER,
+  p3: DEFAULT_CHARACTER
 };
 let game = null;
 let animationId = null;
@@ -719,6 +811,7 @@ let soundSettings = loadSoundSettings();
 let audioContext = null;
 let resimulatingGame = false;
 let settlementRequestedWinnerId = "";
+let masteryRecordRequestedRoomCode = "";
 let settlementTimeoutId = null;
 let serverClockOffsetMs = 0;
 let lastBattleClockSyncAt = 0;
@@ -755,8 +848,10 @@ const codexRatings = {
   artist: { difficulty: 2, damage: 2, mobility: 1 },
   believer: { difficulty: 1, damage: 1, mobility: 1 },
   archmage: { difficulty: 3, damage: 3, mobility: 1 },
-  gunner: { difficulty: 3, damage: 2, mobility: 3 },
+  gunner: { difficulty: 2, damage: 2, mobility: 3 },
   freezer: { difficulty: 2, damage: 2, mobility: 1 },
+  bomberman: { difficulty: 1, damage: 3, mobility: 3 },
+  roper: { difficulty: 2, damage: 2, mobility: 3 },
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
 };
@@ -1062,6 +1157,21 @@ function configureCodexPreviewScene(previewGame, kind, skillIndex) {
     caster.vx = dummy.vx = 0;
     caster.vy = dummy.vy = 0;
   }
+  if (kind === "bomberman") {
+    caster.x = w * 0.45;
+    dummy.x = w * 0.57;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
+  }
+  if (kind === "roper") {
+    caster.x = w * 0.39;
+    dummy.x = w * 0.61;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
+    if (skillIndex === 2) dummy.stunTime = 220;
+  }
   if (kind === "believer") caster.hp = caster.maxHp * 0.45;
   if (kind === "demon") dummy.demonMarkCount = skillIndex === 0 ? 0 : 1;
   if (kind === "enhancer") caster.attackPower = 0;
@@ -1228,6 +1338,31 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     }
     return;
   }
+  if (kind === "bomberman") {
+    if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 16, () => triggerExplosionBoost(caster));
+      addCodexPreviewEvent(previewGame, 86, () => triggerExplosionBoost(caster));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 20, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 20, () => triggerUltimate(caster));
+    }
+    return;
+  }
+  if (kind === "roper") {
+    if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 25, () => roperStrike(caster, true));
+      addCodexPreviewEvent(previewGame, 130, () => roperStrike(caster, true));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 30, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 40, () => {
+        dummy.stunTime = 180;
+        triggerUltimate(caster);
+      });
+    }
+    return;
+  }
   addCodexPreviewEvent(previewGame, kind === "grabber" && skillIndex === 2 ? 55 : 15, () => {
     if (skillIndex === 0) setupCodexActualBasic(caster, dummy, kind);
     else if (skillIndex === 1) triggerNormalSkill(caster);
@@ -1266,6 +1401,8 @@ function setupCodexActualBasic(caster, dummy, kind) {
   } else if (kind === "archmage") castMageLightning(caster);
   else if (kind === "gunner") firePistol(caster);
   else if (kind === "freezer") fireIcicle(caster, false);
+  else if (kind === "bomberman") triggerExplosionBoost(caster);
+  else if (kind === "roper") roperStrike(caster, true);
   else if (kind === "gambler") useRouletteAttack(caster);
   else if (kind === "cosmic") {
     caster.cosmicDustTimer = 1;
@@ -2364,11 +2501,27 @@ function normalizePlayer(user) {
     noticeRewardClaimed: Boolean(user.noticeRewardClaimed ?? user.notice_reward_claimed),
     pvpPlayCount: Number(user.pvpPlayCount ?? user.pvp_play_count ?? 0),
     pveHardCleared: Boolean(user.pveHardCleared ?? user.pve_hard_cleared),
+    characterMastery: user.characterMastery || user.character_mastery || {},
     ownedTitles: [...new Set(user.ownedTitles || user.owned_titles || [])],
     equippedTitle: user.equippedTitle ?? user.equipped_title ?? "",
     rankPosition: Number(user.rankPosition ?? user.rank_position ?? 0) || null,
     pveRankPosition: Number(user.pveRankPosition ?? user.pve_rank_position ?? 0) || null,
     ownedCharacters: [...new Set([DEFAULT_CHARACTER, ...(user.ownedCharacters || user.owned_characters || [])])]
+  };
+}
+
+function masteryLevel(points = 0) {
+  return clamp(Math.floor((Number(points) || 0) / 10) + 1, 1, 10);
+}
+
+function masteryProgress(points = 0) {
+  const value = clamp(Number(points) || 0, 0, 90);
+  const level = masteryLevel(value);
+  return {
+    value,
+    level,
+    percent: level >= 10 ? 100 : (value % 10) * 10,
+    next: level >= 10 ? "MAX" : `${value % 10} / 10`
   };
 }
 
@@ -2400,7 +2553,7 @@ function previewRankedLpChange(winnerLp, loserLp) {
   const tierDifference = competitiveTierIndex(loserLp) - competitiveTierIndex(winnerLp);
   return {
     gain: clamp(15 + tierDifference * 2, 10, 20),
-    loss: clamp(7 + tierDifference, 5, 10)
+    loss: clamp(4 + tierDifference, 3, 7)
   };
 }
 
@@ -2832,6 +2985,7 @@ function resetLocalMatchState() {
   completedMatchTransitionRoomCode = "";
   matchTransitionEntering = false;
   matchFoundSoundRoomCode = "";
+  masteryRecordRequestedRoomCode = "";
   if (matchTransitionTimeoutId) {
     clearTimeout(matchTransitionTimeoutId);
     matchTransitionTimeoutId = null;
@@ -2957,7 +3111,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gunner: "Y", freezer: "I", gambler: "?", cosmic: "U"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gunner: "Y", freezer: "I", bomberman: "X", roper: "O", gambler: "?", cosmic: "U"
   })[kind] || "?";
 }
 
@@ -2979,6 +3133,7 @@ function renderInventory() {
 
   Object.entries(characters).forEach(([kind, character]) => {
     const unlocked = owned.includes(kind);
+    const mastery = masteryProgress(currentUser.characterMastery?.[kind] || 0);
     const card = document.createElement("article");
     card.className = `inventory-card ${unlocked ? "is-owned" : "is-locked"}`;
     card.style.setProperty("--char-color", character.color);
@@ -2988,6 +3143,15 @@ function renderInventory() {
       <div class="inventory-card-copy">
         <strong>${unlocked ? character.name : "미보유 캐릭터"}</strong>
         <span>${unlocked ? "보유 캐릭터" : "상점에서 획득 가능"}</span>
+        ${unlocked ? `
+          <div class="mastery-strip" title="숙련도 ${mastery.value}">
+            <div>
+              <b>숙련도 LV.${mastery.level}</b>
+              <small>${mastery.next}</small>
+            </div>
+            <span><i style="width:${mastery.percent}%"></i></span>
+          </div>
+        ` : ""}
         <em>${unlocked ? "OWNED" : "LOCKED"}</em>
       </div>
     `;
@@ -3006,10 +3170,11 @@ function renderTitleInventory() {
     const action = owned
       ? `<button class="ghost-button title-equip-button" type="button" data-equip-title="${escapeHtml(key)}" ${isEquipped ? "disabled" : ""}>${isEquipped ? "장착중" : "장착"}</button>`
       : `<span class="title-lock-state">${canClaim ? "우편함에서 수령 가능" : "미획득"}</span>`;
+    const shownName = owned ? title.name : "미획득 칭호";
     return `
       <article class="title-card ${owned ? "is-owned" : "is-locked"} ${canClaim ? "can-claim" : ""} ${isEquipped ? "is-equipped" : ""} ${titleTierClass(key)}">
         <div>
-          <strong class="equipped-title ${titleTierClass(key)}">${escapeHtml(title.name)}</strong>
+          <strong class="equipped-title ${owned ? titleTierClass(key) : ""}">${escapeHtml(shownName)}</strong>
           <span>${escapeHtml(title.condition)}</span>
         </div>
         ${action}
@@ -3338,12 +3503,15 @@ function setMatchPlayer(slot, playerId) {
   updateLobbyPreview();
 }
 
-function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2) {
+function reconcileMatchPlayers(previousP1 = matchPlayers.p1, previousP2 = matchPlayers.p2, previousP3 = matchPlayers.p3) {
   if (matchSelectionTouched && getPlayer(matchPlayers.p1) && getPlayer(matchPlayers.p2)) return;
   matchPlayers.p1 = getPlayer(previousP1) ? previousP1 : players[0]?.id ?? "";
   matchPlayers.p2 = getPlayer(previousP2) && previousP2 !== matchPlayers.p1
     ? previousP2
     : players.find(player => player.id !== matchPlayers.p1)?.id ?? "";
+  matchPlayers.p3 = getPlayer(previousP3) && ![matchPlayers.p1, matchPlayers.p2].includes(previousP3)
+    ? previousP3
+    : players.find(player => ![matchPlayers.p1, matchPlayers.p2].includes(player.id))?.id ?? "";
 }
 
 function updateLobbyPreview() {
@@ -3384,7 +3552,7 @@ function openPvpSetup() {
 async function startMatchmaking(type = "ranked") {
   if (!currentUser) return;
   if (matchmakingActive) return;
-  const requestedType = type === "casual" ? "casual" : "ranked";
+  const requestedType = type === "triple" ? "triple" : type === "casual" ? "casual" : "ranked";
   if (requestedType === "ranked" && (currentUser.ownedCharacters?.length || 0) < 5) {
     const message = "랭크게임을 입장하기 위해선 캐릭터 5개를 보유해야합니다.";
     ui.modeMessage.textContent = message;
@@ -3409,7 +3577,7 @@ async function startMatchmaking(type = "ranked") {
   ui.pvpModeButton.classList.add("is-selected");
   ui.pveModeButton.classList.remove("is-selected");
   ui.cancelMatchButton.classList.remove("is-hidden");
-  ui.modeMessage.textContent = matchmakingType === "casual" ? "일반게임 매칭중..." : "랭크게임 매칭중...";
+  ui.modeMessage.textContent = matchmakingType === "triple" ? "1 VS 1 VS 1 매칭중..." : matchmakingType === "casual" ? "일반게임 매칭중..." : "랭크게임 매칭중...";
   ui.pvpModeButton.disabled = true;
   showScreen("lobby");
   await checkMatchmaking(generation);
@@ -3422,11 +3590,12 @@ async function checkMatchmaking(expectedGeneration = matchmakingGeneration) {
   try {
     const data = await rpc("find_pvp_match", {
       session_token: appSessionToken,
-      casual: matchmakingType === "casual"
+      casual: matchmakingType !== "ranked",
+      match_kind: matchmakingType === "triple" ? "triple" : "duel"
     });
     if (!matchmakingActive || expectedGeneration !== matchmakingGeneration) return;
     if (!data.matched) {
-      const label = matchmakingType === "casual" ? "일반게임 매칭중" : "랭크게임 매칭중";
+      const label = matchmakingType === "triple" ? "1 VS 1 VS 1 매칭중" : matchmakingType === "casual" ? "일반게임 매칭중" : "랭크게임 매칭중";
       ui.modeMessage.textContent = `${label}... ${data.elapsed ?? 0}초`;
       return;
     }
@@ -3559,6 +3728,7 @@ async function authenticate(mode) {
       players = [currentUser];
       matchPlayers.p1 = currentUser.id;
       matchPlayers.p2 = "";
+      matchPlayers.p3 = "";
       renderLobby();
       showScreen("lobby");
       return;
@@ -3583,6 +3753,7 @@ async function loadCurrentUser() {
     players = [currentUser];
     matchPlayers.p1 = currentUser.id;
     matchPlayers.p2 = "";
+    matchPlayers.p3 = "";
   }
   renderLobby();
 }
@@ -3591,6 +3762,7 @@ function applyRoom(room) {
   const previousRoomCode = currentRoom?.code || "";
   const previousP1 = matchPlayers.p1;
   const previousP2 = matchPlayers.p2;
+  const previousP3 = matchPlayers.p3;
   const roomPlayers = Array.isArray(room.players)
     ? room.players.map(normalizePlayer)
     : currentUser
@@ -3602,8 +3774,9 @@ function applyRoom(room) {
   if (prep.matchPlayers?.p1 && prep.matchPlayers?.p2) {
     matchPlayers.p1 = String(prep.matchPlayers.p1);
     matchPlayers.p2 = String(prep.matchPlayers.p2);
+    matchPlayers.p3 = prep.matchPlayers.p3 ? String(prep.matchPlayers.p3) : "";
   } else {
-    reconcileMatchPlayers(previousP1, previousP2);
+    reconcileMatchPlayers(previousP1, previousP2, previousP3);
   }
   if (previousRoomCode !== currentRoom.code) renderLobby();
   setRoomPolling(true);
@@ -3842,6 +4015,7 @@ async function drawCharacter() {
 }
 
 function updateCharacterCards(playerKey, player) {
+  const cardPlayerKey = playerKey === "p3" ? "p1" : playerKey;
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
   const banned = bannedCharacterSet(prep);
@@ -3852,7 +4026,7 @@ function updateCharacterCards(playerKey, player) {
     selections[playerKey] = firstSelectableCharacter(player, prep);
   }
 
-  document.querySelectorAll(`.fighter-card[data-player="${playerKey}"]`).forEach(card => {
+  document.querySelectorAll(`.fighter-card[data-player="${cardPlayerKey}"]`).forEach(card => {
     const isRandom = card.dataset.character === "random";
     const isBanned = !isRandom && banned.has(card.dataset.character);
     const isValidCharacter = isRandom || Boolean(characters[card.dataset.character]);
@@ -3888,7 +4062,12 @@ function myMatchSlot() {
   if (!currentUser) return "";
   if (currentUser.id === matchPlayers.p1) return "p1";
   if (currentUser.id === matchPlayers.p2) return "p2";
+  if (currentUser.id === matchPlayers.p3) return "p3";
   return "";
+}
+
+function isTripleMatch(prep = matchPrepState()) {
+  return Boolean(prep.triple || prep.matchKind === "triple" || prep.match_kind === "triple" || matchPlayers.p3);
 }
 
 function matchPrepState() {
@@ -3918,7 +4097,7 @@ function totalBanTurns(prep = matchPrepState()) {
 }
 
 function isRankedBanPhase(prep = matchPrepState()) {
-  return !Boolean(prep.casual) && totalBanTurns(prep) < 4;
+  return !Boolean(prep.casual) && !isTripleMatch(prep) && totalBanTurns(prep) < 4;
 }
 
 function currentBanSlot(prep = matchPrepState()) {
@@ -3939,6 +4118,7 @@ function renderBanPickStatus() {
   const mySlot = myMatchSlot();
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  const p3 = getPlayer(matchPlayers.p3);
   if (ui.selectTitle) ui.selectTitle.textContent = banPhase ? "캐릭터 밴" : "캐릭터 선택";
   ui.banPickStatus?.classList.toggle("is-hidden", Boolean(prep.casual));
   screens.select?.classList.toggle("is-ban-phase", banPhase);
@@ -3971,15 +4151,19 @@ function renderBanPickStatus() {
 }
 
 function prepareCharacterSelect() {
-  if ((!matchPlayers.p1 || !matchPlayers.p2 || !getPlayer(matchPlayers.p1) || !getPlayer(matchPlayers.p2))
+  const prep = matchPrepState();
+  const triple = isTripleMatch(prep);
+  if ((!matchPlayers.p1 || !matchPlayers.p2 || !getPlayer(matchPlayers.p1) || !getPlayer(matchPlayers.p2) || (triple && (!matchPlayers.p3 || !getPlayer(matchPlayers.p3))))
     && currentRoom?.players?.length >= 2) {
     matchPlayers.p1 = currentRoom.players[0].id;
     matchPlayers.p2 = currentRoom.players[1].id;
+    matchPlayers.p3 = currentRoom.players[2]?.id || "";
   }
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  const p3 = getPlayer(matchPlayers.p3);
   const mySlot = myMatchSlot();
-  if (!currentRoom || !p1 || !p2 || !mySlot) {
+  if (!currentRoom || !p1 || !p2 || (triple && !p3) || !mySlot) {
     console.warn("character select blocked", {
       hasRoom: Boolean(currentRoom),
       players: players.map(player => player.id),
@@ -3993,18 +4177,20 @@ function prepareCharacterSelect() {
   }
   const p1Name = `PLAYER 1 - ${playerNameWithTitle(p1)}`;
   const p2Name = `PLAYER 2 - ${playerNameWithTitle(p2)}`;
-  ui.selectP1Label.innerHTML = p1Name;
+  const p3Name = p3 ? `PLAYER 3 - ${playerNameWithTitle(p3)}` : "";
+  ui.selectP1Label.innerHTML = mySlot === "p3" ? p3Name : p1Name;
   ui.selectP2Label.innerHTML = p2Name;
   if (ui.selectMatchNames) {
     ui.selectMatchNames.innerHTML = `
       <div>${p1Name}</div>
       <span>VS</span>
       <div>${p2Name}</div>
+      ${p3 ? `<span>VS</span><div>${p3Name}</div>` : ""}
     `;
   }
   document.querySelectorAll(".select-panel").forEach(panel => {
     const label = panel.querySelector(".player-label");
-    const isMine = label?.id === (mySlot === "p1" ? "selectP1Label" : "selectP2Label");
+    const isMine = label?.id === (mySlot === "p2" ? "selectP2Label" : "selectP1Label");
     panel.classList.toggle("is-hidden", !isMine);
   });
   refreshCharacterSelectState();
@@ -4026,6 +4212,7 @@ function refreshCharacterSelectState() {
   renderBanPickStatus();
   if (p1) updateCharacterCards("p1", p1);
   if (p2) updateCharacterCards("p2", p2);
+  if (p3 && myMatchSlot() === "p3") updateCharacterCards("p3", p3);
   if (banPhase) {
     const turnSlot = currentBanSlot(prep);
     const isMyTurn = turnSlot === myMatchSlot();
@@ -4106,6 +4293,7 @@ function maybeStartReadyMatch() {
   const charSelections = prep.characterSelections || {};
   selections.p1 = charSelections[matchPlayers.p1] || selections.p1;
   selections.p2 = charSelections[matchPlayers.p2] || selections.p2;
+  if (matchPlayers.p3) selections.p3 = charSelections[matchPlayers.p3] || selections.p3;
   ui.toBetButton.disabled = false;
   stopSelectTimer();
   const startAt = Number(prep.matchStartAt || prep.match_start_at || 0);
@@ -4182,6 +4370,8 @@ function normalSkillCooldown(kind) {
     archmage: 660,
     gunner: 600,
     freezer: 720,
+    bomberman: 720,
+    roper: 540,
     gambler: 480,
     cosmic: 840
   }[kind] ?? Infinity;
@@ -4210,6 +4400,8 @@ function ultimateCooldown(kind) {
     archmage: 1380,
     gunner: 180,
     freezer: 1800,
+    bomberman: 2100,
+    roper: 1800,
     gambler: 1200,
     cosmic: 0
   }[kind] ?? Infinity;
@@ -4220,6 +4412,8 @@ function characterMaxHp(kind) {
     gunner: 175,
     swordsman: 125,
     archmage: 150,
+    bomberman: 190,
+    roper: 200,
     believer: 175,
     brawler: 200,
     charger: 250,
@@ -4342,6 +4536,19 @@ function makeCharacterCombatState(kind) {
     machineGunTime: 0,
     machineGunTick: 0,
     icicleTimer: kind === "freezer" ? 180 : Infinity,
+    explosionTimer: kind === "bomberman" ? 30 : Infinity,
+    explosionHitCooldown: 0,
+    megaBoomWindup: 0,
+    houserAirTime: 0,
+    houserStrikeTime: 0,
+    houserStrikeTick: 0,
+    houserSelfDamagePending: false,
+    roperAngle: 0,
+    roperDashTimer: kind === "roper" ? 150 : Infinity,
+    roperRushHits: 0,
+    roperRushTimer: 0,
+    ropeThrowTime: 0,
+    ropeThrowWallDamage: 0,
     mageHealReductionTime: 0,
     mageDamageAmpTime: 0,
     overloadWallDamage: 0,
@@ -4402,21 +4609,27 @@ function makeFighter(kind, label, ownerId, x, y) {
 function resetGame() {
   const p1 = getPlayer(matchPlayers.p1);
   const p2 = getPlayer(matchPlayers.p2);
+  const p3 = getPlayer(matchPlayers.p3);
+  const triple = Boolean(p3);
   matchRandomSeed = hashSeed([
     currentRoom?.code ?? "local",
     matchPlayers.p1,
     matchPlayers.p2,
+    matchPlayers.p3,
     selections.p1,
-    selections.p2
+    selections.p2,
+    selections.p3
   ].join("|"));
 
-  const stealthMirror = selections.p1 === "stealth" && selections.p2 === "stealth";
+  const stealthMirror = !triple && selections.p1 === "stealth" && selections.p2 === "stealth";
   const easterWinnerIndex = stealthMirror && deterministicRandom(`${currentRoom?.code || "local"}|stealth-mirror-winner`) < 0.5 ? 0 : 1;
   game = {
     fighters: [
       makeFighter(selections.p1, "PLAYER 1", p1.id, 120, canvas.height / 2),
       makeFighter(selections.p2, "PLAYER 2", p2.id, canvas.width - 120, canvas.height / 2)
-    ],
+    ].concat(triple ? [
+      makeFighter(selections.p3, "PLAYER 3", p3.id, canvas.width / 2, 120)
+    ] : []),
     balls: [],
     grapples: [],
     pokerShots: [],
@@ -4451,9 +4664,11 @@ function resetGame() {
 
   ui.currentBet.textContent = "";
   ui.hudP1Label.innerHTML = playerNameWithTitle(p1, "PLAYER 1");
-  ui.hudP2Label.innerHTML = playerNameWithTitle(p2, "PLAYER 2");
+  ui.hudP2Label.innerHTML = triple
+    ? `${playerNameWithTitle(p2, "PLAYER 2")} / ${playerNameWithTitle(p3, "PLAYER 3")}`
+    : playerNameWithTitle(p2, "PLAYER 2");
   ui.playerOneName.textContent = game.fighters[0].name;
-  ui.playerTwoName.textContent = game.fighters[1].name;
+  ui.playerTwoName.textContent = triple ? "상대 2명" : game.fighters[1].name;
   ui.resultOverlay.classList.remove("is-active");
   updateHud();
 }
@@ -4465,6 +4680,7 @@ function startGame() {
   }
   resetGame();
   settlementRequestedWinnerId = "";
+  masteryRecordRequestedRoomCode = "";
   if (settlementTimeoutId) {
     clearTimeout(settlementTimeoutId);
     settlementTimeoutId = null;
@@ -4479,12 +4695,15 @@ function startGame() {
 function updateHud() {
   if (codexPreviewMode) return;
   if (resimulatingGame) return;
-  const p1Hp = clamp(game.fighters[0].hp, 0, game.fighters[0].maxHp);
-  const p2Hp = clamp(game.fighters[1].hp, 0, game.fighters[1].maxHp);
+  const local = myFighter() || game.fighters[0];
+  const opponents = game.fighters.filter(fighter => fighter !== local);
+  const mainOpponent = opponents.find(fighter => fighter.hp > 0) || opponents[0] || game.fighters[1];
+  const p1Hp = clamp(local.hp, 0, local.maxHp);
+  const p2Hp = clamp(mainOpponent.hp, 0, mainOpponent.maxHp);
   ui.playerOneHealthText.textContent = Math.ceil(p1Hp);
   ui.playerTwoHealthText.textContent = Math.ceil(p2Hp);
-  ui.playerOneHealthBar.style.width = `${(p1Hp / game.fighters[0].maxHp) * 100}%`;
-  ui.playerTwoHealthBar.style.width = `${(p2Hp / game.fighters[1].maxHp) * 100}%`;
+  ui.playerOneHealthBar.style.width = `${(p1Hp / local.maxHp) * 100}%`;
+  ui.playerTwoHealthBar.style.width = `${(p2Hp / mainOpponent.maxHp) * 100}%`;
 }
 
 function damage(fighter, amount, attacker = null) {
@@ -4506,7 +4725,10 @@ function damage(fighter, amount, attacker = null) {
     heal(attacker, finalAmount * 0.3);
   }
   updateHud();
-  if (fighter.hp <= 0) finishGame(fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0]);
+  if (fighter.hp <= 0) {
+    const alive = game.fighters.filter(item => item.hp > 0 && item !== fighter);
+    if (alive.length <= 1) finishGame(alive[0] || attacker || game.fighters.find(item => item !== fighter));
+  }
 }
 
 function contactDamagePair(a, b) {
@@ -5241,23 +5463,43 @@ function renderPvpResultSummary(fighter, outcome, lpPreview = null) {
 }
 
 function presentGameWinner(winner) {
-  const loser = winner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  const loser = game.fighters.find(fighter => fighter !== winner) || game.fighters[0];
   const winnerPlayer = getPlayer(winner.ownerId);
   const loserPlayer = getPlayer(loser.ownerId);
   const localFighter = myFighter() || winner;
-  const casualMatch = Boolean(currentRoom?.prepState?.casual || currentRoom?.prep_state?.casual);
+  const prep = currentRoom?.prepState || currentRoom?.prep_state || {};
+  const tripleMatch = isTripleMatch(prep);
+  const casualMatch = Boolean(prep.casual) || tripleMatch;
   const lpPreview = casualMatch ? { casual: true, gain: 0, loss: 0 } : previewRankedLpChange(winnerPlayer.lp, loserPlayer.lp);
   renderPvpResultSummary(localFighter, localFighter === winner ? "win" : "lose", lpPreview);
   ui.resultBox.classList.remove("is-promotion");
   ui.resultBox.classList.toggle("is-defeat", localFighter !== winner);
   ui.resultOverlay.classList.add("is-active");
-  if (settlementRequestedWinnerId !== winner.ownerId) {
+  if (!tripleMatch && settlementRequestedWinnerId !== winner.ownerId) {
     if (settlementTimeoutId) clearTimeout(settlementTimeoutId);
     settlementRequestedWinnerId = winner.ownerId;
     settlementTimeoutId = setTimeout(() => {
       settlementTimeoutId = null;
       settleMatch(winnerPlayer, loserPlayer);
     }, 700);
+  } else if (tripleMatch && masteryRecordRequestedRoomCode !== currentRoom?.code) {
+    masteryRecordRequestedRoomCode = currentRoom?.code || "";
+    recordMatchMastery().catch(error => {
+      console.warn("mastery record failed", error);
+    });
+  }
+}
+
+async function recordMatchMastery() {
+  if (!currentRoom || !appSessionToken) return;
+  const data = await rpc("record_match_mastery", {
+    session_token: appSessionToken,
+    room_code: currentRoom.code
+  });
+  if (data?.user) {
+    currentUser = normalizePlayer(data.user);
+    players = players.map(player => player.id === currentUser.id ? currentUser : player);
+    renderInventory();
   }
 }
 
@@ -5349,14 +5591,23 @@ function presentGameDraw() {
     clearTimeout(settlementTimeoutId);
     settlementTimeoutId = null;
     settlementRequestedWinnerId = "";
+    masteryRecordRequestedRoomCode = "";
   }
   renderPvpResultSummary(myFighter() || game.fighters[0], "draw");
   ui.resultBox.classList.remove("is-promotion", "is-defeat");
   ui.resultOverlay.classList.add("is-active");
+  if (masteryRecordRequestedRoomCode !== currentRoom?.code) {
+    masteryRecordRequestedRoomCode = currentRoom?.code || "";
+    recordMatchMastery().catch(error => {
+      console.warn("draw mastery record failed", error);
+    });
+  }
 }
 
 function opponentOf(fighter) {
-  return fighter === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+  const enemies = game.fighters.filter(target => target !== fighter && target.hp > 0);
+  if (!enemies.length) return game.fighters.find(target => target !== fighter) || game.fighters[0];
+  return enemies.sort((a, b) => Math.hypot(a.x - fighter.x, a.y - fighter.y) - Math.hypot(b.x - fighter.x, b.y - fighter.y))[0];
 }
 
 function swordEnemyTarget(owner) {
@@ -5628,9 +5879,9 @@ function detonateMageFire(owner) {
   });
 }
 
-const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage", "gunner", "freezer"];
-const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer"];
-const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer"];
+const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
+const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
+const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
 
 function roulettePick(pool, owner, salt) {
   const seed = hashSeed(`${currentRoom?.code || game?.seedKey || "local"}|${owner.ownerId || owner.id}|${game.tick}|${salt}|${pool.length}`);
@@ -5673,6 +5924,8 @@ function useRouletteAttack(owner) {
   else if (kind === "archmage") castMageLightning(owner);
   else if (kind === "gunner") firePistol(owner);
   else if (kind === "freezer") fireIcicle(owner, false);
+  else if (kind === "bomberman") triggerExplosionBoost(owner);
+  else if (kind === "roper") roperStrike(owner, true);
   owner.rouletteAttackTimer = 240;
 }
 
@@ -5730,6 +5983,10 @@ function useRouletteNormal(owner) {
     owner.machineGunTick = 1;
   } else if (kind === "freezer") {
     castSnowAngel(owner);
+  } else if (kind === "bomberman") {
+    beginMegaBoom(owner);
+  } else if (kind === "roper") {
+    throwRopedTarget(owner);
   } else if (kind === "believer") {
     owner.ceremonyTime = 300;
     owner.ceremonyTick = 60;
@@ -5800,6 +6057,8 @@ function useRouletteUltimate(owner) {
   if (kind === "archmage") setRouletteForm(owner, "archmage", 240);
   if (kind === "gunner") setRouletteForm(owner, "gunner", 150);
   if (kind === "freezer") setRouletteForm(owner, "freezer", 240);
+  if (kind === "bomberman") setRouletteForm(owner, "bomberman", 240);
+  if (kind === "roper") setRouletteForm(owner, "roper", 240);
   if (kind === "believer") setRouletteForm(owner, "believer", 900);
   if (kind === "beamer") setRouletteForm(owner, "beamer", 180);
   if (kind === "vampire") setRouletteForm(owner, "vampire", 180);
@@ -5966,6 +6225,16 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "freezer") {
     castSnowAngel(fighter);
+    return;
+  }
+
+  if (fighter.kind === "bomberman") {
+    beginMegaBoom(fighter);
+    return;
+  }
+
+  if (fighter.kind === "roper") {
+    throwRopedTarget(fighter);
     return;
   }
 
@@ -6152,6 +6421,16 @@ function triggerUltimate(fighter) {
     return;
   }
 
+  if (fighter.kind === "bomberman") {
+    beginHouserImpact(fighter);
+    return;
+  }
+
+  if (fighter.kind === "roper") {
+    beginStunRush(fighter);
+    return;
+  }
+
   if (fighter.kind === "believer") {
     fighter.faithStacks += 1;
     fighter.faithBurnTick = Math.min(fighter.faithBurnTick, 60);
@@ -6180,6 +6459,7 @@ function triggerUltimate(fighter) {
 function myFighter() {
   if (!game || !currentUser) return null;
   if (currentUser.id === matchPlayers.p2) return game.fighters[1];
+  if (currentUser.id === matchPlayers.p3) return game.fighters[2];
   return game.fighters[0];
 }
 
@@ -6190,7 +6470,7 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
-  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperRushHits > 0 || fighter.ropeThrowTime > 0) return false;
   if (type === "attack") {
     return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
   }
@@ -6205,6 +6485,7 @@ function skillAvailable(fighter, type) {
   if (fighter.kind === "wild") return false;
   if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
   if (fighter.kind === "cosmic" && !fighter.cosmicBlasterActive && fighter.cosmicDust <= 0) return false;
+  if (fighter.kind === "roper" && opponentOf(fighter).stunTime <= 0) return false;
   return fighter.ultimateTimer <= 0;
 }
 
@@ -6344,6 +6625,7 @@ function updateSkills(fighter, dt) {
 }
 
 function moveFighter(fighter, dt) {
+  if (!fighter || fighter.hp <= 0) return;
   updateMageAilments(fighter, dt);
   if (game.over) return;
   fighter.timeHistory.push({ x: fighter.x, y: fighter.y, hp: fighter.hp });
@@ -6567,6 +6849,73 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
+  if (fighter.megaBoomWindup > 0) {
+    fighter.megaBoomWindup -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.megaBoomWindup <= 0) detonateMegaBoom(fighter);
+    return;
+  }
+  if (fighter.houserAirTime > 0) {
+    fighter.houserAirTime -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    fighter.phaseTime = Math.max(fighter.phaseTime, 3);
+    updateSkills(fighter, dt);
+    if (fighter.houserAirTime <= 0) {
+      fighter.houserStrikeTime = 180;
+      fighter.houserStrikeTick = 1;
+      fighter.houserSelfDamagePending = true;
+    }
+    return;
+  }
+  if (fighter.houserStrikeTime > 0) {
+    fighter.houserStrikeTime -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    fighter.phaseTime = Math.max(fighter.phaseTime, 3);
+    fighter.houserStrikeTick -= dt;
+    while (fighter.houserStrikeTime > 0 && fighter.houserStrikeTick <= 0 && !game.over) {
+      createHouserStrike(fighter);
+      fighter.houserStrikeTick += 6;
+    }
+    updateSkills(fighter, dt);
+    if (fighter.houserStrikeTime <= 0 && fighter.houserSelfDamagePending) {
+      fighter.houserSelfDamagePending = false;
+      selfDamage(fighter, 12);
+      fighter.slowTime = Math.max(fighter.slowTime, 180);
+    }
+    return;
+  }
+  if (fighter.roperRushHits > 0) {
+    fighter.roperRushTimer -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    while (fighter.roperRushHits > 0 && fighter.roperRushTimer <= 0 && !game.over) {
+      roperStrike(fighter, false);
+      fighter.roperRushHits -= 1;
+      fighter.roperRushTimer += 12;
+    }
+    return;
+  }
+  if (fighter.ropeThrowTime > 0) {
+    fighter.ropeThrowTime -= dt;
+    fighter.x += fighter.vx * dt;
+    fighter.y += fighter.vy * dt;
+    const thrownWallHit = bounceOnWalls(fighter);
+    if (fighter.ropeThrowWallDamage > 0 && thrownWallHit) {
+      damage(fighter, fighter.ropeThrowWallDamage, opponentOf(fighter));
+      fighter.stunTime = Math.max(fighter.stunTime || 0, 60);
+      fighter.ropeThrowWallDamage = 0;
+      fighter.ropeThrowTime = 0;
+    }
+    updateSkills(fighter, dt);
+    if (fighter.slowTime > 0) fighter.slowTime -= dt;
+    if (fighter.hasteTime > 0) fighter.hasteTime -= dt;
+    return;
+  }
   if (fighter.cosmicBlasterActive) {
     fighter.vx = 0;
     fighter.vy = 0;
@@ -6659,6 +7008,11 @@ function moveFighter(fighter, dt) {
     fighter.vy = 0;
   }
   const wallHit = bounceOnWalls(fighter);
+  if (fighter.ropeThrowWallDamage > 0 && wallHit) {
+    damage(fighter, fighter.ropeThrowWallDamage, opponentOf(fighter));
+    fighter.stunTime = Math.max(fighter.stunTime || 0, 60);
+    fighter.ropeThrowWallDamage = 0;
+  }
   if (wallHit && fighter.overloadWallDamage > 0) {
     damage(fighter, fighter.overloadWallDamage, opponentOf(fighter));
     if (fighter.overloadWallStun > 0) fighter.stunTime = Math.max(fighter.stunTime || 0, fighter.overloadWallStun);
@@ -6666,6 +7020,7 @@ function moveFighter(fighter, dt) {
     fighter.overloadWallStun = 0;
   }
   updateSkills(fighter, dt);
+  if (fighter.explosionHitCooldown > 0) fighter.explosionHitCooldown -= dt;
 
   if (fighter.rageTime > 0) fighter.rageTime -= dt;
   if (fighter.unstoppableTime > 0) {
@@ -6794,6 +7149,18 @@ function moveFighter(fighter, dt) {
     }
   }
 
+  if (fighter.kind === "bomberman") {
+    fighter.explosionTimer -= dt;
+    const targetDistance = Math.hypot(target.x - fighter.x, target.y - fighter.y);
+    if ((wallHit || targetDistance < target.radius + fighter.radius + 4 || fighter.explosionTimer <= 0) && fighter.explosionHitCooldown <= 0) {
+      triggerExplosionBoost(fighter);
+    }
+  }
+
+  if (fighter.kind === "roper") {
+    updateRoperOrbit(fighter, target, dt);
+  }
+
   if (fighter.kind === "gambler") {
     fighter.rouletteAttackTimer -= dt;
     if (fighter.rouletteAttackTimer <= 0) useRouletteAttack(fighter);
@@ -6914,8 +7281,15 @@ function bounceOnWalls(body) {
 }
 
 function handleFighterCollision() {
-  const a = game.fighters[0];
-  const b = game.fighters[1];
+  for (let left = 0; left < game.fighters.length; left += 1) {
+    for (let right = left + 1; right < game.fighters.length; right += 1) {
+      handleFighterCollisionPair(game.fighters[left], game.fighters[right]);
+    }
+  }
+}
+
+function handleFighterCollisionPair(a, b) {
+  if (a.hp <= 0 || b.hp <= 0) return;
   if (a.phaseTime > 0 || b.phaseTime > 0) {
     game.contactLock = false;
     return;
@@ -8035,8 +8409,8 @@ function updateBalls(dt) {
           }
           let hitDamage = ball.damage;
           if (ball.freezeBullet) {
-            if (target.stunTime > 0) hitDamage += 10;
-            else if (target.slowTime > 0) hitDamage += 5;
+            if (target.stunTime > 0) hitDamage += 7.5;
+            else if (target.slowTime > 0) hitDamage += 2.5;
             target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 75);
           }
           damage(target, hitDamage, ball.owner);
@@ -8184,6 +8558,21 @@ function updateAreaAttacks(dt) {
           if (hitTarget?.hp > 0 && Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y) < hitTarget.radius + attack.radius) {
             damageCombatTarget(hitTarget, attack.damage, attack.owner);
           }
+        });
+        return attack.life > 0;
+      }
+      if (attack.type === "explosion-boost" || attack.type === "mega-boom" || attack.type === "houser-strike") {
+        const targets = [target, ...enemySummonsOf(attack.owner)];
+        if (attack.affectsOwner) targets.push(attack.owner);
+        targets.forEach(hitTarget => {
+          if (!hitTarget || hitTarget.hp <= 0) return;
+          const distance = Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y);
+          if (distance >= hitTarget.radius + attack.radius) return;
+          if (hitTarget !== attack.owner) damageCombatTarget(hitTarget, attack.damage, attack.owner);
+          const angle = Math.atan2(hitTarget.y - attack.y, hitTarget.x - attack.x);
+          const force = attack.knockback || 18;
+          hitTarget.vx = Math.cos(angle) * force;
+          hitTarget.vy = Math.sin(angle) * force;
         });
         return attack.life > 0;
       }
@@ -8464,6 +8853,7 @@ function drawArena() {
     ctx.stroke();
   }
   drawFaithFields();
+  drawRopeLinks();
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
@@ -8477,7 +8867,7 @@ function drawArena() {
   game.pokerShots.forEach(drawPokerShot);
   game.visualEffects.filter(effect => effect.type !== "assassinate-slash").forEach(drawVisualEffect);
   game.fighters
-    .filter((fighter, index) => !game.easterEgg?.revealed || index === game.easterEgg.winnerIndex)
+    .filter((fighter, index) => fighter.hp > 0 && (!game.easterEgg?.revealed || index === game.easterEgg.winnerIndex))
     .forEach(drawFighter);
   game.balls.filter(ball => ball.blizzardCore).forEach(drawBall);
   game.summons.forEach(drawSummon);
@@ -8618,7 +9008,15 @@ function drawVisualEffect(effect) {
     drawClockSweep(effect);
     return;
   }
-  if (effect.type === "time-explosion" || effect.type === "void-rift" || effect.type === "rift-hit" || effect.type === "summon-arrival") {
+  if (effect.type === "mega-charge" || effect.type === "houser-rise") {
+    drawChargeAura(effect);
+    return;
+  }
+  if (effect.type === "rope-hit") {
+    drawEnergyLine(effect, 7);
+    return;
+  }
+  if (effect.type === "time-explosion" || effect.type === "void-rift" || effect.type === "rift-hit" || effect.type === "summon-arrival" || effect.type === "mega-explosion") {
     drawPointBurst(effect);
   }
 }
@@ -8816,6 +9214,63 @@ function drawMageZone(effect) {
       ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
       ctx.stroke();
     }
+  }
+  ctx.restore();
+}
+
+function drawRopeLinks() {
+  game.fighters
+    .filter(fighter => fighter.kind === "roper" && fighter.hp > 0)
+    .forEach(fighter => {
+      const target = opponentOf(fighter);
+      if (!target || target.hp <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.strokeStyle = "#fef3c7";
+      ctx.shadowColor = "#facc15";
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 8]);
+      ctx.beginPath();
+      ctx.moveTo(fighter.x, fighter.y);
+      ctx.quadraticCurveTo(
+        (fighter.x + target.x) / 2 + Math.sin(game.tick * 0.09) * 22,
+        (fighter.y + target.y) / 2 + Math.cos(game.tick * 0.08) * 18,
+        target.x,
+        target.y
+      );
+      ctx.stroke();
+      ctx.restore();
+    });
+}
+
+function drawChargeAura(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const pulse = 1 + Math.sin(game.tick * 0.34) * 0.08;
+  const radius = fighter.radius + 34 + progress * 54;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = 0.32 + progress * 0.34;
+  ctx.strokeStyle = effect.type === "houser-rise" ? "#facc15" : effect.color;
+  ctx.fillStyle = effect.type === "houser-rise" ? "rgba(250, 204, 21, 0.16)" : "rgba(249, 115, 22, 0.18)";
+  ctx.shadowColor = ctx.strokeStyle;
+  ctx.shadowBlur = effect.type === "houser-rise" ? 42 : 30;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, radius * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  for (let ray = 0; ray < 12; ray += 1) {
+    const angle = ray * Math.PI / 6 + game.tick * 0.04;
+    ctx.globalAlpha = (0.45 + progress * 0.45) * (ray % 2 ? 0.75 : 1);
+    ctx.strokeStyle = ray % 2 ? "#f97316" : "#fff7ad";
+    ctx.lineWidth = ray % 3 === 0 ? 4 : 2;
+    ctx.beginPath();
+    ctx.moveTo(fighter.x + Math.cos(angle) * radius * 0.35, fighter.y + Math.sin(angle) * radius * 0.35);
+    ctx.lineTo(fighter.x + Math.cos(angle) * radius * 1.35, fighter.y + Math.sin(angle) * radius * 1.35);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -9561,6 +10016,41 @@ function drawFighter(fighter) {
     ctx.stroke();
     ctx.restore();
   }
+  if (fighter.kind === "bomberman") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#facc15";
+    ctx.fillStyle = "#fb923c";
+    ctx.shadowColor = "#f97316";
+    ctx.shadowBlur = 22;
+    ctx.lineWidth = 4;
+    for (let index = 0; index < 8; index += 1) {
+      const angle = index * Math.PI / 4 + game.tick * 0.05;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
+      ctx.lineTo(Math.cos(angle) * 27, Math.sin(angle) * 27);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  if (fighter.kind === "roper") {
+    ctx.save();
+    ctx.strokeStyle = "#fef3c7";
+    ctx.shadowColor = "#fef3c7";
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, 17, 0, Math.PI * 1.65);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-12, 12);
+    ctx.lineTo(14, -14);
+    ctx.stroke();
+    ctx.restore();
+  }
   if (fighter.kind === "cosmic") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -10055,7 +10545,7 @@ function castReloadShot(owner) {
 
 function fireIcicle(owner, blizzard = false) {
   if (!blizzard) {
-    [-0.14, 0, 0.14].forEach(angleOffset => {
+    [-0.1, 0.1].forEach(angleOffset => {
       fireStraightBullet(owner, {
         damage: 5,
         speed: 24.8,
@@ -10108,6 +10598,171 @@ function castSnowAngel(owner) {
   }
   owner.skillTimer = 720;
   addSkillPulse(owner, owner.accent);
+}
+
+function selfDamage(fighter, amount) {
+  if (amount <= 0 || game.over) return;
+  const actualDamage = Math.min(Math.max(0, fighter.hp - 1), amount);
+  if (actualDamage <= 0) return;
+  fighter.hp = Math.max(1, fighter.hp - actualDamage);
+  fighter.damageTaken += actualDamage;
+  fighter.hitFlash = 10;
+  addDamageText(fighter.x, fighter.y - fighter.radius, Math.round(actualDamage * 10) / 10);
+  updateHud();
+}
+
+function explodeAt(owner, x, y, radius, damageAmount, options = {}) {
+  game.areaAttacks.push({
+    type: options.type || "explosion-boost",
+    owner,
+    x,
+    y,
+    radius,
+    delay: options.delay || 0,
+    life: options.life || 36,
+    hit: false,
+    damage: damageAmount,
+    color: options.color || owner.accent,
+    knockback: options.knockback || 20,
+    affectsOwner: !!options.affectsOwner
+  });
+  addVisualEffect({
+    type: "mega-explosion",
+    x,
+    y,
+    radius,
+    color: options.color || owner.accent,
+    life: options.visualLife || 42,
+    maxLife: options.visualLife || 42
+  });
+}
+
+function triggerExplosionBoost(owner) {
+  explodeAt(owner, owner.x, owner.y, 118, 15, {
+    type: "explosion-boost",
+    color: "#fb923c",
+    knockback: 24,
+    affectsOwner: true
+  });
+  selfDamage(owner, 3);
+  owner.explosionTimer = 30;
+  owner.explosionHitCooldown = 12;
+}
+
+function beginMegaBoom(owner) {
+  owner.megaBoomWindup = 90;
+  owner.skillTimer = 720;
+  addSkillPulse(owner, "#f97316");
+  addVisualEffect({
+    type: "mega-charge",
+    fighter: owner,
+    color: "#facc15",
+    life: 90,
+    maxLife: 90
+  });
+}
+
+function detonateMegaBoom(owner) {
+  explodeAt(owner, canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height), 25, {
+    type: "mega-boom",
+    color: "#facc15",
+    knockback: 34,
+    visualLife: 64
+  });
+  selfDamage(owner, 9);
+}
+
+function beginHouserImpact(owner) {
+  owner.houserAirTime = 180;
+  owner.houserStrikeTime = 0;
+  owner.ultimateTimer = 2100;
+  owner.phaseTime = 180;
+  addSkillPulse(owner, "#f97316");
+  addVisualEffect({
+    type: "houser-rise",
+    fighter: owner,
+    color: "#facc15",
+    life: 180,
+    maxLife: 180
+  });
+}
+
+function createHouserStrike(owner) {
+  const index = Math.floor((180 - owner.houserStrikeTime) / 6);
+  const x = 80 + combatRandom(owner, "houser-x", index) * (canvas.width - 160);
+  const y = 80 + combatRandom(owner, "houser-y", index) * (canvas.height - 160);
+  explodeAt(owner, x, y, 92, 15, {
+    type: "houser-strike",
+    color: index % 2 ? "#fb923c" : "#facc15",
+    knockback: 22,
+    visualLife: 36
+  });
+}
+
+function updateRoperOrbit(owner, target, dt) {
+  owner.roperAngle += 0.045 * dt;
+  const orbit = target.radius + owner.radius + 44;
+  owner.x = clamp(target.x + Math.cos(owner.roperAngle) * orbit, owner.radius, canvas.width - owner.radius);
+  owner.y = clamp(target.y + Math.sin(owner.roperAngle) * orbit, owner.radius, canvas.height - owner.radius);
+  owner.vx = 0;
+  owner.vy = 0;
+  owner.roperDashTimer -= dt;
+  if (owner.roperDashTimer <= 0) {
+    roperStrike(owner, true);
+    owner.roperDashTimer = 150;
+  }
+}
+
+function roperStrike(owner, applyStun = true) {
+  const target = opponentOf(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const startX = owner.x;
+  const startY = owner.y;
+  owner.x = clamp(target.x - Math.cos(angle) * (target.radius + owner.radius + 8), owner.radius, canvas.width - owner.radius);
+  owner.y = clamp(target.y - Math.sin(angle) * (target.radius + owner.radius + 8), owner.radius, canvas.height - owner.radius);
+  damage(target, 5, owner);
+  if (applyStun) target.stunTime = Math.max(target.stunTime || 0, 30);
+  addVisualEffect({
+    type: "rope-hit",
+    x1: startX,
+    y1: startY,
+    x2: target.x,
+    y2: target.y,
+    color: owner.accent,
+    life: 24,
+    maxLife: 24
+  });
+}
+
+function throwRopedTarget(owner) {
+  const target = opponentOf(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  damage(target, 5, owner);
+  target.vx = Math.cos(angle) * 22;
+  target.vy = Math.sin(angle) * 22;
+  target.ropeThrowTime = 24;
+  target.ropeThrowWallDamage = 5;
+  owner.skillTimer = 540;
+  addSkillPulse(owner, owner.accent);
+  addVisualEffect({
+    type: "rope-hit",
+    x1: owner.x,
+    y1: owner.y,
+    x2: target.x + Math.cos(angle) * 70,
+    y2: target.y + Math.sin(angle) * 70,
+    color: "#fef3c7",
+    life: 34,
+    maxLife: 34
+  });
+}
+
+function beginStunRush(owner) {
+  const target = opponentOf(owner);
+  if (target.stunTime <= 0) return;
+  owner.roperRushHits = 5;
+  owner.roperRushTimer = 1;
+  owner.ultimateTimer = 1800;
+  addSkillPulse(owner, "#fef3c7");
 }
 
 function drawFighterHealthBar(fighter) {
@@ -14673,7 +15328,7 @@ async function logout() {
   currentUser = null;
   currentRoom = null;
   players = [];
-  matchPlayers = { p1: "", p2: "" };
+  matchPlayers = { p1: "", p2: "", p3: "" };
   localStorage.removeItem(APP_SESSION_KEY);
   stopSelectTimer();
   resetLocalMatchState();
@@ -14760,6 +15415,7 @@ ui.backFromGachaButton.addEventListener("click", () => {
 ui.pvpModeButton.addEventListener("click", openPvpSetup);
 ui.rankedMatchButton?.addEventListener("click", () => startMatchmaking("ranked"));
 ui.casualMatchButton?.addEventListener("click", () => startMatchmaking("casual"));
+ui.tripleMatchButton?.addEventListener("click", () => startMatchmaking("triple"));
 ui.backFromPvpQueueButton?.addEventListener("click", () => {
   ui.pvpModeButton.classList.remove("is-selected");
   renderLobby();
@@ -14861,11 +15517,12 @@ ui.cards.forEach(card => {
       refreshCharacterSelectState();
       return;
     }
+    const actualPlayer = player === "p1" && myMatchSlot() === "p3" ? "p3" : player;
     document.querySelectorAll(`.fighter-card[data-player="${player}"]`).forEach(item => {
       item.classList.remove("is-selected");
     });
     card.classList.add("is-selected");
-    selections[player] = card.dataset.character;
+    selections[actualPlayer] = card.dataset.character;
   });
 });
 

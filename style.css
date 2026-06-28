@@ -617,6 +617,10 @@ body:not(.is-authenticated) .notice-actions {
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 12px;
   margin-top: 8px;
+  max-height: min(620px, calc(100vh - 300px));
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-color: rgba(242, 193, 78, 0.5) rgba(5, 8, 14, 0.42);
 }
 
 .title-card {
@@ -654,15 +658,16 @@ body:not(.is-authenticated) .notice-actions {
 }
 
 .title-card.is-locked {
-  opacity: 0.44;
-  filter: grayscale(0.55) saturate(0.42);
+  opacity: 0.36;
+  filter: grayscale(0.72) saturate(0.32);
   background:
     linear-gradient(180deg, rgba(6, 10, 17, 0.88), rgba(3, 6, 11, 0.95));
+  border-color: rgba(71, 85, 105, 0.22);
 }
 
 .title-card.is-locked strong,
 .title-card.is-locked span {
-  color: #6b7280 !important;
+  color: #64748b !important;
   text-shadow: none !important;
   -webkit-text-fill-color: currentColor;
   background: none;
@@ -672,12 +677,13 @@ body:not(.is-authenticated) .notice-actions {
   opacity: 1;
   filter: none;
   background:
-    radial-gradient(circle at 18% 18%, rgba(242, 193, 78, 0.2), transparent 36%),
-    radial-gradient(circle at 92% 70%, rgba(34, 211, 238, 0.08), transparent 34%),
+    radial-gradient(circle at 18% 18%, rgba(242, 193, 78, 0.28), transparent 38%),
+    radial-gradient(circle at 92% 70%, rgba(34, 211, 238, 0.12), transparent 36%),
     linear-gradient(180deg, rgba(15, 22, 35, 0.98), rgba(5, 10, 18, 0.98));
-  border-color: rgba(242, 193, 78, 0.48);
+  border-color: rgba(242, 193, 78, 0.68);
   box-shadow:
-    0 0 26px rgba(242, 193, 78, 0.12),
+    0 0 30px rgba(242, 193, 78, 0.2),
+    0 0 64px rgba(34, 211, 238, 0.06),
     inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
@@ -765,6 +771,7 @@ body:not(.is-authenticated) .notice-actions {
 .equipped-title.title-grand-gold,
 .equipped-title.title-challenger,
 .equipped-title.title-god-pve,
+.equipped-title.title-mastery,
 .equipped-title.title-developer,
 .ranking-row .equipped-title,
 .podium-player .equipped-title,
@@ -790,6 +797,13 @@ body:not(.is-authenticated) .notice-actions {
 .title-pro {
   color: #c4b5fd;
   text-shadow: 0 0 14px rgba(168, 85, 247, 0.54), 0 0 22px rgba(34, 211, 238, 0.18);
+}
+
+.title-mastery {
+  color: #bfdbfe;
+  text-shadow:
+    0 0 12px rgba(96, 165, 250, 0.5),
+    0 0 24px rgba(34, 211, 238, 0.22);
 }
 
 .title-developer {
@@ -3579,6 +3593,51 @@ h2 {
   opacity: 0.55;
 }
 
+.mastery-strip {
+  display: grid;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.mastery-strip div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mastery-strip b {
+  color: #ffe5a3;
+  font-size: 0.75rem;
+  font-weight: 1000;
+  text-shadow: 0 0 10px rgba(242, 193, 78, 0.22);
+}
+
+.mastery-strip small {
+  color: #9fb4d0;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.mastery-strip > span {
+  position: relative;
+  display: block;
+  height: 7px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(242, 193, 78, 0.22);
+  border-radius: 999px;
+}
+
+.mastery-strip > span i {
+  display: block;
+  height: 100%;
+  min-width: 6px;
+  background: linear-gradient(90deg, #8b5cf6, #38bdf8, #facc15);
+  border-radius: inherit;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+}
+
 .inventory-orb {
   display: grid;
   place-items: center;
@@ -4497,14 +4556,14 @@ h2 {
 }
 
 .pvp-mode-panel {
-  width: min(620px, 100%);
+  width: min(780px, 100%);
   min-height: 0;
   margin: auto;
 }
 
 .pvp-mode-choice-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 22px;
 }
@@ -4532,6 +4591,12 @@ h2 {
 .pvp-match-type-button.casual {
   background:
     radial-gradient(circle at 18% 18%, rgba(61, 214, 208, 0.14), transparent 30%),
+    rgba(6, 10, 17, 0.84);
+}
+
+.pvp-match-type-button.triple {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(239, 68, 68, 0.16), transparent 30%),
     rgba(6, 10, 17, 0.84);
 }
 

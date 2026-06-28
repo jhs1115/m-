@@ -14,6 +14,7 @@ create table if not exists public.app_users (
   owned_titles text[] not null default array[]::text[],
   equipped_title text,
   redeemed_codes text[] not null default array[]::text[],
+  character_mastery jsonb not null default '{}'::jsonb,
   owned_characters text[] not null default array['thrower']::text[],
   created_at timestamptz not null default now()
 );
@@ -41,6 +42,9 @@ add column if not exists equipped_title text;
 
 alter table public.app_users
 add column if not exists redeemed_codes text[] not null default array[]::text[];
+
+alter table public.app_users
+add column if not exists character_mastery jsonb not null default '{}'::jsonb;
 
 alter table public.app_users
 alter column coins set default 0;
@@ -167,6 +171,7 @@ as $$
     'noticeRewardClaimed', target_user.notice_reward_claimed,
     'pvpPlayCount', target_user.pvp_play_count,
     'pveHardCleared', target_user.pve_hard_cleared,
+    'characterMastery', target_user.character_mastery,
     'ownedTitles', target_user.owned_titles,
     'equippedTitle', target_user.equipped_title,
     'rankPosition', (
@@ -187,6 +192,37 @@ as $$
     ),
     'ownedCharacters', target_user.owned_characters
   );
+$$;
+
+create or replace function public.add_character_mastery(user_id uuid, character_kind text, amount integer)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  current_points integer;
+begin
+  if character_kind is null or character_kind = '' or amount <= 0 then
+    return;
+  end if;
+
+  select coalesce((character_mastery->>character_kind)::integer, 0)
+  into current_points
+  from public.app_users
+  where id = user_id
+  for update;
+
+  update public.app_users
+  set character_mastery = jsonb_set(
+    coalesce(character_mastery, '{}'::jsonb),
+    array[character_kind],
+    to_jsonb(least(90, current_points + amount)),
+    true
+  )
+  where id = user_id;
+end;
 $$;
 
 create or replace function public.lp_tier(score integer)
@@ -503,8 +539,10 @@ end;
 $$;
 
 drop function if exists public.find_pvp_match(text);
+drop function if exists public.find_pvp_match(text, boolean);
+drop function if exists public.find_pvp_match(text, boolean, text);
 
-create or replace function public.find_pvp_match(session_token text, casual boolean default false)
+create or replace function public.find_pvp_match(session_token text, casual boolean default false, match_kind text default 'duel')
 returns jsonb
 language plpgsql
 volatile
@@ -514,8 +552,10 @@ as $$
 declare
   active_user public.app_users;
   opponent public.app_users;
+  opponent_two public.app_users;
   active_tier text;
   is_casual boolean := coalesce(casual, false);
+  is_triple boolean := lower(coalesce(match_kind, 'duel')) = 'triple';
   elapsed_seconds integer;
   existing_room_code text;
   tier_index integer;
@@ -527,6 +567,10 @@ begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
     raise exception 'login required';
+  end if;
+
+  if is_triple then
+    is_casual := true;
   end if;
 
   if not is_casual and coalesce(array_length(active_user.owned_characters, 1), 0) < 5 then
@@ -573,7 +617,7 @@ begin
     where user_id = active_user.id;
   end if;
 
-  active_tier := case when is_casual then '일반' else public.lp_tier(active_user.lp) end;
+  active_tier := case when is_triple then 'triple' when is_casual then 'casual' else public.lp_tier(active_user.lp) end;
 
   insert into public.match_queue (user_id, tier, casual, last_seen_at)
   values (active_user.id, active_tier, is_casual, now())
@@ -601,6 +645,8 @@ begin
   where q.user_id <> active_user.id
     and q.matched_room_code is null
     and q.casual = is_casual
+    and (not is_triple or q.tier = active_tier)
+    and (is_triple or q.tier <> 'triple')
     and q.last_seen_at >= now() - interval '5 seconds'
     and (is_casual or array_position(tiers, q.tier) between min_index and max_index)
   order by q.joined_at
@@ -617,6 +663,31 @@ begin
     );
   end if;
 
+  if is_triple then
+    select u.* into opponent_two
+    from public.match_queue q
+    join public.app_users u on u.id = q.user_id
+    where q.user_id <> active_user.id
+      and q.user_id <> opponent.id
+      and q.matched_room_code is null
+      and q.casual = true
+      and q.tier = active_tier
+      and q.last_seen_at >= now() - interval '5 seconds'
+    order by q.joined_at
+    limit 1
+    for update skip locked;
+
+    if opponent_two.id is null then
+      return jsonb_build_object(
+        'matched', false,
+        'tier', active_tier,
+        'casual', true,
+        'triple', true,
+        'elapsed', elapsed_seconds
+      );
+    end if;
+  end if;
+
   loop
     new_code := public.make_room_code();
     exit when not exists (select 1 from public.app_rooms where code = new_code);
@@ -626,12 +697,20 @@ begin
   values (
     new_code,
     active_user.id,
-    array[active_user.id, opponent.id]::uuid[],
+    case when is_triple
+      then array[active_user.id, opponent.id, opponent_two.id]::uuid[]
+      else array[active_user.id, opponent.id]::uuid[]
+    end,
     jsonb_build_object(
       'matchmaking', true,
       'casual', is_casual,
+      'triple', is_triple,
+      'matchKind', case when is_triple then 'triple' else 'duel' end,
       'lpGain', case when is_casual then 0 else 14 end,
-      'matchPlayers', jsonb_build_object('p1', active_user.id, 'p2', opponent.id),
+      'matchPlayers', case when is_triple
+        then jsonb_build_object('p1', active_user.id, 'p2', opponent.id, 'p3', opponent_two.id)
+        else jsonb_build_object('p1', active_user.id, 'p2', opponent.id)
+      end,
       'characterSelections', '{}'::jsonb,
       'bans', jsonb_build_object('p1', '[]'::jsonb, 'p2', '[]'::jsonb),
       'banTurnStartedAt', extract(epoch from now()),
@@ -644,7 +723,7 @@ begin
   update public.match_queue
   set matched_room_code = new_code,
       last_seen_at = now()
-  where user_id in (active_user.id, opponent.id);
+  where user_id in (active_user.id, opponent.id, opponent_two.id);
 
   return jsonb_build_object('matched', true, 'room', public.app_room_json(new_code));
 end;
@@ -838,6 +917,8 @@ declare
   next_state jsonb;
   next_ready jsonb;
   next_versions jsonb;
+  ready_count integer;
+  participant_count integer;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -886,9 +967,17 @@ begin
     true
   );
 
-  if coalesce((next_ready->>(room_players[1]::text))::boolean, false)
-    and coalesce((next_ready->>(room_players[2]::text))::boolean, false)
-    and (next_versions->>(room_players[1]::text)) is distinct from (next_versions->>(room_players[2]::text)) then
+  participant_count := coalesce(array_length(room_players, 1), 0);
+  select count(*) into ready_count
+  from unnest(room_players) as participant_id
+  where coalesce((next_ready->>(participant_id::text))::boolean, false);
+
+  if ready_count = participant_count
+    and exists (
+      select 1
+      from unnest(room_players) as participant_id
+      where (next_versions->>(participant_id::text)) is distinct from (next_versions->>(room_players[1]::text))
+    ) then
     raise exception 'game version mismatch; refresh both clients';
   end if;
 
@@ -910,10 +999,7 @@ begin
       true
     ),
     array['started'],
-    to_jsonb(
-      coalesce((next_ready->>(room_players[1]::text))::boolean, false)
-      and coalesce((next_ready->>(room_players[2]::text))::boolean, false)
-    ),
+    to_jsonb(ready_count = participant_count),
     true
   ) into next_state
   ;
@@ -939,6 +1025,69 @@ begin
   where code = normalized_code;
 
   return public.app_room_json(normalized_code);
+end;
+$$;
+
+create or replace function public.record_match_mastery(session_token text, room_code text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_code text := upper(trim(room_code));
+  room_players uuid[];
+  room_state jsonb;
+  character_kind text;
+  recorded jsonb;
+  mastery_amount integer := 10;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  select player_ids, coalesce(prep_state, '{}'::jsonb)
+  into room_players, room_state
+  from public.app_rooms
+  where code = normalized_code
+  for update;
+
+  if room_players is null or active_user.id <> all(room_players) then
+    raise exception 'not a match participant';
+  end if;
+
+  recorded := coalesce(room_state->'masteryRecorded', '{}'::jsonb);
+  if coalesce((recorded->>(active_user.id::text))::boolean, false) then
+    select * into active_user from public.app_users where id = active_user.id;
+    return jsonb_build_object('user', public.app_user_json(active_user), 'recorded', false);
+  end if;
+
+  if coalesce(room_state->>'matchKind', 'duel') <> 'triple'
+    and not coalesce((room_state->>'casual')::boolean, false) then
+    mastery_amount := 20;
+  end if;
+
+  character_kind := room_state->'characterSelections'->>active_user.id::text;
+  perform public.add_character_mastery(active_user.id, character_kind, mastery_amount);
+
+  update public.app_users
+  set pvp_play_count = pvp_play_count + 1
+  where id = active_user.id
+  returning * into active_user;
+
+  update public.app_rooms
+  set prep_state = jsonb_set(
+    room_state,
+    array['masteryRecorded', active_user.id::text],
+    'true'::jsonb,
+    true
+  )
+  where code = normalized_code;
+
+  return jsonb_build_object('user', public.app_user_json(active_user), 'recorded', true);
 end;
 $$;
 
@@ -1204,8 +1353,10 @@ declare
   all_characters text[] := array[
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer', 'tank', 'beamer',
     'wild', 'vampire', 'brawler', 'timekeeper', 'riftmaker', 'summoner', 'swordsman',
-    'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic'
+    'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic',
+    'bomberman', 'roper'
   ];
+  mastery_kind text;
 begin
   active_user := public.app_user_from_token(session_token);
   if active_user.id is null then
@@ -1235,19 +1386,25 @@ begin
   ) ranked
   where ranked.id = active_user.id;
 
-  eligible := case normalized_key
-    when 'm_beginner' then active_user.pvp_play_count >= 5
-    when 'm_skilled' then active_user.pvp_play_count >= 20
-    when 'm_expert' then active_user.pvp_play_count >= 50
-    when 'm_progamer' then active_user.pvp_play_count >= 100
-    when 'pve_progamer' then active_user.pve_hard_cleared
-    when 'challenger' then active_user.lp >= 2700 and rank_position = 1
-    when 'all_collect' then all_characters <@ active_user.owned_characters
-    when 'million_left' then active_user.coins >= 1000
-    when 'million_right' then active_user.coins >= 10000
-    when 'god_pve' then active_user.pve_damage_total > 0 and pve_rank_position = 1
-    else false
-  end;
+  if normalized_key like 'mastery_%' then
+    mastery_kind := substring(normalized_key from 9);
+    eligible := mastery_kind = any(all_characters)
+      and coalesce((active_user.character_mastery->>mastery_kind)::integer, 0) >= 90;
+  else
+    eligible := case normalized_key
+      when 'm_beginner' then active_user.pvp_play_count >= 5
+      when 'm_skilled' then active_user.pvp_play_count >= 20
+      when 'm_expert' then active_user.pvp_play_count >= 50
+      when 'm_progamer' then active_user.pvp_play_count >= 100
+      when 'pve_progamer' then active_user.pve_hard_cleared
+      when 'challenger' then active_user.lp >= 2700 and rank_position = 1
+      when 'all_collect' then all_characters <@ active_user.owned_characters
+      when 'million_left' then active_user.coins >= 1000
+      when 'million_right' then active_user.coins >= 10000
+      when 'god_pve' then active_user.pve_damage_total > 0 and pve_rank_position = 1
+      else false
+    end;
+  end if;
 
   if not eligible then
     raise exception 'title condition not met';
@@ -1793,7 +1950,9 @@ declare
   loser_tier_index integer;
   tier_difference integer;
   lp_gain integer := 14;
-  lp_loss integer := 7;
+  lp_loss integer := 4;
+  winner_character text;
+  loser_character text;
   promoted boolean := false;
   promotion_reward integer := 0;
 begin
@@ -1853,8 +2012,12 @@ begin
 
   select * into loser_user from public.app_users where id = loser_id for update;
   select * into winner_user from public.app_users where id = winner_id for update;
+  winner_character := room_state->'characterSelections'->>winner_id::text;
+  loser_character := room_state->'characterSelections'->>loser_id::text;
 
   if casual_match then
+    perform public.add_character_mastery(winner_id, winner_character, 10);
+    perform public.add_character_mastery(loser_id, loser_character, 10);
     update public.app_users
     set coins = coins + 10,
         pvp_play_count = pvp_play_count + 1
@@ -1921,7 +2084,7 @@ begin
   end;
   tier_difference := loser_tier_index - winner_tier_index;
   lp_gain := greatest(10, least(20, 15 + tier_difference * 2));
-  lp_loss := greatest(5, least(10, 7 + tier_difference));
+  lp_loss := greatest(3, least(7, 4 + tier_difference));
   old_tier := case
     when old_lp >= 2200 then '다이아'
     when old_lp >= 1800 then '플레'
@@ -1944,6 +2107,9 @@ begin
   new_tier := public.lp_tier(old_lp + lp_gain);
   promoted := old_tier <> new_tier;
   promotion_reward := case when promoted then 200 else 0 end;
+
+  perform public.add_character_mastery(winner_id, winner_character, 20);
+  perform public.add_character_mastery(loser_id, loser_character, 20);
 
   update public.app_users
   set lp = lp + lp_gain,
@@ -2007,11 +2173,12 @@ grant execute on function public.complete_pve_run(text, uuid) to anon, authentic
 grant execute on function public.get_rankings(text) to anon, authenticated;
 grant execute on function public.get_pve_rankings(text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
-grant execute on function public.find_pvp_match(text, boolean) to anon, authenticated;
+grant execute on function public.find_pvp_match(text, boolean, text) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
 grant execute on function public.cancel_pvp_match(text) to anon, authenticated;
 grant execute on function public.set_character_ban(text, text, text) to anon, authenticated;
 grant execute on function public.set_character_ready(text, text, text, boolean, text) to anon, authenticated;
+grant execute on function public.record_match_mastery(text, text) to anon, authenticated;
 grant execute on function public.use_skill_event(text, text, text, integer) to anon, authenticated;
 grant execute on function public.settle_match(text, text, uuid, uuid, integer) to anon, authenticated;
 
