@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260628p">
+  <link rel="stylesheet" href="style.css?v=20260630b">
 </head>
 <body>
   <main class="app">
@@ -22,20 +22,19 @@
         <div class="patch-note-layout">
           <aside class="patch-version-panel" aria-label="버전 선택">
             <strong>버전 선택</strong>
-            <button class="patch-version-button is-active" type="button" data-patch-version="beta-v1.2">beta v1.2</button>
+            <button class="patch-version-button is-active" type="button" data-patch-version="beta-v1.3">beta v1.3</button>
+            <button class="patch-version-button" type="button" data-patch-version="beta-v1.2">beta v1.2</button>
             <button class="patch-version-button" type="button" data-patch-version="beta-v1.1">beta v1.1</button>
             <button class="patch-version-button" type="button" data-patch-version="beta-v1.0">beta v1.0</button>
           </aside>
           <section class="patch-content-panel">
-            <h3 id="patchVersionTitle">beta v1.2 업데이트</h3>
+            <h3 id="patchVersionTitle">beta v1.3 업데이트</h3>
             <div id="patchVersionContent" class="patch-version-content">
               <ul>
-                <li>신규 캐릭터 - 총쏘는 색히, 얼리는 색히, 폭발하는 색히, 로프타는 색히</li>
-                <li>1 VS 1 VS 1 모드 추가 - 세 명이 동시에 싸우는 일반 매치가 추가되었습니다.</li>
-                <li>숙련도 시스템 추가 - 캐릭터 플레이로 숙련도를 올리고 전용 칭호를 획득할 수 있습니다.</li>
-                <li>픽창 개선 - 캐릭터 목록을 스크롤 방식으로 바꾸고 신규 캐릭터를 선택할 수 있게 했습니다.</li>
-                <li>폭발하는 색히와 로프타는 색히 전투 연출 및 판정을 조정했습니다.</li>
-                <li>3인전 HUD는 자신의 체력만 보이도록 정리했습니다.</li>
+                <li>로프타는 색히 조정 - 난이도 3으로 변경하고 로프 길이와 타격 연출을 강화했습니다.</li>
+                <li>개쳐맞는 색히 조정 - 도발 쿨타임이 2초 증가했습니다.</li>
+                <li>맨몸격투 하는 색히 추가 효과 - 용권 상태에서 2초마다 이동 방향이 적을 향하도록 보정됩니다.</li>
+                <li>도감 설명과 능력치가 최신 전투 수치에 맞게 갱신되었습니다.</li>
               </ul>
             </div>
           </section>
@@ -902,6 +901,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260628p"></script>
+  <script src="game.js?v=20260630b"></script>
 </body>
 </html>

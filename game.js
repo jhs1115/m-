@@ -247,6 +247,15 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.3": {
+    title: "beta v1.3 업데이트",
+    items: [
+      "로프타는 색히 조정 - 난이도 3으로 변경하고 로프 길이와 타격 연출을 강화했습니다.",
+      "개쳐맞는 색히 조정 - 도발 쿨타임이 2초 증가했습니다.",
+      "맨몸격투 하는 색히 추가 효과 - 용권 상태에서 2초마다 이동 방향이 적을 향하도록 보정됩니다.",
+      "도감 설명과 능력치가 최신 전투 수치에 맞게 갱신되었습니다."
+    ]
+  },
   "beta-v1.2": {
     title: "beta v1.2 업데이트",
     items: [
@@ -587,7 +596,7 @@ const skillNames = {
   gunner: { normal: "기관총", ultimate: "리로드" },
   freezer: { normal: "스노우 엔젤", ultimate: "이터널 블리자드" },
   bomberman: { normal: "메가 붐", ultimate: "하우저 임팩트" },
-  roper: { normal: "쓰로잉", ultimate: "스턴 러쉬" },
+  roper: { normal: "쓰로잉", ultimate: "로프 러쉬" },
   gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" },
   cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" }
 };
@@ -625,7 +634,7 @@ const characterGuide = {
   },
   tank: {
     attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 주며 받는 모든 피해가 20% 감소합니다."],
-    normal: ["도발", "12초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
+    normal: ["도발", "14초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
     ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 50의 피해와 3초 기절을 줍니다."]
   },
   beamer: {
@@ -646,7 +655,7 @@ const characterGuide = {
   brawler: {
     attack: ["격투", "1초", "적이 사거리 내에 들어오면 8의 피해를 입힙니다."],
     normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 25% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
-    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 피해가 증가합니다."]
+    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 피해가 증가합니다. 용권 상태에서는 2초마다 이동 궤적이 적을 바라보도록 보정됩니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -699,14 +708,14 @@ const characterGuide = {
     ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 더 큰 얼음의 정수를 관통 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 6초 동안 유지되는 넓은 슬로우 장판이 남습니다."]
   },
   bomberman: {
-    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 15의 피해를 받습니다. 발동할 때마다 자신은 3의 피해를 받습니다."],
-    normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 9의 피해를 받습니다."],
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 15의 피해를 받습니다. 발동할 때마다 자신은 5의 피해를 받습니다."],
+    normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 10의 피해를 받습니다."],
     ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
   },
   roper: {
     attack: ["로프", "2.5초", "게임 시작 시 적에게 로프를 걸고 적 주변을 계속 돕니다. 일반공격 쿨타임마다 적에게 달려들어 5의 피해를 주고 기절시킵니다."],
-    normal: ["쓰로잉", "9초", "로프를 강하게 당겨 적을 던집니다. 던져진 적은 5의 피해를 입고, 벽에 닿으면 5의 추가 피해와 1초 기절을 받습니다."],
-    ultimate: ["스턴 러쉬", "30초", "기절 상태의 적에게만 사용할 수 있습니다. 기절한 적에게 0.2초마다 5번 로프 공격을 몰아칩니다. 이 공격에는 기절이 적용되지 않습니다."]
+    normal: ["쓰로잉", "9초", "1초 동안 회피 상태가 되어 긴 로프 궤도로 빠르게 회전합니다. 회피 중에는 투사체 피해를 받지 않으며, 이후 로프를 당겨 적을 던집니다. 던져진 적은 5의 피해를 입고 벽에 닿으면 5의 추가 피해와 1초 기절을 받습니다."],
+    ultimate: ["로프 러쉬", "30초", "적의 주위를 긴 로프로 빠르게 돌며 1.5초 간격으로 4번 집어 던집니다. 던질 때마다 5의 피해를 주고, 벽에 닿으면 5의 추가 피해와 1초 기절을 받습니다."]
   },
   gambler: {
     attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
@@ -825,6 +834,7 @@ let selections = {
 };
 let game = null;
 let animationId = null;
+let gameLoopToken = 0;
 let gameSpeed = 1;
 let codexPreviewMode = false;
 let selectedMode = "";
@@ -897,7 +907,7 @@ const codexRatings = {
   gunner: { difficulty: 2, damage: 2, mobility: 3 },
   freezer: { difficulty: 2, damage: 2, mobility: 1 },
   bomberman: { difficulty: 1, damage: 3, mobility: 3 },
-  roper: { difficulty: 2, damage: 2, mobility: 3 },
+  roper: { difficulty: 3, damage: 2, mobility: 3 },
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 }
 };
@@ -2777,8 +2787,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "beta-v1.2") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.2"];
+function renderPatchNotice(version = "beta-v1.3") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.3"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -2793,7 +2803,7 @@ function renderPatchNotice(version = "beta-v1.2") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("beta-v1.2");
+  if (open) renderPatchNotice("beta-v1.3");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -4472,7 +4482,7 @@ function normalSkillCooldown(kind) {
     poker: 600,
     stealth: 1020,
     enhancer: 600,
-    tank: 720,
+    tank: 840,
     beamer: 720,
     wild: 1080,
     vampire: 0,
@@ -4604,6 +4614,7 @@ function makeCharacterCombatState(kind) {
     punchTimer: 0,
     brawlerSpeedStacks: 0,
     dragonFistTime: 0,
+    dragonAimTimer: 0,
     idleAttackTime: 0,
     clockHandTimer: kind === "timekeeper" ? 240 : Infinity,
     clockDamageOverride: 0,
@@ -4670,6 +4681,11 @@ function makeCharacterCombatState(kind) {
     roperLeashStretch: 0,
     roperRushHits: 0,
     roperRushTimer: 0,
+    roperRushActive: false,
+    roperRushNextThrow: 0,
+    roperRushSpin: 0,
+    roperDodgeTime: 0,
+    roperDodgeThrowPending: false,
     ropeThrowTime: 0,
     ropeThrowWallDamage: 0,
     mageHealReductionTime: 0,
@@ -4788,10 +4804,12 @@ function resetGame() {
   ui.currentBet.textContent = "";
   const local = myFighter() || game.fighters[0];
   const localPlayer = getPlayer(local.ownerId) || p1;
-  ui.hudP1Label.innerHTML = triple ? playerNameWithTitle(localPlayer, "PLAYER") : playerNameWithTitle(p1, "PLAYER 1");
-  ui.hudP2Label.innerHTML = triple ? "" : playerNameWithTitle(p2, "PLAYER 2");
-  ui.playerOneName.textContent = triple ? local.name : game.fighters[0].name;
-  ui.playerTwoName.textContent = triple ? "" : game.fighters[1].name;
+  const mainOpponent = game.fighters.find(fighter => fighter.ownerId !== local.ownerId) || game.fighters[1];
+  const mainOpponentPlayer = getPlayer(mainOpponent?.ownerId) || p2;
+  ui.hudP1Label.innerHTML = playerNameWithTitle(localPlayer, triple ? "PLAYER" : "PLAYER 1");
+  ui.hudP2Label.innerHTML = triple ? "" : playerNameWithTitle(mainOpponentPlayer, "PLAYER 2");
+  ui.playerOneName.textContent = local.name;
+  ui.playerTwoName.textContent = triple ? "" : mainOpponent?.name || "";
   ui.hudP2Label.closest(".hud-card")?.classList.toggle("is-hidden", triple);
   ui.resultOverlay.classList.remove("is-active");
   updateHud();
@@ -4813,7 +4831,8 @@ function startGame() {
   showScreen("game");
   if (animationId) cancelAnimationFrame(animationId);
   updateSkillHud();
-  animationId = requestAnimationFrame(loop);
+  const loopToken = ++gameLoopToken;
+  animationId = requestAnimationFrame(now => loop(now, loopToken));
 }
 
 function updateHud() {
@@ -5758,6 +5777,10 @@ function damageCombatTarget(target, amount, attacker) {
   else damage(target, amount, attacker);
 }
 
+function dodgesProjectile(target) {
+  return !target?.owner && target?.kind === "roper" && target.roperDodgeTime > 0;
+}
+
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
   fighter.stealthTime = hyper ? 240 : 180;
@@ -6114,7 +6137,7 @@ function useRouletteNormal(owner) {
   } else if (kind === "bomberman") {
     beginMegaBoom(owner);
   } else if (kind === "roper") {
-    throwRopedTarget(owner);
+    beginRopeDodgeThrow(owner);
   } else if (kind === "believer") {
     owner.ceremonyTime = 300;
     owner.ceremonyTick = 60;
@@ -6272,7 +6295,7 @@ function triggerNormalSkill(fighter) {
       target.silenceTime = Math.max(target.silenceTime, 120);
     }
     addSkillPulse(fighter, fighter.accent);
-    fighter.skillTimer = 720;
+    fighter.skillTimer = 840;
     return;
   }
 
@@ -6362,7 +6385,7 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "roper") {
-    throwRopedTarget(fighter);
+    beginRopeDodgeThrow(fighter);
     return;
   }
 
@@ -6521,6 +6544,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "brawler") {
     fighter.dragonFistTime = 480;
+    fighter.dragonAimTimer = 120;
     fighter.ultimateTimer = 2700;
     addVisualEffect({
       type: "dragon-fist",
@@ -6555,7 +6579,7 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "roper") {
-    beginStunRush(fighter);
+    beginRopeRush(fighter);
     return;
   }
 
@@ -6586,9 +6610,7 @@ function triggerUltimate(fighter) {
 
 function myFighter() {
   if (!game || !currentUser) return null;
-  if (currentUser.id === matchPlayers.p2) return game.fighters[1];
-  if (currentUser.id === matchPlayers.p3) return game.fighters[2];
-  return game.fighters[0];
+  return game.fighters.find(fighter => fighter.ownerId === currentUser.id) || null;
 }
 
 function fighterByOwnerId(ownerId) {
@@ -6598,7 +6620,7 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
-  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0 || fighter.roperRushHits > 0 || fighter.ropeThrowTime > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0 || fighter.roperRushHits > 0 || fighter.roperDodgeTime > 0 || fighter.ropeThrowTime > 0) return false;
   if (type === "attack") {
     return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
   }
@@ -6613,7 +6635,6 @@ function skillAvailable(fighter, type) {
   if (fighter.kind === "wild") return false;
   if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
   if (fighter.kind === "cosmic" && !fighter.cosmicBlasterActive && fighter.cosmicDust <= 0) return false;
-  if (fighter.kind === "roper" && opponentOf(fighter).stunTime <= 0) return false;
   return fighter.ultimateTimer <= 0;
 }
 
@@ -7023,6 +7044,40 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
+  if (fighter.roperDodgeTime > 0) {
+    fighter.roperDodgeTime -= dt;
+    fighter.roperAngle += 0.22 * dt;
+    const target = opponentOf(fighter);
+    if (target) {
+      const ropePulse = 62 + Math.sin(game.tick * 0.08 + fighter.roperAngle * 1.8) * 38;
+      const orbit = target.radius + fighter.radius + 144 + ropePulse + Math.sin(game.tick * 0.18) * 24;
+      const desiredX = clamp(target.x + Math.cos(fighter.roperAngle) * orbit, fighter.radius, canvas.width - fighter.radius);
+      const desiredY = clamp(target.y + Math.sin(fighter.roperAngle) * orbit, fighter.radius, canvas.height - fighter.radius);
+      fighter.vx = (desiredX - fighter.x) * 0.34;
+      fighter.vy = (desiredY - fighter.y) * 0.34;
+      fighter.x += fighter.vx * dt;
+      fighter.y += fighter.vy * dt;
+      bounceOnWalls(fighter);
+    }
+    if (game.tick % 6 === 0) {
+      addVisualEffect({
+        type: "rope-hit",
+        x1: fighter.x,
+        y1: fighter.y,
+        x2: target?.x || fighter.x,
+        y2: target?.y || fighter.y,
+        color: "#fde68a",
+        life: 12,
+        maxLife: 12
+      });
+    }
+    updateSkills(fighter, dt);
+    if (fighter.roperDodgeTime <= 0 && fighter.roperDodgeThrowPending) {
+      fighter.roperDodgeThrowPending = false;
+      throwRopedTarget(fighter, { keepSkillTimer: true });
+    }
+    return;
+  }
   if (fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0) {
     updateRoperStrikeMotion(fighter, dt);
     updateSkills(fighter, dt);
@@ -7030,14 +7085,26 @@ function moveFighter(fighter, dt) {
   }
   if (fighter.roperRushHits > 0) {
     fighter.roperRushTimer -= dt;
-    fighter.vx = 0;
-    fighter.vy = 0;
+    const target = opponentOf(fighter);
+    if (target) {
+      fighter.roperAngle += 0.18 * dt;
+      const ropePulse = 74 + Math.sin(game.tick * 0.09 + fighter.roperAngle * 2.1) * 46;
+      const orbit = target.radius + fighter.radius + 162 + ropePulse + Math.sin(game.tick * 0.2) * 28;
+      const desiredX = clamp(target.x + Math.cos(fighter.roperAngle) * orbit, fighter.radius, canvas.width - fighter.radius);
+      const desiredY = clamp(target.y + Math.sin(fighter.roperAngle) * orbit, fighter.radius, canvas.height - fighter.radius);
+      fighter.vx = (desiredX - fighter.x) * 0.42;
+      fighter.vy = (desiredY - fighter.y) * 0.42;
+      fighter.x += fighter.vx * dt;
+      fighter.y += fighter.vy * dt;
+      bounceOnWalls(fighter);
+    }
     updateSkills(fighter, dt);
     while (fighter.roperRushHits > 0 && fighter.roperRushTimer <= 0 && !game.over) {
-      queueRoperStrike(fighter, false);
+      throwRopedTarget(fighter, { keepSkillTimer: true, rush: true });
       fighter.roperRushHits -= 1;
-      fighter.roperRushTimer += 12;
+      fighter.roperRushTimer += 90;
     }
+    if (fighter.roperRushHits <= 0) fighter.roperRushActive = false;
     return;
   }
   if (fighter.ropeThrowTime > 0) {
@@ -7178,7 +7245,25 @@ function moveFighter(fighter, dt) {
   if (fighter.chaseTime > 0) fighter.chaseTime -= dt;
   if (fighter.chaseBounceTime > 0) fighter.chaseBounceTime -= dt;
   if (fighter.bloodPreludeTime > 0) fighter.bloodPreludeTime -= dt;
-  if (fighter.dragonFistTime > 0) fighter.dragonFistTime -= dt;
+  if (fighter.dragonFistTime > 0) {
+    fighter.dragonFistTime -= dt;
+    fighter.dragonAimTimer -= dt;
+    if (fighter.dragonAimTimer <= 0) {
+      const aimTarget = nearestEnemyTarget(fighter);
+      const angle = Math.atan2(aimTarget.y - fighter.y, aimTarget.x - fighter.x);
+      const currentSpeed = Math.max(Math.hypot(fighter.vx, fighter.vy), 7.8);
+      fighter.vx = Math.cos(angle) * currentSpeed;
+      fighter.vy = Math.sin(angle) * currentSpeed;
+      fighter.dragonAimTimer = 120;
+      addVisualEffect({
+        type: "rage-burst",
+        fighter,
+        life: 26,
+        maxLife: 26,
+        color: "#facc15"
+      });
+    }
+  }
   if (fighter.riftWallCooldown > 0) fighter.riftWallCooldown -= dt;
   if (fighter.kind === "riftmaker" && wallHit && fighter.riftWallCooldown <= 0) {
     addRift(fighter, fighter.x, fighter.y, false, wallHit);
@@ -7292,7 +7377,7 @@ function moveFighter(fighter, dt) {
   if (fighter.kind === "bomberman") {
     fighter.explosionTimer -= dt;
     const targetDistance = Math.hypot(target.x - fighter.x, target.y - fighter.y);
-    if ((wallHit || targetDistance < target.radius + fighter.radius + 4 || fighter.explosionTimer <= 0) && fighter.explosionHitCooldown <= 0) {
+    if ((wallHit || targetDistance < target.radius + fighter.radius + 4) && fighter.explosionHitCooldown <= 0) {
       triggerExplosionBoost(fighter);
     }
   }
@@ -8532,6 +8617,19 @@ function updateBalls(dt) {
       const dy = target.y - ball.y;
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
         if (target !== ball.owner) {
+          if (dodgesProjectile(target)) {
+            addVisualEffect({
+              type: "rope-hit",
+              x1: target.x,
+              y1: target.y,
+              x2: ball.x,
+              y2: ball.y,
+              color: "#fde68a",
+              life: 16,
+              maxLife: 16
+            });
+            return false;
+          }
           if (ball.demonMissile) {
             applyDemonHit(target, ball.damage, ball.owner, {
               addMark: 1,
@@ -8643,6 +8741,19 @@ function updatePokerShots(dt) {
       return false;
     }
     if (Math.hypot(card.target.x - card.x, card.target.y - card.y) < card.target.radius + card.radius) {
+      if (dodgesProjectile(card.target)) {
+        addVisualEffect({
+          type: "rope-hit",
+          x1: card.target.x,
+          y1: card.target.y,
+          x2: card.x,
+          y2: card.y,
+          color: "#fde68a",
+          life: 16,
+          maxLife: 16
+        });
+        return false;
+      }
       applyPokerCardHit(card);
       return false;
     }
@@ -8780,7 +8891,7 @@ function updateWeapons(dt) {
       weapon.returning = true;
     }
     if (!weapon.returning && Math.hypot(weapon.target.x - weapon.x, weapon.target.y - weapon.y) < weapon.target.radius + 18) {
-      if (!weapon.hit) damageCombatTarget(weapon.target, weapon.damage, weapon.owner);
+      if (!weapon.hit && !dodgesProjectile(weapon.target)) damageCombatTarget(weapon.target, weapon.damage, weapon.owner);
       weapon.hit = true;
       weapon.returning = true;
     }
@@ -9366,25 +9477,26 @@ function drawRopeLinks() {
       if (!target || target.hp <= 0) return;
       const charge = fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0;
       const stretch = fighter.roperLeashStretch || 0;
+      const breathing = Math.sin(game.tick * 0.055 + fighter.roperAngle) * 22;
       ctx.save();
       ctx.globalAlpha = charge ? 0.95 : 0.72;
       ctx.strokeStyle = "#fef3c7";
       ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = charge ? 22 : 12;
-      ctx.lineWidth = charge ? 5 : 3;
-      ctx.setLineDash(charge ? [18, 5] : [12, 9]);
+      ctx.shadowBlur = charge ? 30 : 16;
+      ctx.lineWidth = charge ? 6 : 3.8;
+      ctx.setLineDash(charge ? [22, 5] : [16, 10]);
       ctx.beginPath();
       ctx.moveTo(fighter.x, fighter.y);
       ctx.quadraticCurveTo(
-        (fighter.x + target.x) / 2 + Math.sin(game.tick * 0.09) * (26 + stretch * 0.22),
-        (fighter.y + target.y) / 2 + Math.cos(game.tick * 0.08) * (20 + stretch * 0.18),
+        (fighter.x + target.x) / 2 + Math.sin(game.tick * 0.09) * (36 + stretch * 0.24 + breathing),
+        (fighter.y + target.y) / 2 + Math.cos(game.tick * 0.08) * (30 + stretch * 0.2 + breathing),
         target.x,
         target.y
       );
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.globalAlpha *= 0.45;
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 13;
       ctx.strokeStyle = "rgba(254, 243, 199, 0.22)";
       ctx.beginPath();
       ctx.moveTo(fighter.x, fighter.y);
@@ -10852,13 +10964,14 @@ function createHouserStrike(owner) {
 }
 
 function updateRoperOrbit(owner, target, dt) {
-  owner.roperAngle += 0.045 * dt;
+  owner.roperAngle += 0.052 * dt;
   owner.roperLeashStretch = Math.max(0, owner.roperLeashStretch - dt * 0.05);
-  const orbit = target.radius + owner.radius + 72 + Math.sin(game.tick * 0.08 + owner.roperAngle) * 10 + owner.roperLeashStretch;
+  const ropePulse = 46 + Math.sin(game.tick * 0.045 + owner.roperAngle * 1.6) * 34;
+  const orbit = target.radius + owner.radius + 108 + ropePulse + Math.sin(game.tick * 0.11 + owner.roperAngle) * 18 + owner.roperLeashStretch;
   const desiredX = clamp(target.x + Math.cos(owner.roperAngle) * orbit, owner.radius, canvas.width - owner.radius);
   const desiredY = clamp(target.y + Math.sin(owner.roperAngle) * orbit, owner.radius, canvas.height - owner.radius);
-  owner.vx = (desiredX - owner.x) * 0.24;
-  owner.vy = (desiredY - owner.y) * 0.24;
+  owner.vx = (desiredX - owner.x) * 0.28;
+  owner.vy = (desiredY - owner.y) * 0.28;
   owner.x += owner.vx * dt;
   owner.y += owner.vy * dt;
   bounceOnWalls(owner);
@@ -10879,7 +10992,7 @@ function queueRoperStrike(owner, applyStun = true) {
   owner.roperStrikeHit = false;
   owner.vx *= 0.25;
   owner.vy *= 0.25;
-  owner.roperLeashStretch = 24;
+  owner.roperLeashStretch = 70;
   addVisualEffect({
     type: "rope-hit",
     x1: owner.x,
@@ -10903,11 +11016,11 @@ function updateRoperStrikeMotion(owner, dt) {
     owner.roperStrikeWindup -= dt;
     owner.vx = -Math.cos(angle) * 1.6;
     owner.vy = -Math.sin(angle) * 1.6;
-    owner.roperLeashStretch = Math.min(54, owner.roperLeashStretch + dt * 1.7);
+    owner.roperLeashStretch = Math.min(112, owner.roperLeashStretch + dt * 2.4);
     if (owner.roperStrikeWindup <= 0) {
       owner.roperStrikeCharge = 18;
-      owner.vx = Math.cos(angle) * 28;
-      owner.vy = Math.sin(angle) * 28;
+      owner.vx = Math.cos(angle) * 34;
+      owner.vy = Math.sin(angle) * 34;
       addVisualEffect({
         type: "rope-hit",
         x1: owner.x,
@@ -10933,11 +11046,11 @@ function updateRoperStrikeMotion(owner, dt) {
     damage(target, 5, owner);
     if (owner.roperStrikeStun) target.stunTime = Math.max(target.stunTime || 0, 30);
     const hitAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
-    target.vx += Math.cos(hitAngle) * 7;
-    target.vy += Math.sin(hitAngle) * 7;
-    owner.vx = -Math.cos(hitAngle) * 12;
-    owner.vy = -Math.sin(hitAngle) * 12;
-    owner.roperLeashStretch = 64;
+    target.vx += Math.cos(hitAngle) * 10;
+    target.vy += Math.sin(hitAngle) * 10;
+    owner.vx = -Math.cos(hitAngle) * 16;
+    owner.vy = -Math.sin(hitAngle) * 16;
+    owner.roperLeashStretch = 132;
     addVisualEffect({
       type: "rope-hit",
       x1: owner.x,
@@ -10945,8 +11058,17 @@ function updateRoperStrikeMotion(owner, dt) {
       x2: target.x,
       y2: target.y,
       color: owner.accent,
-      life: 30,
-      maxLife: 30
+      life: 42,
+      maxLife: 42
+    });
+    addVisualEffect({
+      type: "mega-explosion",
+      x: target.x,
+      y: target.y,
+      radius: 58,
+      color: "#fde68a",
+      life: 24,
+      maxLife: 24
     });
   }
   if (owner.roperStrikeCharge <= 0 || owner.roperStrikeHit) {
@@ -10959,16 +11081,36 @@ function updateRoperStrikeMotion(owner, dt) {
   }
 }
 
-function throwRopedTarget(owner) {
+function beginRopeDodgeThrow(owner) {
+  owner.roperDodgeTime = 60;
+  owner.roperDodgeThrowPending = true;
+  owner.skillTimer = 540;
+  owner.roperLeashStretch = 138;
+  addSkillPulse(owner, "#fde68a");
+  addVisualEffect({
+    type: "rope-hit",
+    x1: owner.x,
+    y1: owner.y,
+    x2: opponentOf(owner).x,
+    y2: opponentOf(owner).y,
+    color: "#fde68a",
+    life: 48,
+    maxLife: 48
+  });
+}
+
+function throwRopedTarget(owner, options = {}) {
   const target = opponentOf(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   damage(target, 5, owner);
-  target.vx = Math.cos(angle) * 22;
-  target.vy = Math.sin(angle) * 22;
-  target.ropeThrowTime = 24;
+  const throwForce = options.rush ? 27 : 23;
+  target.vx = Math.cos(angle) * throwForce;
+  target.vy = Math.sin(angle) * throwForce;
+  target.ropeThrowTime = options.rush ? 30 : 24;
   target.ropeThrowWallDamage = 5;
-  owner.skillTimer = 540;
+  if (!options.keepSkillTimer) owner.skillTimer = 540;
   addSkillPulse(owner, owner.accent);
+  owner.roperLeashStretch = options.rush ? 176 : 138;
   addVisualEffect({
     type: "rope-hit",
     x1: owner.x,
@@ -10976,18 +11118,31 @@ function throwRopedTarget(owner) {
     x2: target.x + Math.cos(angle) * 70,
     y2: target.y + Math.sin(angle) * 70,
     color: "#fef3c7",
-    life: 34,
-    maxLife: 34
+    life: options.rush ? 48 : 38,
+    maxLife: options.rush ? 48 : 38
+  });
+  addVisualEffect({
+    type: "mega-explosion",
+    x: target.x,
+    y: target.y,
+    radius: options.rush ? 72 : 58,
+    color: "#facc15",
+    life: 24,
+    maxLife: 24
   });
 }
 
-function beginStunRush(owner) {
-  const target = opponentOf(owner);
-  if (target.stunTime <= 0) return;
-  owner.roperRushHits = 5;
+function beginRopeRush(owner) {
+  owner.roperRushHits = 4;
   owner.roperRushTimer = 12;
+  owner.roperRushActive = true;
+  owner.roperLeashStretch = 190;
   owner.ultimateTimer = 1800;
   addSkillPulse(owner, "#fef3c7");
+}
+
+function beginStunRush(owner) {
+  beginRopeRush(owner);
 }
 
 function drawFighterHealthBar(fighter) {
@@ -11599,7 +11754,8 @@ function resimulateGameToTick(targetTick) {
   }
 }
 
-function loop(now) {
+function loop(now, loopToken = gameLoopToken) {
+  if (loopToken !== gameLoopToken) return;
   if (!game) return;
   if (!battleClockSyncPending && now - lastBattleClockSyncAt >= 5000) {
     lastBattleClockSyncAt = now;
@@ -11620,7 +11776,7 @@ function loop(now) {
   }
 
   drawArena();
-  animationId = requestAnimationFrame(loop);
+  animationId = requestAnimationFrame(nextNow => loop(nextNow, loopToken));
 }
 
 function setGameSpeed(speed) {
@@ -12197,7 +12353,7 @@ function usePveSkill(type) {
         projectile.homing = true;
         projectile.homingTime = 240;
       });
-      player.skillTimer = 720;
+      player.skillTimer = 840;
       addPveFloating("룩 온!", player.accent);
     } else if (player.kind === "charger") {
       player.rageTime = 180;
@@ -15526,6 +15682,7 @@ function returnToPveSelect() {
 }
 
 function stopGame() {
+  gameLoopToken += 1;
   if (animationId) cancelAnimationFrame(animationId);
   animationId = null;
   game = null;

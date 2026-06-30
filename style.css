@@ -645,6 +645,7 @@ body:not(.is-authenticated) .notice-actions {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
   opacity: 0;
   background:
     linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.12) 38%, transparent 58%),
@@ -663,6 +664,13 @@ body:not(.is-authenticated) .notice-actions {
   background:
     linear-gradient(180deg, rgba(6, 10, 17, 0.88), rgba(3, 6, 11, 0.95));
   border-color: rgba(71, 85, 105, 0.22);
+}
+
+.title-card > div,
+.title-card > button,
+.title-card > span {
+  position: relative;
+  z-index: 2;
 }
 
 .title-card.is-locked strong,
@@ -711,9 +719,13 @@ body:not(.is-authenticated) .notice-actions {
 .title-lock-state {
   display: block;
   margin-top: 8px;
-  color: var(--muted);
+  color: #d7e2f3;
   font-size: 0.78rem;
   font-weight: 800;
+  opacity: 0.96;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+  -webkit-text-fill-color: currentColor;
+  background: none;
 }
 
 .title-card.can-claim .title-lock-state {
@@ -801,15 +813,15 @@ body:not(.is-authenticated) .notice-actions {
 
 .title-mastery {
   color: var(--title-b, #bfdbfe);
-  background: linear-gradient(90deg, var(--title-a, #60a5fa), #ffffff, var(--title-b, #22d3ee), var(--title-a, #60a5fa));
+  background: linear-gradient(90deg, var(--title-a, #60a5fa), #ffffff, var(--title-b, #22d3ee), #ffffff, var(--title-a, #60a5fa));
   background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow:
-    0 0 10px var(--title-a, rgba(96, 165, 250, 0.5)),
-    0 0 22px var(--title-b, rgba(34, 211, 238, 0.35)),
-    0 0 42px rgba(255, 255, 255, 0.18);
-  animation: title-shine 2.3s linear infinite;
+    0 0 12px var(--title-a, rgba(96, 165, 250, 0.62)),
+    0 0 28px var(--title-b, rgba(34, 211, 238, 0.44)),
+    0 0 48px rgba(255, 255, 255, 0.22);
+  animation: title-shine 2.05s linear infinite;
 }
 
 .title-developer {
@@ -819,9 +831,10 @@ body:not(.is-authenticated) .notice-actions {
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow:
-    0 0 12px rgba(167, 139, 250, 0.58),
-    0 0 24px rgba(34, 211, 238, 0.28);
-  animation: developer-title-shine 2.4s linear infinite;
+    0 0 16px rgba(167, 139, 250, 0.82),
+    0 0 36px rgba(34, 211, 238, 0.42),
+    0 0 64px rgba(240, 171, 252, 0.24);
+  animation: developer-title-shine 1.9s linear infinite;
 }
 
 .title-gold,
@@ -850,20 +863,24 @@ body:not(.is-authenticated) .notice-actions {
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow:
-    0 0 10px rgba(255, 255, 255, 0.95),
-    0 0 22px rgba(250, 204, 21, 0.95),
-    0 0 44px rgba(245, 158, 11, 0.8),
-    0 0 72px rgba(255, 255, 255, 0.34);
-  animation: challenger-title-shine 1.35s linear infinite;
+    0 0 14px rgba(255, 255, 255, 1),
+    0 0 30px rgba(250, 204, 21, 1),
+    0 0 62px rgba(245, 158, 11, 0.92),
+    0 0 110px rgba(255, 255, 255, 0.46);
+  animation: challenger-title-shine 1.05s linear infinite;
 }
 
 .title-god-pve {
   color: #dffcff;
-  background: linear-gradient(90deg, #67e8f9, #ffffff, #c084fc, #22d3ee);
+  background: linear-gradient(90deg, #67e8f9, #ffffff, #c084fc, #22d3ee, #ffffff);
+  background-size: 240% 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  text-shadow: 0 0 18px rgba(34, 211, 238, 0.9), 0 0 38px rgba(168, 85, 247, 0.55);
-  animation: title-shine 1.9s linear infinite;
+  text-shadow:
+    0 0 18px rgba(34, 211, 238, 0.94),
+    0 0 44px rgba(168, 85, 247, 0.68),
+    0 0 76px rgba(255, 255, 255, 0.22);
+  animation: title-shine 1.45s linear infinite;
 }
 
 .title-challenger,
@@ -1045,9 +1062,10 @@ body:not(.is-authenticated) .notice-actions {
   background-clip: text;
   -webkit-text-fill-color: transparent !important;
   text-shadow:
-    0 0 12px rgba(167, 139, 250, 0.58),
-    0 0 24px rgba(34, 211, 238, 0.28);
-  animation: developer-title-shine 2.4s linear infinite;
+    0 0 16px rgba(167, 139, 250, 0.82),
+    0 0 36px rgba(34, 211, 238, 0.42),
+    0 0 64px rgba(240, 171, 252, 0.24);
+  animation: developer-title-shine 1.9s linear infinite;
 }
 
 .title-card.title-developer .title-equip-button {
@@ -1056,6 +1074,117 @@ body:not(.is-authenticated) .notice-actions {
   background:
     linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96)) !important;
   box-shadow: 0 0 18px rgba(167, 139, 250, 0.16);
+}
+
+.title-card.is-owned strong {
+  letter-spacing: 0;
+}
+
+.title-card.is-owned.title-mastery {
+  background:
+    radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--title-a, #60a5fa) 34%, transparent), transparent 33%),
+    radial-gradient(circle at 88% 68%, color-mix(in srgb, var(--title-b, #22d3ee) 20%, transparent), transparent 36%),
+    linear-gradient(135deg, rgba(8, 15, 28, 0.98), rgba(3, 7, 14, 0.98));
+  border-color: color-mix(in srgb, var(--title-a, #60a5fa) 70%, #f2c14e);
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--title-a, #60a5fa) 38%, transparent),
+    0 0 46px color-mix(in srgb, var(--title-b, #22d3ee) 22%, transparent),
+    inset 0 0 16px rgba(255, 255, 255, 0.055);
+}
+
+.title-card.is-owned.title-pro {
+  background:
+    radial-gradient(circle at 20% 22%, rgba(196, 181, 253, 0.26), transparent 34%),
+    radial-gradient(circle at 84% 70%, rgba(34, 211, 238, 0.14), transparent 36%),
+    linear-gradient(135deg, rgba(24, 18, 44, 0.98), rgba(4, 8, 16, 0.98));
+  border-color: rgba(196, 181, 253, 0.68);
+  box-shadow:
+    0 0 24px rgba(168, 85, 247, 0.32),
+    0 0 54px rgba(34, 211, 238, 0.14);
+}
+
+.title-card.is-owned.title-gold,
+.title-card.is-owned.title-collect {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(250, 204, 21, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(26, 20, 8, 0.98), rgba(5, 9, 16, 0.98));
+  border-color: rgba(250, 204, 21, 0.52);
+  box-shadow:
+    0 0 16px rgba(250, 204, 21, 0.18),
+    inset 0 0 12px rgba(255, 247, 173, 0.04);
+}
+
+.title-card.is-owned.title-beta {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.34), transparent 30%),
+    radial-gradient(circle at 84% 66%, rgba(168, 85, 247, 0.22), transparent 36%),
+    linear-gradient(135deg, rgba(12, 20, 40, 0.98), rgba(4, 8, 16, 0.98));
+  border-color: rgba(147, 197, 253, 0.68);
+  box-shadow:
+    0 0 24px rgba(147, 197, 253, 0.28),
+    0 0 48px rgba(168, 85, 247, 0.16),
+    inset 0 0 16px rgba(255, 255, 255, 0.06);
+}
+
+.title-card.is-owned.title-god-pve {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(103, 232, 249, 0.36), transparent 34%),
+    radial-gradient(circle at 82% 42%, rgba(192, 132, 252, 0.3), transparent 36%),
+    radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.12), transparent 38%),
+    linear-gradient(135deg, rgba(4, 22, 34, 0.98), rgba(8, 6, 24, 0.98));
+  border-color: rgba(103, 232, 249, 0.9);
+  box-shadow:
+    0 0 34px rgba(34, 211, 238, 0.54),
+    0 0 88px rgba(168, 85, 247, 0.34),
+    inset 0 0 22px rgba(255, 255, 255, 0.1);
+}
+
+.title-card.is-owned.title-developer {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(167, 139, 250, 0.42), transparent 32%),
+    radial-gradient(circle at 72% 44%, rgba(34, 211, 238, 0.24), transparent 34%),
+    radial-gradient(circle at 90% 82%, rgba(240, 171, 252, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(25, 18, 48, 0.98), rgba(4, 9, 18, 0.98));
+  border-color: rgba(196, 181, 253, 0.88);
+  box-shadow:
+    0 0 30px rgba(167, 139, 250, 0.48),
+    0 0 68px rgba(34, 211, 238, 0.22),
+    inset 0 0 20px rgba(255, 255, 255, 0.09);
+}
+
+.title-card.is-owned.title-challenger {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.34), transparent 24%),
+    radial-gradient(circle at 68% 36%, rgba(250, 204, 21, 0.56), transparent 38%),
+    radial-gradient(circle at 98% 88%, rgba(245, 158, 11, 0.32), transparent 42%),
+    linear-gradient(135deg, rgba(58, 35, 3, 0.99), rgba(8, 10, 18, 0.99));
+  border-color: rgba(255, 244, 163, 1);
+  box-shadow:
+    0 0 42px rgba(250, 204, 21, 0.76),
+    0 0 120px rgba(245, 158, 11, 0.46),
+    0 0 180px rgba(255, 255, 255, 0.16),
+    inset 0 0 28px rgba(255, 255, 255, 0.16);
+}
+
+.title-card.is-owned.title-god-pve::before,
+.title-card.is-owned.title-developer::before,
+.title-card.is-owned.title-beta::before,
+.title-card.is-owned.title-mastery::before,
+.title-card.is-owned.title-pro::before,
+.title-card.is-owned.title-challenger::before {
+  opacity: 1;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.22) 42%, transparent 58%),
+    radial-gradient(circle at 90% 22%, rgba(255, 255, 255, 0.2), transparent 16%);
+  animation: title-card-gleam 2.4s ease-in-out infinite;
+}
+
+.title-card.is-owned.title-challenger::before {
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.42) 40%, transparent 58%),
+    radial-gradient(circle at 88% 22%, rgba(255, 244, 163, 0.44), transparent 18%),
+    radial-gradient(circle at 28% 78%, rgba(250, 204, 21, 0.3), transparent 22%);
+  animation-duration: 1.55s;
 }
 
 @keyframes title-shine {
