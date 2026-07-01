@@ -1440,6 +1440,10 @@ h2 {
   border-color: rgba(242, 193, 78, 0.26);
 }
 
+.world-panel {
+  min-height: 0;
+}
+
 .lobby-panel h2,
 .shop-panel h2,
 .inventory-panel h2,
@@ -1592,7 +1596,7 @@ h2 {
 
 .tier-maker-layout {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 156px;
+  grid-template-rows: minmax(0, 1fr) 230px;
   gap: 14px;
   min-height: 0;
 }
@@ -1610,7 +1614,7 @@ h2 {
   grid-template-rows: repeat(5, minmax(72px, 1fr));
   gap: 8px;
   padding: 12px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .tier-row {
@@ -1673,9 +1677,9 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 8px;
+  gap: 10px;
   min-height: 0;
-  padding: 10px;
+  padding: 12px;
   overflow: auto;
   background: rgba(0, 0, 0, 0.18);
   border: 1px dashed rgba(255, 255, 255, 0.14);
@@ -1685,10 +1689,10 @@ h2 {
 .tier-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 178px;
-  min-height: 38px;
-  padding: 5px 9px 5px 6px;
+  gap: 10px;
+  max-width: 214px;
+  min-height: 48px;
+  padding: 7px 12px 7px 8px;
   color: #f8fafc;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
@@ -1696,7 +1700,7 @@ h2 {
   border: 1px solid rgba(242, 193, 78, 0.24);
   border-radius: 999px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 900;
   touch-action: none;
   user-select: none;
@@ -1707,15 +1711,24 @@ h2 {
   transform: translateY(-1px);
 }
 
+.tier-chip.is-selected {
+  color: #fff7d6;
+  border-color: rgba(255, 226, 138, 0.95);
+  box-shadow:
+    0 0 0 2px rgba(242, 193, 78, 0.24) inset,
+    0 0 24px rgba(242, 193, 78, 0.28);
+}
+
 .tier-chip.is-dragging {
-  opacity: 0.42;
+  opacity: 0.72;
+  transform: scale(1.05);
 }
 
 .tier-chip-orb {
   display: grid;
-  flex: 0 0 28px;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
   place-items: center;
   color: #0b1020;
   background: linear-gradient(135deg, var(--chip-color), var(--chip-accent));
@@ -1967,16 +1980,20 @@ h2 {
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
   flex: 1;
+  height: 100%;
   min-height: 0;
   margin-top: 22px;
+  overflow: hidden;
 }
 
 .lobby-chat-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
+  height: 100%;
   min-height: 0;
-  padding: 14px;
+  max-height: 100%;
+  padding: 10px;
   overflow-y: auto;
   background:
     radial-gradient(circle at 50% 85%, rgba(242, 193, 78, 0.08), transparent 18%),
@@ -1993,8 +2010,8 @@ h2 {
 
 .lobby-chat-message {
   display: grid;
-  gap: 4px;
-  padding: 10px 11px;
+  gap: 2px;
+  padding: 7px 9px;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -2009,7 +2026,8 @@ h2 {
   min-width: 0;
   color: #f8fafc;
   font-weight: 1000;
-  line-height: 1.15;
+  line-height: 1.05;
+  font-size: 0.9rem;
 }
 
 .lobby-chat-name .equipped-title {
@@ -2018,7 +2036,8 @@ h2 {
 
 .lobby-chat-text {
   color: #ffffff;
-  line-height: 1.45;
+  line-height: 1.32;
+  font-size: 0.92rem;
   word-break: break-word;
   white-space: pre-wrap;
 }

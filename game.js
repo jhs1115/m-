@@ -270,7 +270,10 @@ const patchNoticeVersions = {
       "로프타는 색히 조정 - 난이도 3으로 변경하고 로프 길이와 타격 연출을 강화했습니다.",
       "개쳐맞는 색히 조정 - 도발 쿨타임이 2초 증가했습니다.",
       "맨몸격투 하는 색히 추가 효과 - 용권 상태에서 2초마다 이동 방향이 적을 향하도록 보정됩니다.",
-      "도감 설명과 능력치가 최신 전투 수치에 맞게 갱신되었습니다."
+      "도감 설명과 능력치가 최신 전투 수치에 맞게 갱신되었습니다.",
+      "로비 채팅 추가 - 닉네임과 장착 칭호가 함께 표시되며, 채팅은 5분 뒤 자동으로 사라집니다.",
+      "설정 개선 - 밝기, 이펙트 밝기, 화면 전환 옵션과 티어표 입장 기능이 추가되었습니다.",
+      "티어표 기능 추가 - 캐릭터를 1~5티어에 드래그하거나 클릭으로 배치할 수 있습니다."
     ]
   },
   "beta-v1.2": {
@@ -887,6 +890,7 @@ let soundSettings = loadSoundSettings();
 let visualSettings = loadVisualSettings();
 let tierMakerState = loadTierMakerState();
 let draggedTierKind = "";
+let selectedTierKind = "";
 let audioContext = null;
 let resimulatingGame = false;
 let settlementRequestedWinnerId = "";
@@ -2810,8 +2814,9 @@ function tierMakerPlacement(kind) {
 function makeTierChip(kind) {
   const character = characters[kind];
   if (!character) return "";
+  const selectedClass = selectedTierKind === kind ? " is-selected" : "";
   return `
-    <button class="tier-chip" type="button" draggable="true" data-tier-kind="${kind}" style="--chip-color:${character.color};--chip-accent:${character.accent};">
+    <button class="tier-chip${selectedClass}" type="button" draggable="true" data-tier-kind="${kind}" style="--chip-color:${character.color};--chip-accent:${character.accent};">
       <span class="tier-chip-orb">${characterInitial(kind)}</span>
       <span class="tier-chip-name">${character.name}</span>
     </button>
@@ -2851,12 +2856,14 @@ function moveTierCharacter(kind, targetTier) {
   if (!characters[kind]) return;
   tierMakerState[kind] = targetTier || "pool";
   if (tierMakerState[kind] === "pool") delete tierMakerState[kind];
+  selectedTierKind = "";
   saveTierMakerState();
   renderTierMaker();
 }
 
 function resetTierMaker() {
   tierMakerState = {};
+  selectedTierKind = "";
   saveTierMakerState();
   renderTierMaker();
 }
@@ -16084,9 +16091,22 @@ ui.tierMakerModal?.addEventListener("dragstart", event => {
   const chip = event.target.closest("[data-tier-kind]");
   if (!chip) return;
   draggedTierKind = chip.dataset.tierKind;
+  selectedTierKind = "";
   chip.classList.add("is-dragging");
   event.dataTransfer.effectAllowed = "move";
   event.dataTransfer.setData("text/plain", draggedTierKind);
+});
+ui.tierMakerModal?.addEventListener("click", event => {
+  const chip = event.target.closest("[data-tier-kind]");
+  if (chip) {
+    selectedTierKind = selectedTierKind === chip.dataset.tierKind ? "" : chip.dataset.tierKind;
+    renderTierMaker();
+    return;
+  }
+  const zone = event.target.closest("[data-tier-drop], #tierCharacterPool");
+  if (!zone || !selectedTierKind) return;
+  const target = zone.id === "tierCharacterPool" ? "pool" : zone.dataset.tierDrop;
+  moveTierCharacter(selectedTierKind, target);
 });
 ui.tierMakerModal?.addEventListener("dragend", event => {
   event.target.closest("[data-tier-kind]")?.classList.remove("is-dragging");
