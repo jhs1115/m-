@@ -1404,7 +1404,9 @@ h2 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+  height: calc(clamp(620px, 72vh, 760px) - 44px);
   min-height: calc(clamp(620px, 72vh, 760px) - 44px);
+  overflow: hidden;
 }
 
 .lobby-shell {
@@ -1428,6 +1430,11 @@ h2 {
   display: block;
 }
 
+.lobby-tab-panel[data-lobby-panel="home"] {
+  height: calc(clamp(620px, 72vh, 760px) - 44px);
+  overflow: hidden;
+}
+
 .lobby-panel {
   width: 100%;
   min-height: 0;
@@ -1441,7 +1448,9 @@ h2 {
 }
 
 .world-panel {
+  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .lobby-panel h2,
@@ -1982,6 +1991,7 @@ h2 {
   flex: 1;
   height: 100%;
   min-height: 0;
+  max-height: 100%;
   margin-top: 22px;
   overflow: hidden;
 }
@@ -1990,11 +2000,13 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  height: 100%;
+  flex: 1 1 0;
+  height: auto;
   min-height: 0;
   max-height: 100%;
   padding: 10px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background:
     radial-gradient(circle at 50% 85%, rgba(242, 193, 78, 0.08), transparent 18%),
     linear-gradient(180deg, rgba(12, 18, 30, 0.42), rgba(3, 6, 10, 0.88));
