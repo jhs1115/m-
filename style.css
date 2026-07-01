@@ -1938,8 +1938,7 @@ h2 {
 }
 
 .player-panel::after,
-.match-panel::after,
-.world-panel::after {
+.match-panel::after {
   content: "";
   flex: 1;
   margin-top: 18px;
@@ -1961,6 +1960,84 @@ h2 {
   background:
     radial-gradient(circle at 50% 78%, rgba(61, 214, 208, 0.11), transparent 18%),
     linear-gradient(180deg, rgba(12, 18, 30, 0.3), rgba(3, 6, 10, 0.88));
+}
+
+.lobby-chat-box {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 22px;
+}
+
+.lobby-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 85%, rgba(242, 193, 78, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(12, 18, 30, 0.42), rgba(3, 6, 10, 0.88));
+  border: 1px solid rgba(242, 193, 78, 0.14);
+  border-radius: 8px;
+}
+
+.lobby-chat-empty {
+  margin: auto;
+  color: rgba(255, 255, 255, 0.52);
+  font-weight: 800;
+}
+
+.lobby-chat-message {
+  display: grid;
+  gap: 4px;
+  padding: 10px 11px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+}
+
+.lobby-chat-name {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: #f8fafc;
+  font-weight: 1000;
+  line-height: 1.15;
+}
+
+.lobby-chat-name .equipped-title {
+  margin-left: 0;
+}
+
+.lobby-chat-text {
+  color: #ffffff;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.lobby-chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.lobby-chat-form .text-input {
+  min-height: 46px;
+  color: #ffffff;
+  background: rgba(6, 10, 17, 0.92);
+}
+
+.lobby-chat-form .primary-button {
+  min-width: 72px;
+  min-height: 46px;
 }
 
 .gacha-box {

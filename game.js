@@ -117,6 +117,10 @@ const ui = {
   lobbyMessage: document.getElementById("lobbyMessage"),
   lobbyStartButton: document.getElementById("lobbyStartButton"),
   pvpModeButton: document.getElementById("pvpModeButton"),
+  lobbyChatList: document.getElementById("lobbyChatList"),
+  lobbyChatForm: document.getElementById("lobbyChatForm"),
+  lobbyChatInput: document.getElementById("lobbyChatInput"),
+  lobbyChatSendButton: document.getElementById("lobbyChatSendButton"),
   cancelMatchButton: document.getElementById("cancelMatchButton"),
   pveModeButton: document.getElementById("pveModeButton"),
   backFromPveButton: document.getElementById("backFromPveButton"),
@@ -852,9 +856,12 @@ let gameSpeed = 1;
 let codexPreviewMode = false;
 let selectedMode = "";
 let roomPollId = null;
+let lobbyChatPollId = null;
 let roomRefreshPending = false;
 let roomRealtimeChannel = null;
 let roomRealtimeCode = "";
+let lobbyChatRealtimeChannel = null;
+let lobbyChatMessages = [];
 let matchSelectionTouched = false;
 let matchmakingPollId = null;
 let selectedCharacterReady = false;
@@ -2854,6 +2861,111 @@ function resetTierMaker() {
   renderTierMaker();
 }
 
+function normalizeChatMessage(row) {
+  return {
+    id: row?.id || "",
+    message: String(row?.message || ""),
+    createdAt: row?.createdAt || row?.created_at || "",
+    player: normalizePlayer(row?.player || row?.user || {})
+  };
+}
+
+function renderLobbyChat() {
+  if (!ui.lobbyChatList) return;
+  if (!lobbyChatMessages.length) {
+    ui.lobbyChatList.innerHTML = `<p class="lobby-chat-empty">채팅이 없습니다.</p>`;
+    return;
+  }
+  ui.lobbyChatList.innerHTML = lobbyChatMessages.map(chat => `
+    <article class="lobby-chat-message" data-chat-id="${escapeHtml(chat.id)}">
+      <strong class="lobby-chat-name">${playerNameWithTitle(chat.player, "unknown", { maskForbidden: true })}</strong>
+      <p class="lobby-chat-text">${escapeHtml(chat.message)}</p>
+    </article>
+  `).join("");
+  ui.lobbyChatList.scrollTop = ui.lobbyChatList.scrollHeight;
+}
+
+async function loadLobbyChat() {
+  if (!currentUser || !appSessionToken || !supabaseClient) return;
+  try {
+    const data = await rpc("get_lobby_chat", { session_token: appSessionToken });
+    lobbyChatMessages = Array.isArray(data) ? data.map(normalizeChatMessage) : [];
+    renderLobbyChat();
+  } catch (error) {
+    if (ui.lobbyChatList) {
+      ui.lobbyChatList.innerHTML = `<p class="lobby-chat-empty">채팅을 불러오지 못했습니다.</p>`;
+    }
+  }
+}
+
+async function sendLobbyChat(event) {
+  event?.preventDefault();
+  if (!currentUser || !appSessionToken || !ui.lobbyChatInput) return;
+  const message = ui.lobbyChatInput.value.trim();
+  if (!message) return;
+  ui.lobbyChatSendButton.disabled = true;
+  try {
+    const data = await rpc("send_lobby_chat", {
+      session_token: appSessionToken,
+      chat_message: message
+    });
+    ui.lobbyChatInput.value = "";
+    const sent = normalizeChatMessage(data);
+    lobbyChatMessages = [...lobbyChatMessages.filter(chat => chat.id !== sent.id), sent];
+    renderLobbyChat();
+  } catch (error) {
+    if (ui.lobbyChatList) {
+      ui.lobbyChatList.innerHTML += `<p class="lobby-chat-empty">전송 실패: ${escapeHtml(error.message)}</p>`;
+    }
+  } finally {
+    ui.lobbyChatSendButton.disabled = false;
+  }
+}
+
+function setLobbyChatRealtime(enabled) {
+  if (lobbyChatRealtimeChannel) {
+    supabaseClient?.removeChannel(lobbyChatRealtimeChannel);
+    lobbyChatRealtimeChannel = null;
+  }
+  if (!enabled || !supabaseClient) return;
+  lobbyChatRealtimeChannel = supabaseClient
+    .channel("lobby-chat")
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "lobby_chat_messages"
+    }, () => {
+      loadLobbyChat();
+    })
+    .subscribe();
+}
+
+function setLobbyChatPolling(enabled) {
+  if (lobbyChatPollId) {
+    clearInterval(lobbyChatPollId);
+    lobbyChatPollId = null;
+  }
+  if (enabled) {
+    lobbyChatPollId = setInterval(() => {
+      if (screens.lobby.classList.contains("is-active")) loadLobbyChat();
+    }, 60000);
+  }
+}
+
+function startLobbyChat() {
+  if (!currentUser || !appSessionToken) return;
+  setLobbyChatRealtime(true);
+  setLobbyChatPolling(true);
+  loadLobbyChat();
+}
+
+function stopLobbyChat() {
+  setLobbyChatRealtime(false);
+  setLobbyChatPolling(false);
+  lobbyChatMessages = [];
+  renderLobbyChat();
+}
+
 function getAudioContext() {
   if (!audioContext) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -3961,6 +4073,7 @@ async function authenticate(mode) {
       matchPlayers.p3 = "";
       renderLobby();
       showScreen("lobby");
+      startLobbyChat();
       enforceNicknameChangeIfNeeded();
       return;
     }
@@ -3970,6 +4083,7 @@ async function authenticate(mode) {
     localStorage.setItem(APP_SESSION_KEY, appSessionToken);
     await loadCurrentUser();
     showScreen("lobby");
+    startLobbyChat();
     enforceNicknameChangeIfNeeded();
   } catch (error) {
     message.textContent = String(error.message || "").includes("forbidden username")
@@ -3990,6 +4104,7 @@ async function loadCurrentUser() {
     matchPlayers.p3 = "";
   }
   renderLobby();
+  startLobbyChat();
   enforceNicknameChangeIfNeeded();
 }
 
@@ -15848,6 +15963,7 @@ async function logout() {
   resetMatchmakingUi("");
   setRoomRealtime(null);
   setRoomPolling(false);
+  stopLobbyChat();
   ui.authPassword.value = "";
   ui.authMessage.textContent = "";
   setAccountModalOpen(false);
@@ -15939,6 +16055,7 @@ ui.matchSoundVolume?.addEventListener("input", () => {
   updateSoundSettingsUi();
 });
 ui.testMatchSoundButton?.addEventListener("click", playMatchFoundSound);
+ui.lobbyChatForm?.addEventListener("submit", sendLobbyChat);
 ui.screenBrightness?.addEventListener("input", () => {
   visualSettings.brightness = clamp(Number(ui.screenBrightness.value) / 100, 0.8, 1.2);
   saveVisualSettings();

@@ -93,6 +93,16 @@ create table if not exists public.pve_runs (
   completed_at timestamptz
 );
 
+create table if not exists public.lobby_chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  message text not null check (char_length(message) between 1 and 160),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists lobby_chat_messages_created_at_idx
+on public.lobby_chat_messages(created_at desc);
+
 alter table public.app_rooms
 add column if not exists prep_state jsonb not null default '{}'::jsonb;
 
@@ -101,6 +111,7 @@ alter table public.app_sessions enable row level security;
 alter table public.app_rooms enable row level security;
 alter table public.match_queue enable row level security;
 alter table public.pve_runs enable row level security;
+alter table public.lobby_chat_messages enable row level security;
 
 drop policy if exists "app rooms are visible for realtime" on public.app_rooms;
 create policy "app rooms are visible for realtime"
@@ -114,8 +125,15 @@ on public.match_queue for select
 to anon, authenticated
 using (true);
 
+drop policy if exists "lobby chat visible for realtime" on public.lobby_chat_messages;
+create policy "lobby chat visible for realtime"
+on public.lobby_chat_messages for select
+to anon, authenticated
+using (created_at > now() - interval '5 minutes');
+
 alter table public.app_rooms replica identity full;
 alter table public.match_queue replica identity full;
+alter table public.lobby_chat_messages replica identity full;
 
 do $$
 begin
@@ -127,6 +145,20 @@ begin
       and tablename = 'app_rooms'
   ) then
     alter publication supabase_realtime add table public.app_rooms;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'lobby_chat_messages'
+  ) then
+    alter publication supabase_realtime add table public.lobby_chat_messages;
   end if;
 end;
 $$;
@@ -1921,6 +1953,99 @@ begin
 end;
 $$;
 
+create or replace function public.cleanup_lobby_chat()
+returns void
+language sql
+volatile
+security definer
+set search_path = public
+as $$
+  delete from public.lobby_chat_messages
+  where created_at <= now() - interval '5 minutes';
+$$;
+
+create or replace function public.lobby_chat_json(chat_row public.lobby_chat_messages)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'id', chat_row.id,
+    'message', chat_row.message,
+    'createdAt', chat_row.created_at,
+    'player', public.app_user_json(u)
+  )
+  from public.app_users u
+  where u.id = chat_row.user_id;
+$$;
+
+create or replace function public.get_lobby_chat(session_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  result jsonb;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  perform public.cleanup_lobby_chat();
+
+  select coalesce(jsonb_agg(item order by created_at), '[]'::jsonb)
+  into result
+  from (
+    select m.created_at, public.lobby_chat_json(m) as item
+    from public.lobby_chat_messages m
+    where m.created_at > now() - interval '5 minutes'
+    order by m.created_at asc
+    limit 80
+  ) recent;
+
+  return result;
+end;
+$$;
+
+create or replace function public.send_lobby_chat(session_token text, chat_message text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  active_user public.app_users;
+  normalized_message text := btrim(coalesce(chat_message, ''));
+  inserted_message public.lobby_chat_messages;
+begin
+  active_user := public.app_user_from_token(session_token);
+  if active_user.id is null then
+    raise exception 'login required';
+  end if;
+
+  if char_length(normalized_message) < 1 then
+    raise exception 'empty message';
+  end if;
+
+  if char_length(normalized_message) > 160 then
+    normalized_message := substr(normalized_message, 1, 160);
+  end if;
+
+  perform public.cleanup_lobby_chat();
+
+  insert into public.lobby_chat_messages(user_id, message)
+  values (active_user.id, normalized_message)
+  returning * into inserted_message;
+
+  return public.lobby_chat_json(inserted_message);
+end;
+$$;
+
 create or replace function public.set_match_ready(
   session_token text,
   room_code text,
@@ -2244,6 +2369,8 @@ grant execute on function public.complete_survival_run(text, uuid, integer, inte
 grant execute on function public.complete_pve_run(text, uuid) to anon, authenticated;
 grant execute on function public.get_rankings(text) to anon, authenticated;
 grant execute on function public.get_pve_rankings(text) to anon, authenticated;
+grant execute on function public.get_lobby_chat(text) to anon, authenticated;
+grant execute on function public.send_lobby_chat(text, text) to anon, authenticated;
 revoke execute on function public.set_match_ready(text, text, uuid, uuid, integer, boolean) from anon, authenticated;
 grant execute on function public.find_pvp_match(text, boolean, text) to anon, authenticated;
 grant execute on function public.get_match_status(text) to anon, authenticated;
