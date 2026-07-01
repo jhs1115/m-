@@ -3,6 +3,8 @@ const DEFAULT_CHARACTER = "thrower";
 const GACHA_COST = 50;
 const APP_SESSION_KEY = "matchzzang-supabase-session";
 const SOUND_SETTINGS_KEY = "matchzzang-sound-settings";
+const VISUAL_SETTINGS_KEY = "matchzzang-visual-settings";
+const TIER_MAKER_KEY = "matchzzang-tier-maker";
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
@@ -183,6 +185,17 @@ const ui = {
   matchSoundVolume: document.getElementById("matchSoundVolume"),
   matchSoundVolumeText: document.getElementById("matchSoundVolumeText"),
   testMatchSoundButton: document.getElementById("testMatchSoundButton"),
+  screenBrightness: document.getElementById("screenBrightness"),
+  screenBrightnessText: document.getElementById("screenBrightnessText"),
+  effectIntensity: document.getElementById("effectIntensity"),
+  effectIntensityText: document.getElementById("effectIntensityText"),
+  screenMotionToggle: document.getElementById("screenMotionToggle"),
+  openTierMakerButton: document.getElementById("openTierMakerButton"),
+  tierMakerModal: document.getElementById("tierMakerModal"),
+  tierMakerCloseButton: document.getElementById("tierMakerCloseButton"),
+  tierMakerResetButton: document.getElementById("tierMakerResetButton"),
+  tierRows: document.getElementById("tierRows"),
+  tierCharacterPool: document.getElementById("tierCharacterPool"),
   modeMessage: document.getElementById("modeMessage"),
   openGachaButton: document.getElementById("openGachaButton"),
   gachaPlayer: document.getElementById("gachaPlayer"),
@@ -703,7 +716,7 @@ const characterGuide = {
     ultimate: ["리로드", "3초", "앞으로 순간이동합니다. 순간이동한 위치에서 탄환을 발사하여 맞은 적에게 5의 피해를 입힙니다."]
   },
   freezer: {
-    attack: ["고드름", "3초", "적에게 고드름 2갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 두 고드름이 모두 맞을 수 있습니다. 슬로우 중이면 추가 2.5, 스턴 중이면 추가 7.5 피해를 줍니다."],
+    attack: ["고드름", "3초", "적에게 고드름 2갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 두 고드름이 모두 맞을 수 있습니다. 스턴 중인 적에게는 5의 추가 피해를 줍니다."],
     normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 얼려 기절시키고 5의 피해를 줍니다."],
     ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 더 큰 얼음의 정수를 관통 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 6초 동안 유지되는 넓은 슬로우 장판이 남습니다."]
   },
@@ -864,6 +877,9 @@ let matchStartTimeoutId = null;
 let appliedSkillEvents = new Set();
 let pendingSkillUse = false;
 let soundSettings = loadSoundSettings();
+let visualSettings = loadVisualSettings();
+let tierMakerState = loadTierMakerState();
+let draggedTierKind = "";
 let audioContext = null;
 let resimulatingGame = false;
 let settlementRequestedWinnerId = "";
@@ -2725,6 +2741,115 @@ function updateSoundSettingsUi() {
   const percent = Math.round(soundSettings.matchVolume * 100);
   if (ui.matchSoundVolume) ui.matchSoundVolume.value = String(percent);
   if (ui.matchSoundVolumeText) ui.matchSoundVolumeText.textContent = `${percent}%`;
+}
+
+function loadVisualSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(VISUAL_SETTINGS_KEY) || "{}");
+    const brightness = Number(saved.brightness);
+    const effects = Number(saved.effects);
+    return {
+      brightness: Number.isFinite(brightness) ? clamp(brightness, 0.8, 1.2) : 1,
+      effects: Number.isFinite(effects) ? clamp(effects, 0.6, 1.2) : 1,
+      softMotion: saved.softMotion !== false
+    };
+  } catch {
+    return { brightness: 1, effects: 1, softMotion: true };
+  }
+}
+
+function saveVisualSettings() {
+  localStorage.setItem(VISUAL_SETTINGS_KEY, JSON.stringify(visualSettings));
+}
+
+function applyVisualSettings() {
+  document.body.style.setProperty("--screen-brightness", visualSettings.brightness.toFixed(2));
+  document.documentElement.style.setProperty("--effect-intensity", visualSettings.effects.toFixed(2));
+  document.body.classList.toggle("low-motion", !visualSettings.softMotion);
+}
+
+function updateVisualSettingsUi() {
+  const brightnessPercent = Math.round(visualSettings.brightness * 100);
+  const effectPercent = Math.round(visualSettings.effects * 100);
+  if (ui.screenBrightness) ui.screenBrightness.value = String(brightnessPercent);
+  if (ui.screenBrightnessText) ui.screenBrightnessText.textContent = `${brightnessPercent}%`;
+  if (ui.effectIntensity) ui.effectIntensity.value = String(effectPercent);
+  if (ui.effectIntensityText) ui.effectIntensityText.textContent = `${effectPercent}%`;
+  if (ui.screenMotionToggle) {
+    ui.screenMotionToggle.classList.toggle("is-active", visualSettings.softMotion);
+    ui.screenMotionToggle.textContent = visualSettings.softMotion ? "부드럽게" : "즉시 전환";
+  }
+}
+
+function loadTierMakerState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TIER_MAKER_KEY) || "{}");
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveTierMakerState() {
+  localStorage.setItem(TIER_MAKER_KEY, JSON.stringify(tierMakerState));
+}
+
+function tierMakerPlacement(kind) {
+  return tierMakerState[kind] || "pool";
+}
+
+function makeTierChip(kind) {
+  const character = characters[kind];
+  if (!character) return "";
+  return `
+    <button class="tier-chip" type="button" draggable="true" data-tier-kind="${kind}" style="--chip-color:${character.color};--chip-accent:${character.accent};">
+      <span class="tier-chip-orb">${characterInitial(kind)}</span>
+      <span class="tier-chip-name">${character.name}</span>
+    </button>
+  `;
+}
+
+function renderTierMaker() {
+  if (!ui.tierRows || !ui.tierCharacterPool) return;
+  const tiers = [
+    ["tier1", "1티어", "#ff6b6b"],
+    ["tier2", "2티어", "#f59e0b"],
+    ["tier3", "3티어", "#facc15"],
+    ["tier4", "4티어", "#38bdf8"],
+    ["tier5", "5티어", "#94a3b8"]
+  ];
+  ui.tierRows.innerHTML = tiers.map(([id, label, color]) => `
+    <article class="tier-row" data-tier-drop="${id}" style="--tier-color:${color};">
+      <div class="tier-label-cell">${label}</div>
+      <div class="tier-dropzone" data-tier-drop="${id}">
+        ${Object.keys(characters).filter(kind => tierMakerPlacement(kind) === id).map(makeTierChip).join("")}
+      </div>
+    </article>
+  `).join("");
+  ui.tierCharacterPool.innerHTML = Object.keys(characters)
+    .filter(kind => tierMakerPlacement(kind) === "pool")
+    .map(makeTierChip)
+    .join("");
+}
+
+function setTierMakerOpen(open) {
+  ui.tierMakerModal?.classList.toggle("is-active", open);
+  ui.tierMakerModal?.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open) renderTierMaker();
+}
+
+function moveTierCharacter(kind, targetTier) {
+  if (!characters[kind]) return;
+  tierMakerState[kind] = targetTier || "pool";
+  if (tierMakerState[kind] === "pool") delete tierMakerState[kind];
+  saveTierMakerState();
+  renderTierMaker();
+}
+
+function resetTierMaker() {
+  tierMakerState = {};
+  saveTierMakerState();
+  renderTierMaker();
 }
 
 function getAudioContext() {
@@ -8651,8 +8776,7 @@ function updateBalls(dt) {
           }
           let hitDamage = ball.damage;
           if (ball.freezeBullet) {
-            if (target.stunTime > 0) hitDamage += 7.5;
-            else if (target.slowTime > 0) hitDamage += 2.5;
+            if (target.stunTime > 0) hitDamage += 5;
             target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 75);
           }
           damage(target, hitDamage, ball.owner);
@@ -15813,6 +15937,62 @@ ui.matchSoundVolume?.addEventListener("input", () => {
   updateSoundSettingsUi();
 });
 ui.testMatchSoundButton?.addEventListener("click", playMatchFoundSound);
+ui.screenBrightness?.addEventListener("input", () => {
+  visualSettings.brightness = clamp(Number(ui.screenBrightness.value) / 100, 0.8, 1.2);
+  saveVisualSettings();
+  applyVisualSettings();
+  updateVisualSettingsUi();
+});
+ui.effectIntensity?.addEventListener("input", () => {
+  visualSettings.effects = clamp(Number(ui.effectIntensity.value) / 100, 0.6, 1.2);
+  saveVisualSettings();
+  applyVisualSettings();
+  updateVisualSettingsUi();
+});
+ui.screenMotionToggle?.addEventListener("click", () => {
+  visualSettings.softMotion = !visualSettings.softMotion;
+  saveVisualSettings();
+  applyVisualSettings();
+  updateVisualSettingsUi();
+});
+ui.openTierMakerButton?.addEventListener("click", () => setTierMakerOpen(true));
+ui.tierMakerCloseButton?.addEventListener("click", () => setTierMakerOpen(false));
+ui.tierMakerResetButton?.addEventListener("click", resetTierMaker);
+ui.tierMakerModal?.addEventListener("click", event => {
+  if (event.target === ui.tierMakerModal) setTierMakerOpen(false);
+});
+ui.tierMakerModal?.addEventListener("dragstart", event => {
+  const chip = event.target.closest("[data-tier-kind]");
+  if (!chip) return;
+  draggedTierKind = chip.dataset.tierKind;
+  chip.classList.add("is-dragging");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", draggedTierKind);
+});
+ui.tierMakerModal?.addEventListener("dragend", event => {
+  event.target.closest("[data-tier-kind]")?.classList.remove("is-dragging");
+  ui.tierMakerModal.querySelectorAll(".is-over").forEach(item => item.classList.remove("is-over"));
+  draggedTierKind = "";
+});
+ui.tierMakerModal?.addEventListener("dragover", event => {
+  const zone = event.target.closest("[data-tier-drop], #tierCharacterPool");
+  if (!zone) return;
+  event.preventDefault();
+  zone.classList.add("is-over");
+});
+ui.tierMakerModal?.addEventListener("dragleave", event => {
+  const zone = event.target.closest("[data-tier-drop], #tierCharacterPool");
+  if (!zone || zone.contains(event.relatedTarget)) return;
+  zone.classList.remove("is-over");
+});
+ui.tierMakerModal?.addEventListener("drop", event => {
+  const zone = event.target.closest("[data-tier-drop], #tierCharacterPool");
+  if (!zone) return;
+  event.preventDefault();
+  const kind = event.dataTransfer.getData("text/plain") || draggedTierKind;
+  const target = zone.id === "tierCharacterPool" ? "pool" : zone.dataset.tierDrop;
+  moveTierCharacter(kind, target);
+});
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);
 ui.pveDifficultyButtons.forEach(button => {
@@ -15927,7 +16107,9 @@ ui.toBetButton.addEventListener("click", () => {
 });
 ui.againButton.addEventListener("click", returnToLobby);
 
+applyVisualSettings();
 updateSoundSettingsUi();
+updateVisualSettingsUi();
 
 async function boot() {
   if (!supabaseClient) {

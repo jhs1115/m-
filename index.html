@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260701b">
+  <link rel="stylesheet" href="style.css?v=20260701d">
 </head>
 <body>
   <main class="app">
@@ -63,6 +63,22 @@
           <p id="mailboxEmpty" class="mailbox-empty is-hidden">우편이 없습니다.</p>
         </div>
         <p id="mailboxMessage" class="status-message"></p>
+      </div>
+    </div>
+    <div id="tierMakerModal" class="tier-maker-modal" aria-hidden="true">
+      <div class="tier-maker-box">
+        <button id="tierMakerCloseButton" class="patch-note-close" type="button">닫기</button>
+        <div class="tier-maker-heading">
+          <h2>티어표 만들기</h2>
+        </div>
+        <div class="tier-maker-layout">
+          <section id="tierRows" class="tier-rows" aria-label="티어표"></section>
+          <aside class="tier-pool-panel">
+            <strong>캐릭터</strong>
+            <div id="tierCharacterPool" class="tier-character-pool"></div>
+            <button id="tierMakerResetButton" class="ghost-button" type="button">초기화</button>
+          </aside>
+        </div>
       </div>
     </div>
     <div id="matchOverlay" class="match-overlay">
@@ -238,14 +254,37 @@
             <h2>설정</h2>
             <div class="settings-list">
               <section class="setting-row">
-                <div>
-                  <strong>마스터 음량</strong>
-                </div>
+                <strong>마스터 음량</strong>
                 <div class="setting-control">
                   <input id="matchSoundVolume" class="setting-slider" type="range" min="0" max="100" value="70">
                   <b id="matchSoundVolumeText">70%</b>
                   <button id="testMatchSoundButton" class="ghost-button" type="button">테스트</button>
                 </div>
+              </section>
+              <section class="setting-row">
+                <strong>화면 밝기</strong>
+                <div class="setting-control is-compact">
+                  <input id="screenBrightness" class="setting-slider" type="range" min="80" max="120" value="100">
+                  <b id="screenBrightnessText">100%</b>
+                </div>
+              </section>
+              <section class="setting-row">
+                <strong>이펙트 밝기</strong>
+                <div class="setting-control is-compact">
+                  <input id="effectIntensity" class="setting-slider" type="range" min="60" max="120" value="100">
+                  <b id="effectIntensityText">100%</b>
+                </div>
+              </section>
+              <section class="setting-row setting-toggle-row">
+                <strong>화면 전환</strong>
+                <button id="screenMotionToggle" class="setting-toggle is-active" type="button">부드럽게</button>
+              </section>
+              <section class="setting-row tier-maker-entry">
+                <div>
+                  <strong>티어표</strong>
+                  <span>캐릭터를 드래그해서 1~5티어에 배치합니다.</span>
+                </div>
+                <button id="openTierMakerButton" class="primary-button" type="button">티어표 만들기</button>
               </section>
             </div>
           </div>
@@ -901,6 +940,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260701b"></script>
+  <script src="game.js?v=20260701d"></script>
 </body>
 </html>

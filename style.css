@@ -22,6 +22,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
+  filter: brightness(var(--screen-brightness, 1));
   background:
     radial-gradient(circle at 50% 5%, rgba(242, 193, 78, 0.16), transparent 18%),
     radial-gradient(circle at 18% 18%, rgba(61, 214, 208, 0.12), transparent 28%),
@@ -49,6 +50,7 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 28px 28px 92px;
+  filter: saturate(var(--effect-intensity, 1));
 }
 
 .screen {
@@ -621,6 +623,10 @@ body:not(.is-authenticated) .notice-actions {
   overflow-y: auto;
   padding-right: 8px;
   scrollbar-color: rgba(242, 193, 78, 0.5) rgba(5, 8, 14, 0.42);
+}
+
+body.low-motion .screen.is-active {
+  animation: none;
 }
 
 .title-card {
@@ -1440,6 +1446,7 @@ h2 {
 
 .settings-panel {
   min-height: calc(clamp(620px, 72vh, 760px) - 44px);
+  padding-inline: clamp(24px, 5vw, 72px);
 }
 
 .settings-list {
@@ -1450,7 +1457,7 @@ h2 {
 
 .setting-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  grid-template-columns: 150px minmax(0, 1fr);
   align-items: center;
   gap: 18px;
   padding: 18px;
@@ -1477,9 +1484,13 @@ h2 {
 
 .setting-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px auto;
+  grid-template-columns: minmax(0, 1fr) 58px auto;
   align-items: center;
   gap: 12px;
+}
+
+.setting-control.is-compact {
+  grid-template-columns: minmax(0, 1fr) 58px;
 }
 
 .setting-slider {
@@ -1490,6 +1501,239 @@ h2 {
 .setting-control b {
   color: var(--gold);
   text-align: right;
+}
+
+.setting-toggle-row {
+  grid-template-columns: 150px auto;
+}
+
+.setting-toggle {
+  width: max-content;
+  min-height: 42px;
+  padding: 0 18px;
+  color: var(--muted);
+  background: rgba(10, 14, 22, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.setting-toggle.is-active {
+  color: #16100a;
+  background: linear-gradient(180deg, #ffe28a, #f2c14e);
+  border-color: rgba(255, 237, 160, 0.9);
+  box-shadow: 0 0 20px rgba(242, 193, 78, 0.18);
+}
+
+.tier-maker-entry {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 12px;
+  border-color: rgba(61, 214, 208, 0.28);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(61, 214, 208, 0.08), transparent 32%),
+    rgba(13, 18, 28, 0.86);
+}
+
+.tier-maker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  place-items: center;
+  padding: 22px;
+  background: rgba(3, 7, 14, 0.82);
+  backdrop-filter: blur(9px);
+}
+
+.tier-maker-modal.is-active {
+  display: grid;
+}
+
+.tier-maker-box {
+  position: relative;
+  width: min(1420px, 100%);
+  max-height: calc(100vh - 44px);
+  padding: 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(242, 193, 78, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(18, 25, 38, 0.98), rgba(7, 12, 20, 0.98));
+  border: 1px solid rgba(242, 193, 78, 0.34);
+  border-radius: 14px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+}
+
+.tier-maker-heading {
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.tier-maker-heading h2 {
+  margin: 0;
+  color: #f8d891;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  text-shadow: 0 0 22px rgba(242, 193, 78, 0.25);
+}
+
+.tier-maker-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  min-height: min(680px, calc(100vh - 170px));
+}
+
+.tier-rows,
+.tier-pool-panel {
+  min-height: 0;
+  background: rgba(5, 10, 18, 0.76);
+  border: 1px solid rgba(242, 193, 78, 0.22);
+  border-radius: 12px;
+}
+
+.tier-rows {
+  display: grid;
+  grid-template-rows: repeat(5, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.tier-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  min-height: 96px;
+  overflow: hidden;
+  background: rgba(16, 24, 36, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.tier-row.is-over,
+.tier-dropzone.is-over,
+.tier-character-pool.is-over {
+  border-color: rgba(242, 193, 78, 0.78);
+  box-shadow: inset 0 0 22px rgba(242, 193, 78, 0.16);
+}
+
+.tier-label-cell {
+  display: grid;
+  place-items: center;
+  color: #100b07;
+  background: linear-gradient(180deg, var(--tier-color), color-mix(in srgb, var(--tier-color) 72%, #000));
+  font-size: 1.35rem;
+  font-weight: 1000;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.tier-dropzone {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.tier-pool-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px;
+}
+
+.tier-pool-panel > strong {
+  color: var(--gold);
+  font-size: 1.08rem;
+}
+
+.tier-character-pool {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+}
+
+.tier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 188px;
+  min-height: 42px;
+  padding: 6px 10px 6px 7px;
+  color: #f8fafc;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(16, 23, 35, 0.96);
+  border: 1px solid rgba(242, 193, 78, 0.24);
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  font-size: 0.86rem;
+  font-weight: 900;
+  touch-action: none;
+  user-select: none;
+}
+
+.tier-chip:hover {
+  border-color: rgba(242, 193, 78, 0.78);
+  transform: translateY(-1px);
+}
+
+.tier-chip.is-dragging {
+  opacity: 0.42;
+}
+
+.tier-chip-orb {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #0b1020;
+  background: linear-gradient(135deg, var(--chip-color), var(--chip-accent));
+  border-radius: 50%;
+  font-weight: 1000;
+}
+
+.tier-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 920px) {
+  .setting-row,
+  .setting-toggle-row,
+  .tier-maker-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .setting-control,
+  .setting-control.is-compact {
+    grid-template-columns: minmax(0, 1fr) 58px;
+  }
+
+  .setting-control .ghost-button {
+    grid-column: 1 / -1;
+  }
+
+  .tier-maker-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tier-pool-panel {
+    min-height: 220px;
+  }
+
+  .tier-row {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
 }
 
 .auth-panel {
