@@ -2763,7 +2763,9 @@ function saveVisualSettings() {
 }
 
 function applyVisualSettings() {
-  document.body.style.setProperty("--screen-brightness", visualSettings.brightness.toFixed(2));
+  const brightnessDelta = visualSettings.brightness - 1;
+  document.body.style.setProperty("--screen-overlay-color", brightnessDelta >= 0 ? "#ffffff" : "#000000");
+  document.body.style.setProperty("--screen-overlay-opacity", Math.abs(brightnessDelta * 0.55).toFixed(3));
   document.documentElement.style.setProperty("--effect-intensity", visualSettings.effects.toFixed(2));
   document.body.classList.toggle("low-motion", !visualSettings.softMotion);
 }

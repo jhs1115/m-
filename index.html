@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260701d">
+  <link rel="stylesheet" href="style.css?v=20260701e">
 </head>
 <body>
   <main class="app">
@@ -69,14 +69,16 @@
       <div class="tier-maker-box">
         <button id="tierMakerCloseButton" class="patch-note-close" type="button">닫기</button>
         <div class="tier-maker-heading">
-          <h2>티어표 만들기</h2>
+          <h2>TIER LIST</h2>
         </div>
         <div class="tier-maker-layout">
           <section id="tierRows" class="tier-rows" aria-label="티어표"></section>
           <aside class="tier-pool-panel">
-            <strong>캐릭터</strong>
+            <div class="tier-pool-top">
+              <strong>캐릭터</strong>
+              <button id="tierMakerResetButton" class="ghost-button" type="button">초기화</button>
+            </div>
             <div id="tierCharacterPool" class="tier-character-pool"></div>
-            <button id="tierMakerResetButton" class="ghost-button" type="button">초기화</button>
           </aside>
         </div>
       </div>
@@ -282,9 +284,8 @@
               <section class="setting-row tier-maker-entry">
                 <div>
                   <strong>티어표</strong>
-                  <span>캐릭터를 드래그해서 1~5티어에 배치합니다.</span>
                 </div>
-                <button id="openTierMakerButton" class="primary-button" type="button">티어표 만들기</button>
+                <button id="openTierMakerButton" class="primary-button" type="button">티어표 입장</button>
               </section>
             </div>
           </div>
@@ -940,6 +941,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260701d"></script>
+  <script src="game.js?v=20260701e"></script>
 </body>
 </html>

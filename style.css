@@ -22,12 +22,21 @@ body {
   margin: 0;
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
-  filter: brightness(var(--screen-brightness, 1));
   background:
     radial-gradient(circle at 50% 5%, rgba(242, 193, 78, 0.16), transparent 18%),
     radial-gradient(circle at 18% 18%, rgba(61, 214, 208, 0.12), transparent 28%),
     radial-gradient(circle at 78% 42%, rgba(242, 193, 78, 0.1), transparent 26%),
     linear-gradient(135deg, #050911, #111722 54%, #090d14);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--screen-overlay-color, #ffffff);
+  opacity: var(--screen-overlay-opacity, 0);
 }
 
 button,
@@ -50,7 +59,6 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 28px 28px 92px;
-  filter: saturate(var(--effect-intensity, 1));
 }
 
 .screen {
@@ -1537,12 +1545,15 @@ h2 {
 .tier-maker-modal {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 120;
   display: none;
   place-items: center;
-  padding: 22px;
-  background: rgba(3, 7, 14, 0.82);
-  backdrop-filter: blur(9px);
+  padding: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(242, 193, 78, 0.15), transparent 28%),
+    radial-gradient(circle at 15% 18%, rgba(61, 214, 208, 0.1), transparent 28%),
+    linear-gradient(135deg, #050911, #101827 58%, #070b12);
+  backdrop-filter: none;
 }
 
 .tier-maker-modal.is-active {
@@ -1551,20 +1562,22 @@ h2 {
 
 .tier-maker-box {
   position: relative;
-  width: min(1420px, 100%);
-  max-height: calc(100vh - 44px);
-  padding: 28px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  padding: 24px clamp(24px, 4vw, 68px) 28px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% -10%, rgba(242, 193, 78, 0.16), transparent 30%),
-    linear-gradient(180deg, rgba(18, 25, 38, 0.98), rgba(7, 12, 20, 0.98));
-  border: 1px solid rgba(242, 193, 78, 0.34);
-  border-radius: 14px;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.12)),
+    transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .tier-maker-heading {
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   text-align: center;
 }
 
@@ -1572,15 +1585,16 @@ h2 {
   margin: 0;
   color: #f8d891;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  letter-spacing: 0.08em;
   text-shadow: 0 0 22px rgba(242, 193, 78, 0.25);
 }
 
 .tier-maker-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 18px;
-  min-height: min(680px, calc(100vh - 170px));
+  grid-template-rows: minmax(0, 1fr) 156px;
+  gap: 14px;
+  min-height: 0;
 }
 
 .tier-rows,
@@ -1593,15 +1607,16 @@ h2 {
 
 .tier-rows {
   display: grid;
-  grid-template-rows: repeat(5, minmax(96px, 1fr));
-  gap: 10px;
+  grid-template-rows: repeat(5, minmax(72px, 1fr));
+  gap: 8px;
   padding: 12px;
+  overflow: hidden;
 }
 
 .tier-row {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  min-height: 96px;
+  grid-template-columns: 88px minmax(0, 1fr);
+  min-height: 72px;
   overflow: hidden;
   background: rgba(16, 24, 36, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1637,12 +1652,19 @@ h2 {
 
 .tier-pool-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
   padding: 14px;
 }
 
-.tier-pool-panel > strong {
+.tier-pool-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tier-pool-top > strong {
   color: var(--gold);
   font-size: 1.08rem;
 }
@@ -1654,7 +1676,7 @@ h2 {
   gap: 8px;
   min-height: 0;
   padding: 10px;
-  overflow-y: auto;
+  overflow: auto;
   background: rgba(0, 0, 0, 0.18);
   border: 1px dashed rgba(255, 255, 255, 0.14);
   border-radius: 10px;
@@ -1664,9 +1686,9 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 188px;
-  min-height: 42px;
-  padding: 6px 10px 6px 7px;
+  max-width: 178px;
+  min-height: 38px;
+  padding: 5px 9px 5px 6px;
   color: #f8fafc;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
@@ -1674,7 +1696,7 @@ h2 {
   border: 1px solid rgba(242, 193, 78, 0.24);
   border-radius: 999px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 900;
   touch-action: none;
   user-select: none;
@@ -1691,9 +1713,9 @@ h2 {
 
 .tier-chip-orb {
   display: grid;
-  flex: 0 0 30px;
-  width: 30px;
-  height: 30px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   color: #0b1020;
   background: linear-gradient(135deg, var(--chip-color), var(--chip-accent));
@@ -1721,14 +1743,6 @@ h2 {
 
   .setting-control .ghost-button {
     grid-column: 1 / -1;
-  }
-
-  .tier-maker-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .tier-pool-panel {
-    min-height: 220px;
   }
 
   .tier-row {
@@ -4869,10 +4883,11 @@ h2 {
 
 .bottom-nav {
   position: fixed;
+  position: fixed !important;
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 80;
+  z-index: 110;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 110px));
   justify-content: center;
@@ -4882,6 +4897,7 @@ h2 {
   background: rgba(5, 8, 14, 0.88);
   border-top: 1px solid rgba(242, 193, 78, 0.18);
   backdrop-filter: blur(10px);
+  transform: translateZ(0);
 }
 
 .bottom-nav-button {
