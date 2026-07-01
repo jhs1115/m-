@@ -1105,6 +1105,9 @@ begin
 
   recorded := coalesce(room_state->'masteryRecorded', '{}'::jsonb);
   if coalesce((recorded->>(active_user.id::text))::boolean, false) then
+    delete from public.match_queue
+    where user_id = active_user.id
+      and matched_room_code = normalized_code;
     select * into active_user from public.app_users where id = active_user.id;
     return jsonb_build_object('user', public.app_user_json(active_user), 'recorded', false);
   end if;
@@ -1130,6 +1133,10 @@ begin
     true
   )
   where code = normalized_code;
+
+  delete from public.match_queue
+  where user_id = active_user.id
+    and matched_room_code = normalized_code;
 
   return jsonb_build_object('user', public.app_user_json(active_user), 'recorded', true);
 end;

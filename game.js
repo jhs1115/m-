@@ -689,7 +689,7 @@ const characterGuide = {
   },
   believer: {
     attack: ["기도", "10초", "자신의 체력을 10 회복합니다."],
-    normal: ["주신을 위해", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 10, 적은 초당 8의 회복을 받습니다."],
+    normal: ["주신을 위해", "20초", "맵 전체를 5초간 신앙으로 채워 빛냅니다. 자신은 초당 7, 적은 초당 6의 회복을 받습니다."],
     ultimate: ["커져가는신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
   },
   archmage: {
@@ -3662,6 +3662,7 @@ async function startMatchmaking(type = "ranked") {
     return;
   }
   selectedMode = "pvp";
+  await rpc("cancel_pvp_match", { session_token: appSessionToken }).catch(() => {});
   resetLocalMatchState();
   matchmakingType = requestedType;
   const generation = matchmakingGeneration;
@@ -4607,6 +4608,7 @@ function makeCharacterCombatState(kind) {
     annihilatorTime: 0,
     annihilatorTimer: Infinity,
     wildTimer: kind === "wild" ? 180 : Infinity,
+    wildSlashCount: 0,
     chaseTime: 0,
     chaseBounceTime: 0,
     bloodTimer: kind === "vampire" ? 180 : Infinity,
@@ -6806,8 +6808,8 @@ function moveFighter(fighter, dt) {
       fighter.ceremonyTime -= dt;
       fighter.ceremonyTick -= dt;
       if (fighter.ceremonyTick <= 0) {
-        heal(fighter, 10);
-        heal(opponentOf(fighter), 8);
+        heal(fighter, 7);
+        heal(opponentOf(fighter), 6);
         fighter.ceremonyTick += 60;
       }
     }
@@ -8298,20 +8300,22 @@ function createSkyLaser(owner) {
 }
 
 function createWildSlashes(owner, x = null, y = null) {
+  const sequence = owner.wildSlashCount = (owner.wildSlashCount || 0) + 1;
   for (let index = 0; index < 3; index += 1) {
-    const sequence = game.areaAttacks.length;
+    const slashX = x ?? 40 + combatRandom(owner, `wild-slash-${sequence}-x-${index}`, 0) * (canvas.width - 80);
+    const slashY = y ?? 40 + combatRandom(owner, `wild-slash-${sequence}-y-${index}`, 0) * (canvas.height - 80);
     game.areaAttacks.push({
       type: "slash",
       owner,
-      x: x ?? 70 + combatRandom(owner, `wild-slash-${sequence}`, index * 3) * (canvas.width - 140),
-      y: y ?? 70 + combatRandom(owner, `wild-slash-${sequence}`, index * 3 + 1) * (canvas.height - 140),
+      x: slashX,
+      y: slashY,
       radius: 58,
       delay: 28 + index * 8,
       life: 55 + index * 8,
       hit: false,
       damage: 20,
       color: owner.accent,
-      angle: combatRandom(owner, `wild-slash-${sequence}`, index * 3 + 2) * Math.PI
+      angle: combatRandom(owner, `wild-slash-${sequence}-angle-${index}`, 0) * Math.PI
     });
   }
 }
