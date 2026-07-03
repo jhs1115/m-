@@ -7116,7 +7116,7 @@ function activateStoneEdge(owner) {
   const stacks = owner.rockShardCount;
   owner.rockShardCount = 0;
   owner.stoneEdgeStacks += stacks;
-  owner.contactDamage += stacks * 3;
+  owner.contactDamage += stacks * 2;
   owner.damageReduction = Math.min(0.75, (owner.damageReduction || 0) + stacks * 0.03);
   addSkillPulse(owner, "#facc15");
   addVisualEffect({ type: "stone-edge-armor", fighter: owner, color: "#facc15", life: 70, maxLife: 70 });
