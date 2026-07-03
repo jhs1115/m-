@@ -787,9 +787,9 @@ const characterGuide = {
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "4초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고 표식을 삭제합니다. 레이저 발사 중 0.1초마다 체력을 0.5 회복합니다."],
+    attack: ["CODE : AJD40K", "4초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고 표식을 삭제합니다. 레이저 발사 중 0.1초마다 체력을 0.1 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
-    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 60%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해와 50% 회복량을 가집니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
+    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 50%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해와 50% 회복량을 가집니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
   },
   geomancer: {
     attack: ["지각파편", "2초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 12의 피해를 줍니다."],
@@ -1500,6 +1500,9 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
   }
   if (kind === "hacker") {
     if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 1, () => {
+        caster.hp = caster.maxHp * 0.62;
+      });
       addCodexPreviewEvent(previewGame, 10, () => useHackingAttack(caster));
       addCodexPreviewEvent(previewGame, 72, () => {
         dummy.hackingMarkTime = 240;
@@ -6949,7 +6952,7 @@ function useHackingAttack(owner, damageScale = 1) {
   const sourceOwner = owner.owner || owner;
   const target = nearestEnemyTarget(sourceOwner, owner.x, owner.y);
   if (hasHackingMark(target)) {
-    startHackingLaser(owner, target, damageScale);
+    startSynchronizedHackingLasers(sourceOwner, owner, target, damageScale);
     return;
   }
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
@@ -6972,8 +6975,25 @@ function useHackingAttack(owner, damageScale = 1) {
   });
 }
 
-function startHackingLaser(owner, target, damageScale = 1) {
+function startSynchronizedHackingLasers(sourceOwner, triggerOwner, target, triggerScale = 1) {
+  const casters = [];
+  const addCaster = caster => {
+    if (!caster || caster.hp <= 0 || casters.includes(caster)) return;
+    casters.push(caster);
+  };
+  addCaster(sourceOwner);
+  (game.summons || [])
+    .filter(summon => summon.type === "hologram" && summon.owner === sourceOwner && summon.hp > 0)
+    .forEach(addCaster);
+  addCaster(triggerOwner);
   target.hackingMarkTime = 0;
+  casters.forEach(caster => {
+    const scale = caster.type === "hologram" ? 0.5 : caster === triggerOwner ? Math.max(1, triggerScale) : 1;
+    startHackingLaser(caster, target, scale);
+  });
+}
+
+function startHackingLaser(owner, target, damageScale = 1) {
   owner.hackingLaserTargetId = target.ownerId || target.id || target.label || "";
   owner.hackingLaserTarget = target;
   owner.hackingLaserTime = 120;
@@ -7003,7 +7023,7 @@ function updateHackingLaserEntity(entity, dt) {
   while (entity.hackingLaserTime > 0 && entity.hackingLaserTick <= 0 && !game.over) {
     damageCombatTarget(target, 1 * (entity.hackingLaserDamageScale || 1), attacker);
     const healTarget = entity.type === "hologram" ? entity : attacker;
-    const healAmount = entity.type === "hologram" ? 0.25 : 0.5;
+    const healAmount = entity.type === "hologram" ? 0.05 : 0.1;
     if (healTarget && healTarget.hp > 0) {
       const before = healTarget.hp;
       healTarget.hp = Math.min(healTarget.maxHp || healTarget.hp, healTarget.hp + healAmount);
@@ -7028,7 +7048,7 @@ function summonHologram(owner) {
   const angle = Math.atan2(owner.y - target.y, owner.x - target.x);
   const moveAngle = combatRandom(owner, "hologram-angle", Math.floor(game.tick / 60)) * Math.PI * 2;
   const speed = 5.8;
-  const hp = Math.max(1, owner.hp * 0.6);
+  const hp = Math.max(1, owner.hp * 0.5);
   game.summons.push({
     id: `hologram-${game.tick}-${owner.ownerId}`,
     owner,
