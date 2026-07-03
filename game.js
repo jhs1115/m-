@@ -5,6 +5,14 @@ const APP_SESSION_KEY = "matchzzang-supabase-session";
 const SOUND_SETTINGS_KEY = "matchzzang-sound-settings";
 const VISUAL_SETTINGS_KEY = "matchzzang-visual-settings";
 const TIER_MAKER_KEY = "matchzzang-tier-maker";
+const TIER_MAKER_TIERS = [
+  ["tier1", "1티어", "#ff6b6b"],
+  ["tier2", "2티어", "#f59e0b"],
+  ["tier3", "3티어", "#facc15"],
+  ["tier4", "4티어", "#38bdf8"],
+  ["tier5", "5티어", "#94a3b8"]
+];
+const TIER_MAKER_ZONES = ["pool", ...TIER_MAKER_TIERS.map(([id]) => id)];
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
@@ -332,7 +340,9 @@ const masteryTitleNames = {
   gambler: "아 이번이 마지막이라니까?",
   cosmic: "슈퍼 노바",
   bomberman: "레제",
-  roper: "타잔"
+  roper: "뭐하노~하하하하~",
+  hacker: "#?!@#!$!#$!",
+  geomancer: "넌-진다-"
 };
 
 const masteryCharacterNames = {
@@ -360,7 +370,9 @@ const masteryCharacterNames = {
   gambler: "도박하는 색히",
   cosmic: "우주의 힘쓰는 색히",
   bomberman: "폭발하는 색히",
-  roper: "로프타는 색히"
+  roper: "로프타는 색히",
+  hacker: "해킹하는 색히",
+  geomancer: "바위쓰는 색히"
 };
 
 const masteryTitleColors = {
@@ -388,7 +400,9 @@ const masteryTitleColors = {
   gambler: ["#f97316", "#ec4899"],
   cosmic: ["#111827", "#93c5fd"],
   bomberman: ["#f97316", "#facc15"],
-  roper: ["#d6a25f", "#fef3c7"]
+  roper: ["#d6a25f", "#fef3c7"],
+  hacker: ["#22d3ee", "#a78bfa"],
+  geomancer: ["#a16207", "#fde68a"]
 };
 
 const forbiddenNamePatterns = [
@@ -411,6 +425,7 @@ const titleCatalog = {
   god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 },
   beta_tester: { name: "베타테스터", condition: "베타 코드 입력", tier: "beta", check: () => false },
   developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false },
+  hologram: { name: "홀로그램", condition: "홀로그램 코드 입력", tier: "hologram", check: () => false },
   ...Object.fromEntries(Object.entries(masteryTitleNames).map(([kind, name]) => [
     `mastery_${kind}`,
     {
@@ -588,10 +603,22 @@ const characters = {
     color: "#1e1b4b",
     accent: "#93c5fd",
     contactDamage: 0
+  },
+  hacker: {
+    name: "해킹하는 색히",
+    color: "#071827",
+    accent: "#22d3ee",
+    contactDamage: 0
+  },
+  geomancer: {
+    name: "바위쓰는 색히",
+    color: "#8a5a27",
+    accent: "#facc15",
+    contactDamage: 0
   }
 };
 
-const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "gambler", "cosmic"];
+const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "wild", "vampire", "brawler", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "gambler", "cosmic", "hacker", "geomancer"];
 
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
@@ -618,7 +645,9 @@ const skillNames = {
   bomberman: { normal: "메가 붐", ultimate: "하우저 임팩트" },
   roper: { normal: "쓰로잉", ultimate: "로프 러쉬" },
   gambler: { normal: "스킬 룰렛", ultimate: "궁극 룰렛" },
-  cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" }
+  cosmic: { normal: "초신성", ultimate: "코스믹 블래스터" },
+  hacker: { normal: "CODE : COOLTIME", ultimate: "CODE : HOLOGRAM" },
+  geomancer: { normal: "데스오브가이아", ultimate: "스톤 엣지" }
 };
 
 const characterGuide = {
@@ -638,7 +667,7 @@ const characterGuide = {
     ultimate: ["충격파", "28초", "주변 넓은 범위에 30의 피해를 주고 적을 1초 동안 기절시킵니다."]
   },
   poker: {
-    attack: ["포커 핸드", "자동", "카드 5장을 공개하고 패의 배율이 적용된 비유도 카드 탄환을 발사합니다."],
+    attack: ["포커 핸드", "자동", "52장 덱에서 실제 포커처럼 카드 5장을 뽑고, 족보 배율이 적용된 비유도 카드 탄환을 발사합니다."],
     normal: ["드로우", "10초", "조커, 에이스, 킹, 퀸, 잭 중 카드 한 장을 던집니다. JOKER: 1~45의 무작위 피해. A: 7.5 피해. K: 피해는 없지만 다음 포커 핸드를 강화합니다. Q: 7.5 피해. J: 4.5 피해."],
     ultimate: ["힐 다이스", "40초", "주사위를 굴려 나온 눈의 5배만큼 체력을 회복합니다."]
   },
@@ -655,7 +684,7 @@ const characterGuide = {
   tank: {
     attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 주며 받는 모든 피해가 20% 감소합니다."],
     normal: ["도발", "14초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
-    ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 50의 피해와 3초 기절을 줍니다."]
+    ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 45의 피해와 3초 기절을 줍니다."]
   },
   beamer: {
     attack: ["천공 레이저", "3초", "적의 위치에 예고 후 세로 레이저를 포격해 45의 피해를 줍니다."],
@@ -713,7 +742,7 @@ const characterGuide = {
     ultimate: ["커져가는신앙", "15초", "맵 중앙에 황금색으로 빛나는 큰 십자가를 생성하고, 게임이 끝날 때까지 맵 전체를 불타는 신앙으로 채웁니다. 적에게 초당 피해를 주며, 사용할 때마다 피해가 1, 2, 4, 8, 16 순서로 2배씩 증가합니다."]
   },
   archmage: {
-    attack: ["벼락", "6초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해를 줍니다. 감전 원소를 부착합니다. 감전+화상: 10피해와 10초 맹독가스, 치유 40% 감소, 받는 피해 10% 증가. 감전+습기: 15피해와 1.5초 기절, 주변 적 2초 50% 감속. 습기+감전: 6초 전자기장, 1.5초마다 5피해, 이동기 사용 시 1초 침묵. 습기+화상: 즉시 30 회복, 2초간 초당 5 회복과 30% 가속. 화상+감전: 보호막 파괴, 20피해와 넉백, 벽 충돌 시 10피해와 1초 기절. 화상+습기: 50피해, 체력 30% 이하 대상에게 75피해, 이후 대마법사는 10초 탈진."],
+    attack: ["벼락", "6초", "적에게 낙뢰를 떨어뜨려 3의 피해를 주고 2초 동안 초당 1의 감전 피해를 줍니다. 감전 원소를 부착합니다. 감전+화상: 20피해와 10초 맹독가스, 가스 안의 적은 초당 2피해, 치유 40% 감소, 받는 피해 10% 증가. 감전+습기: 50피해와 1.5초 기절, 주변 적 2초 50% 감속. 습기+감전: 6초 전자기장, 1.5초마다 15피해, 이동기 사용 시 1초 침묵. 습기+화상: 적에게 30피해, 즉시 20 회복, 2초간 초당 10 회복과 30% 가속. 화상+감전: 보호막 파괴, 35피해와 넉백, 벽 충돌 시 10피해와 1초 기절. 화상+습기: 50피해, 체력 30% 이하 대상에게 75피해, 이후 대마법사는 10초 탈진."],
     normal: ["작열", "11초", "3초 후 맵 전체를 강타하는 불꽃을 떨어뜨립니다. 적에게 5의 피해를 주고 화상 원소를 부착합니다."],
     ultimate: ["창해", "23초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 2의 피해를 주고 습기 원소를 부착합니다."]
   },
@@ -725,10 +754,10 @@ const characterGuide = {
   freezer: {
     attack: ["고드름", "3초", "적에게 고드름 2갈래를 발사해 각각 5의 피해와 1.25초 슬로우를 줍니다. 근거리에서는 두 고드름이 모두 맞을 수 있습니다. 스턴 중인 적에게는 5의 추가 피해를 줍니다."],
     normal: ["스노우 엔젤", "12초", "현재 슬로우가 적용된 적을 3초 동안 얼려 기절시키고 5의 피해를 줍니다."],
-    ultimate: ["이터널 블리자드", "30초", "느리게 날아가는 더 큰 얼음의 정수를 관통 발사합니다. 맞은 적은 15의 피해와 슬로우를 받고, 지나간 궤적에는 6초 동안 유지되는 넓은 슬로우 장판이 남습니다."]
+    ultimate: ["이터널 블리자드", "30초", "1.5초 동안 얼음의 정수를 모은 뒤 적에게 유도되는 정수를 발사합니다. 맞은 적은 15의 피해를 받고 3초 동안 얼어붙어 행동할 수 없습니다."]
   },
   bomberman: {
-    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 15의 피해를 받습니다. 발동할 때마다 자신은 5의 피해를 받습니다."],
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 적을 향해 달려가며, 발동할 때마다 자신은 5의 피해를 받습니다."],
     normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 10의 피해를 받습니다."],
     ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
   },
@@ -745,7 +774,17 @@ const characterGuide = {
   cosmic: {
     attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
     normal: ["초신성", "14초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 15개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3의 피해를 주고 초당 별가루 8개를 소모합니다."]
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
+  },
+  hacker: {
+    attack: ["CODE : AJD40K", "4초", "적을 향해 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 2초 동안 0.1초마다 총 15의 피해를 주고 표식을 삭제합니다."],
+    normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
+    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 60%를 가진 홀로그램 분신을 소환합니다. 분신은 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해를 줍니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
+  },
+  geomancer: {
+    attack: ["지각파편", "1초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 1초마다 적을 향해 직선 발사되어 8의 피해를 줍니다."],
+    normal: ["데스오브가이아", "15초", "1초 대기 후 바라보는 방향 조금 앞에 5초 동안 유지되는 바위벽을 소환합니다. 바위쓰는 색히가 벽에 튕기면 지각파편을 얻고, 적이 벽에 닿으면 1의 피해를 입습니다."],
+    ultimate: ["스톤 엣지", "20초", "현재 보유한 지각파편을 몸에 둘러 모두 소모합니다. 파편 1개마다 접촉데미지 3과 피해감소 3%를 얻습니다."]
   }
 };
 
@@ -936,7 +975,9 @@ const codexRatings = {
   bomberman: { difficulty: 1, damage: 3, mobility: 3 },
   roper: { difficulty: 3, damage: 2, mobility: 3 },
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
-  cosmic: { difficulty: 3, damage: 3, mobility: 1 }
+  cosmic: { difficulty: 3, damage: 3, mobility: 1 },
+  hacker: { difficulty: 1, damage: 3, mobility: 1 },
+  geomancer: { difficulty: 3, damage: 3, mobility: 2 }
 };
 
 const enemyCodexRatings = {
@@ -1109,6 +1150,7 @@ function createCodexActualPreviewGame(kind, skillIndex, width, height) {
     weapons: [],
     rifts: [],
     summons: [],
+    rockWalls: [],
     artOrbs: [],
     cosmicDusts: [],
     damageTexts: [],
@@ -2797,18 +2839,66 @@ function updateVisualSettingsUi() {
 function loadTierMakerState() {
   try {
     const saved = JSON.parse(localStorage.getItem(TIER_MAKER_KEY) || "{}");
-    return saved && typeof saved === "object" ? saved : {};
+    return normalizeTierMakerState(saved);
   } catch {
-    return {};
+    return normalizeTierMakerState({});
   }
 }
 
+function normalizeTierMakerState(raw = {}) {
+  const placements = raw?.placements && typeof raw.placements === "object" ? { ...raw.placements } : {};
+  const order = {};
+  TIER_MAKER_ZONES.forEach(zone => {
+    order[zone] = Array.isArray(raw?.order?.[zone]) ? [...raw.order[zone]] : [];
+  });
+
+  if (!raw?.placements) {
+    Object.entries(raw || {}).forEach(([kind, zone]) => {
+      if (characters[kind] && TIER_MAKER_ZONES.includes(zone)) placements[kind] = zone;
+    });
+  }
+
+  const seen = new Set();
+  TIER_MAKER_ZONES.forEach(zone => {
+    order[zone] = order[zone].filter(kind => {
+      if (!characters[kind] || seen.has(kind)) return false;
+      const placement = placements[kind] || "pool";
+      if (placement !== zone) return false;
+      seen.add(kind);
+      return true;
+    });
+  });
+
+  Object.keys(characters).forEach(kind => {
+    const zone = TIER_MAKER_ZONES.includes(placements[kind]) ? placements[kind] : "pool";
+    if (zone === "pool") delete placements[kind];
+    else placements[kind] = zone;
+    if (!seen.has(kind)) {
+      order[zone].push(kind);
+      seen.add(kind);
+    }
+  });
+
+  return { placements, order };
+}
+
+function ensureTierMakerState() {
+  tierMakerState = normalizeTierMakerState(tierMakerState);
+}
+
 function saveTierMakerState() {
+  ensureTierMakerState();
   localStorage.setItem(TIER_MAKER_KEY, JSON.stringify(tierMakerState));
 }
 
 function tierMakerPlacement(kind) {
-  return tierMakerState[kind] || "pool";
+  ensureTierMakerState();
+  return tierMakerState.placements[kind] || "pool";
+}
+
+function tierMakerKinds(zone) {
+  ensureTierMakerState();
+  return tierMakerState.order[zone] || [];
 }
 
 function makeTierChip(kind) {
@@ -2825,25 +2915,16 @@ function makeTierChip(kind) {
 
 function renderTierMaker() {
   if (!ui.tierRows || !ui.tierCharacterPool) return;
-  const tiers = [
-    ["tier1", "1티어", "#ff6b6b"],
-    ["tier2", "2티어", "#f59e0b"],
-    ["tier3", "3티어", "#facc15"],
-    ["tier4", "4티어", "#38bdf8"],
-    ["tier5", "5티어", "#94a3b8"]
-  ];
-  ui.tierRows.innerHTML = tiers.map(([id, label, color]) => `
+  ensureTierMakerState();
+  ui.tierRows.innerHTML = TIER_MAKER_TIERS.map(([id, label, color]) => `
     <article class="tier-row" data-tier-drop="${id}" style="--tier-color:${color};">
       <div class="tier-label-cell">${label}</div>
       <div class="tier-dropzone" data-tier-drop="${id}">
-        ${Object.keys(characters).filter(kind => tierMakerPlacement(kind) === id).map(makeTierChip).join("")}
+        ${tierMakerKinds(id).map(makeTierChip).join("")}
       </div>
     </article>
   `).join("");
-  ui.tierCharacterPool.innerHTML = Object.keys(characters)
-    .filter(kind => tierMakerPlacement(kind) === "pool")
-    .map(makeTierChip)
-    .join("");
+  ui.tierCharacterPool.innerHTML = tierMakerKinds("pool").map(makeTierChip).join("");
 }
 
 function setTierMakerOpen(open) {
@@ -2852,17 +2933,26 @@ function setTierMakerOpen(open) {
   if (open) renderTierMaker();
 }
 
-function moveTierCharacter(kind, targetTier) {
+function moveTierCharacter(kind, targetTier, beforeKind = "") {
   if (!characters[kind]) return;
-  tierMakerState[kind] = targetTier || "pool";
-  if (tierMakerState[kind] === "pool") delete tierMakerState[kind];
+  ensureTierMakerState();
+  const target = TIER_MAKER_ZONES.includes(targetTier) ? targetTier : "pool";
+  TIER_MAKER_ZONES.forEach(zone => {
+    tierMakerState.order[zone] = tierMakerState.order[zone].filter(item => item !== kind);
+  });
+  if (target === "pool") delete tierMakerState.placements[kind];
+  else tierMakerState.placements[kind] = target;
+  const list = tierMakerState.order[target];
+  const beforeIndex = beforeKind && beforeKind !== kind ? list.indexOf(beforeKind) : -1;
+  if (beforeIndex >= 0) list.splice(beforeIndex, 0, kind);
+  else list.push(kind);
   selectedTierKind = "";
   saveTierMakerState();
   renderTierMaker();
 }
 
 function resetTierMaker() {
-  tierMakerState = {};
+  tierMakerState = normalizeTierMakerState({});
   selectedTierKind = "";
   saveTierMakerState();
   renderTierMaker();
@@ -3444,7 +3534,7 @@ function characterInitial(kind) {
   return ({
     thrower: "T", charger: "B", grabber: "G", poker: "P", stealth: "S",
     enhancer: "E", tank: "D", beamer: "L", wild: "W", vampire: "V", brawler: "F",
-    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gunner: "Y", freezer: "I", bomberman: "X", roper: "O", gambler: "?", cosmic: "U"
+    timekeeper: "C", riftmaker: "R", summoner: "N", swordsman: "K", demon: "M", artist: "A", believer: "H", archmage: "Z", gunner: "Y", freezer: "I", bomberman: "X", roper: "O", gambler: "?", cosmic: "U", hacker: "#", geomancer: "G"
   })[kind] || "?";
 }
 
@@ -4750,7 +4840,9 @@ function normalSkillCooldown(kind) {
     bomberman: 720,
     roper: 540,
     gambler: 480,
-    cosmic: 840
+    cosmic: 840,
+    hacker: 840,
+    geomancer: 900
   }[kind] ?? Infinity;
 }
 
@@ -4780,7 +4872,9 @@ function ultimateCooldown(kind) {
     bomberman: 2100,
     roper: 1800,
     gambler: 1200,
-    cosmic: 0
+    cosmic: 0,
+    hacker: 3000,
+    geomancer: 1200
   }[kind] ?? Infinity;
 }
 
@@ -4791,6 +4885,7 @@ function characterMaxHp(kind) {
     archmage: 150,
     bomberman: 190,
     roper: 200,
+    hacker: 150,
     believer: 175,
     brawler: 200,
     charger: 250,
@@ -4893,7 +4988,7 @@ function makeCharacterCombatState(kind) {
     ceremonyTick: 0,
     faithStacks: 0,
     faithBurnTick: 60,
-    mageLightningTimer: kind === "archmage" ? 0 : Infinity,
+    mageLightningTimer: kind === "archmage" ? 480 : Infinity,
     mageFireDelay: 0,
     mageSeaTime: 0,
     mageSeaTick: 60,
@@ -4909,12 +5004,16 @@ function makeCharacterCombatState(kind) {
     mageConductiveTick: 120,
     mageVaporHealTime: 0,
     mageVaporHealTick: 60,
+    mageVaporHealAmount: 10,
     gunTimer: kind === "gunner" ? 60 : Infinity,
     gunAmmo: 5,
     gunReloadTime: 0,
     machineGunTime: 0,
     machineGunTick: 0,
     icicleTimer: kind === "freezer" ? 180 : Infinity,
+    blizzardChargeTime: 0,
+    blizzardChargeMax: 0,
+    blizzardChargeTarget: null,
     explosionTimer: kind === "bomberman" ? 30 : Infinity,
     explosionHitCooldown: 0,
     megaBoomWindup: 0,
@@ -4955,6 +5054,17 @@ function makeCharacterCombatState(kind) {
     cosmicBlasterCharging: 0,
     cosmicBlasterActive: false,
     cosmicBlasterTick: 0,
+    hackingShotTimer: kind === "hacker" ? 240 : Infinity,
+    hackingMarkTime: 0,
+    hackingLaserTime: 0,
+    hackingLaserTick: 0,
+    hologramOwner: null,
+    hologramAttackTimer: Infinity,
+    hologramDeathStunApplied: false,
+    rockShardCount: 0,
+    rockShardTimer: kind === "geomancer" ? 60 : Infinity,
+    gaiaWallWindup: 0,
+    stoneEdgeStacks: 0,
     damageDealt: 0,
     damageTaken: 0,
     healingDone: 0
@@ -5029,6 +5139,7 @@ function resetGame() {
     weapons: [],
     rifts: [],
     summons: [],
+    rockWalls: [],
     artOrbs: [],
     cosmicDusts: [],
     damageTexts: [],
@@ -5311,16 +5422,16 @@ function finishReplay(fighter) {
     x: fighter.x,
     y: fighter.y,
     color: fighter.accent,
-    radius: 185,
+    radius: 204,
     life: 34,
     maxLife: 34
   });
-  const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 185);
+  const summonTarget = enemySummonInArea(fighter, fighter.x, fighter.y, 204);
   const targetFighter = opponentOf(fighter);
   if (summonTarget) {
-    damageSummon(summonTarget, 30, fighter);
-  } else if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 185 + targetFighter.radius) {
-    damage(targetFighter, 30, fighter);
+    damageSummon(summonTarget, 35, fighter);
+  } else if (Math.hypot(targetFighter.x - fighter.x, targetFighter.y - fighter.y) <= 204 + targetFighter.radius) {
+    damage(targetFighter, 35, fighter);
   }
   fighter.replayTarget = null;
 }
@@ -5687,6 +5798,8 @@ function updateSummons(dt) {
         summon.demonMarkTime = 0;
       }
     }
+    if (summon.hackingMarkTime > 0) summon.hackingMarkTime -= dt;
+    updateHackingLaserEntity(summon, dt);
     const target = nearestEnemyTarget(summon.owner, summon.x, summon.y);
     const enemyFighter = opponentOf(summon.owner);
     const ownerSpeed = Math.max(0.1, Math.hypot(summon.owner.vx, summon.owner.vy) || characterBaseSpeed(summon.owner));
@@ -5694,7 +5807,18 @@ function updateSummons(dt) {
     const dy = target.y - summon.y;
     const distance = Math.hypot(dx, dy) || 1;
 
-    if (summon.type === "warrior") {
+    if (summon.type === "hologram") {
+      summon.vx = (summon.owner.x - summon.x) * 0.018;
+      summon.vy = (summon.owner.y - summon.y) * 0.018;
+      summon.x += summon.vx * dt;
+      summon.y += summon.vy * dt;
+      bounceOnWalls(summon);
+      summon.attackTimer -= dt;
+      if (summon.attackTimer <= 0) {
+        useHackingAttack(summon, 0.5);
+        summon.attackTimer = 240;
+      }
+    } else if (summon.type === "warrior") {
       const speed = ownerSpeed * 0.5;
       summon.vx = dx / distance * speed;
       summon.vy = dy / distance * speed;
@@ -5747,7 +5871,84 @@ function updateSummons(dt) {
       resolveFighterSummonImpact(enemyFighter, summon);
     }
   });
-  game.summons = game.summons.filter(summon => summon.hp > 0 && summon.life > 0);
+  game.summons = game.summons.filter(summon => {
+    const alive = summon.hp > 0 && summon.life > 0;
+    if (!alive && summon.type === "hologram" && summon.owner?.hp > 0 && !summon.hologramDeathStunApplied) {
+      summon.hologramDeathStunApplied = true;
+      summon.owner.stunTime = Math.max(summon.owner.stunTime || 0, 180);
+      addVisualEffect({ type: "hacking-glitch", x: summon.owner.x, y: summon.owner.y, color: "#a78bfa", life: 58, maxLife: 58 });
+    }
+    return alive;
+  });
+}
+
+function updateRockWalls(dt) {
+  if (!game.rockWalls) game.rockWalls = [];
+  game.rockWalls = game.rockWalls.filter(wall => {
+    wall.life -= dt;
+    game.fighters.forEach(fighter => {
+      if (!fighter || fighter.hp <= 0) return;
+      const cos = Math.cos(-wall.angle);
+      const sin = Math.sin(-wall.angle);
+      const dx = fighter.x - wall.x;
+      const dy = fighter.y - wall.y;
+      const lx = dx * cos - dy * sin;
+      const ly = dx * sin + dy * cos;
+      const halfW = wall.width / 2 + fighter.radius;
+      const halfH = wall.height / 2 + fighter.radius;
+      if (Math.abs(lx) > halfW || Math.abs(ly) > halfH) return;
+      const pushX = halfW - Math.abs(lx);
+      const pushY = halfH - Math.abs(ly);
+      const localNx = pushX < pushY ? Math.sign(lx || 1) : 0;
+      const localNy = pushX < pushY ? 0 : Math.sign(ly || 1);
+      const nx = localNx * Math.cos(wall.angle) - localNy * Math.sin(wall.angle);
+      const ny = localNx * Math.sin(wall.angle) + localNy * Math.cos(wall.angle);
+      const push = Math.min(pushX, pushY) + 2;
+      fighter.x = clamp(fighter.x + nx * push, fighter.radius, canvas.width - fighter.radius);
+      fighter.y = clamp(fighter.y + ny * push, fighter.radius, canvas.height - fighter.radius);
+      const speed = Math.hypot(fighter.vx, fighter.vy) || characterBaseSpeed(fighter);
+      fighter.vx = nx * speed;
+      fighter.vy = ny * speed;
+      if (fighter === wall.owner && fighter.kind === "geomancer") {
+        fighter.rockShardCount = Math.min(3, fighter.rockShardCount + 1);
+      } else if (wall.hitCooldown.get(fighter) !== game.tick) {
+        damage(fighter, 1, wall.owner);
+        wall.hitCooldown.set(fighter, game.tick);
+      }
+    });
+    return wall.life > 0;
+  });
+}
+
+function drawRockWalls() {
+  (game.rockWalls || []).forEach(wall => {
+    const alpha = clamp(wall.life / 60, 0, 1);
+    ctx.save();
+    ctx.translate(wall.x, wall.y);
+    ctx.rotate(wall.angle);
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = "#facc15";
+    ctx.shadowBlur = 16;
+    const grad = ctx.createLinearGradient(0, -wall.height / 2, 0, wall.height / 2);
+    grad.addColorStop(0, "#fde68a");
+    grad.addColorStop(0.28, "#92400e");
+    grad.addColorStop(0.72, "#4b2e16");
+    grad.addColorStop(1, "#d97706");
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = "#fef3c7";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -wall.height / 2);
+    ctx.lineTo(wall.width / 2, -wall.height * 0.18);
+    ctx.lineTo(wall.width * 0.38, wall.height * 0.34);
+    ctx.lineTo(0, wall.height / 2);
+    ctx.lineTo(-wall.width * 0.38, wall.height * 0.34);
+    ctx.lineTo(-wall.width / 2, -wall.height * 0.18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  });
 }
 
 function resolveFighterSummonImpact(fighter, summon) {
@@ -6101,12 +6302,12 @@ function triggerMageReaction(owner, target, existingElement, nextElement, reacti
   });
   const key = `${existingElement}+${nextElement}`;
   if (key === "electro+fire") {
-    damage(target, 10, owner);
-    target.mageToxicGas = { owner, time: 600, tick: 60, damage: 1, color: "#a3e635" };
+    damage(target, 20, owner);
+    target.mageToxicGas = { owner, time: 600, tick: 60, damage: 2, color: "#a3e635" };
     target.mageHealReductionTime = Math.max(target.mageHealReductionTime || 0, 600);
     target.mageDamageAmpTime = Math.max(target.mageDamageAmpTime || 0, 600);
   } else if (key === "electro+wet") {
-    damage(target, 15, owner);
+    damage(target, 50, owner);
     target.stunTime = Math.max(target.stunTime || 0, 90);
     [opponentOf(owner), ...enemySummonsOf(owner)].forEach(other => {
       if (!other || other === target || other.hp <= 0) return;
@@ -6122,19 +6323,22 @@ function triggerMageReaction(owner, target, existingElement, nextElement, reacti
       y: target.y,
       radius: target.radius * 1.732,
       time: 360,
-      tick: 90
+      tick: 90,
+      damage: 15
     };
     addVisualEffect({ type: "mage-field", x: target.x, y: target.y, radius: target.radius * 1.732, color: "#22d3ee", life: 360, maxLife: 360 });
   } else if (key === "wet+fire") {
-    heal(owner, 30);
+    damage(target, 30, owner);
+    heal(owner, 20);
     owner.mageVaporHealTime = 120;
     owner.mageVaporHealTick = 60;
+    owner.mageVaporHealAmount = 10;
     owner.hasteTime = Math.max(owner.hasteTime || 0, 120);
     addVisualEffect({ type: "mage-mist", x: owner.x, y: owner.y, radius: 145, color: "#bfdbfe", life: 240, maxLife: 240 });
   } else if (key === "fire+electro") {
     target.shieldTime = 0;
     target.shieldBlastPending = false;
-    damage(target, 20, owner);
+    damage(target, 35, owner);
     const speed = Math.hypot(target.vx, target.vy);
     const fallback = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
     const dx = speed > 0.2 ? -target.vx / speed : (target.x - owner.x) / fallback;
@@ -6225,7 +6429,7 @@ function updateMageAilments(target, dt) {
     field.tick -= dt;
     const inside = Math.hypot(target.x - field.x, target.y - field.y) <= field.radius + target.radius;
     while (field.time > 0 && field.tick <= 0 && !game.over) {
-      if (inside) damage(target, 5, field.owner);
+      if (inside) damage(target, field.damage || 15, field.owner);
       field.tick += 90;
     }
     if (inside && (
@@ -6281,9 +6485,9 @@ function detonateMageFire(owner) {
   });
 }
 
-const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
-const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
-const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper"];
+const rouletteAttackPool = ["thrower", "charger", "grabber", "poker", "beamer", "wild", "vampire", "brawler", "timekeeper", "summoner", "swordsman", "demon", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "hacker", "geomancer"];
+const rouletteNormalPool = ["thrower", "charger", "grabber", "poker", "enhancer", "tank", "beamer", "wild", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "hacker", "geomancer"];
+const rouletteUltimatePool = ["thrower", "charger", "grabber", "poker", "stealth", "enhancer", "tank", "beamer", "vampire", "timekeeper", "riftmaker", "summoner", "swordsman", "demon", "artist", "believer", "archmage", "gunner", "freezer", "bomberman", "roper", "hacker", "geomancer"];
 
 function roulettePick(pool, owner, salt) {
   const seed = hashSeed(`${currentRoom?.code || game?.seedKey || "local"}|${owner.ownerId || owner.id}|${game.tick}|${salt}|${pool.length}`);
@@ -6328,7 +6532,159 @@ function useRouletteAttack(owner) {
   else if (kind === "freezer") fireIcicle(owner, false);
   else if (kind === "bomberman") triggerExplosionBoost(owner);
   else if (kind === "roper") roperStrike(owner, true);
+  else if (kind === "hacker") useHackingAttack(owner);
+  else if (kind === "geomancer") fireRockShard(owner, true);
   owner.rouletteAttackTimer = 240;
+}
+
+function hasHackingMark(target) {
+  return target && target.hackingMarkTime > 0;
+}
+
+function useHackingAttack(owner, damageScale = 1) {
+  const sourceOwner = owner.owner || owner;
+  const target = nearestEnemyTarget(sourceOwner, owner.x, owner.y);
+  if (hasHackingMark(target)) {
+    startHackingLaser(owner, target, damageScale);
+    return;
+  }
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const speed = 12;
+  game.balls.push({
+    owner: sourceOwner,
+    x: owner.x + Math.cos(angle) * (owner.radius + 14),
+    y: owner.y + Math.sin(angle) * (owner.radius + 14),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    radius: 8,
+    life: 160,
+    hitCooldown: 0,
+    damage: 0,
+    speed,
+    color: "#22d3ee",
+    noBounce: true,
+    hackingBullet: true,
+    hackingDamageScale: damageScale
+  });
+}
+
+function startHackingLaser(owner, target, damageScale = 1) {
+  target.hackingMarkTime = 0;
+  owner.hackingLaserTargetId = target.ownerId || target.id || target.label || "";
+  owner.hackingLaserTarget = target;
+  owner.hackingLaserTime = 120;
+  owner.hackingLaserTick = 0;
+  owner.hackingLaserDamageScale = damageScale;
+  addSkillPulse(owner, "#22d3ee");
+}
+
+function delayEnemyCooldowns(owner) {
+  const target = opponentOf(owner);
+  ["skillTimer", "ultimateTimer", "throwTimer", "pokerTimer", "gunTimer", "icicleTimer", "clockHandTimer", "demonSwordTimer", "mageLightningTimer", "hackingShotTimer", "rockShardTimer"].forEach(key => {
+    if (Number.isFinite(target[key])) target[key] += Math.max(24, Math.abs(target[key] || 0) * 0.2);
+  });
+  addVisualEffect({ type: "hacking-glitch", x: target.x, y: target.y, color: "#22d3ee", life: 48, maxLife: 48 });
+  addSkillPulse(owner, "#22d3ee");
+  owner.skillTimer = 840;
+}
+
+function updateHackingLaserEntity(entity, dt) {
+  if (entity.hackingLaserTime <= 0) return;
+  entity.hackingLaserTime -= dt;
+  entity.hackingLaserTick -= dt;
+  const attacker = entity.hologramOwner || entity.owner || entity;
+  const target = entity.hackingLaserTarget?.hp > 0
+    ? entity.hackingLaserTarget
+    : nearestEnemyTarget(attacker, entity.x, entity.y);
+  while (entity.hackingLaserTime > 0 && entity.hackingLaserTick <= 0 && !game.over) {
+    damageCombatTarget(target, 0.75 * (entity.hackingLaserDamageScale || 1), attacker);
+    addVisualEffect({
+      type: "hacking-beam",
+      x1: entity.x,
+      y1: entity.y,
+      x2: target.x,
+      y2: target.y,
+      color: "#22d3ee",
+      life: 8,
+      maxLife: 8
+    });
+    entity.hackingLaserTick += 6;
+  }
+}
+
+function summonHologram(owner) {
+  const target = opponentOf(owner);
+  const angle = Math.atan2(owner.y - target.y, owner.x - target.x);
+  const hp = Math.max(1, owner.hp * 0.6);
+  game.summons.push({
+    id: `hologram-${game.tick}-${owner.ownerId}`,
+    owner,
+    type: "hologram",
+    x: clamp(owner.x + Math.cos(angle) * 70, 24, canvas.width - 24),
+    y: clamp(owner.y + Math.sin(angle) * 70, 24, canvas.height - 24),
+    vx: 0,
+    vy: 0,
+    radius: 25,
+    hp,
+    maxHp: hp,
+    damage: 0,
+    life: 3600,
+    hitFlash: 0,
+    attackTimer: 90,
+    hackingMarkTime: 0,
+    hologramOwner: owner,
+    hackingLaserTime: 0,
+    hackingLaserTick: 0,
+    hackingLaserDamageScale: 0.5
+  });
+  addVisualEffect({ type: "hacking-glitch", x: owner.x, y: owner.y, color: "#a78bfa", life: 64, maxLife: 64 });
+  addSkillPulse(owner, "#a78bfa");
+}
+
+function fireRockShard(owner, forced = false) {
+  if (!forced && owner.rockShardCount <= 0) return;
+  if (!forced) owner.rockShardCount = Math.max(0, owner.rockShardCount - 1);
+  fireStraightBullet(owner, {
+    damage: 8,
+    speed: 13,
+    radius: 10,
+    life: 150,
+    color: "#a16207",
+    rockShard: true
+  });
+}
+
+function beginGaiaWall(owner) {
+  owner.gaiaWallWindup = 60;
+  owner.vx = 0;
+  owner.vy = 0;
+  owner.skillTimer = 900;
+  addSkillPulse(owner, "#a16207");
+}
+
+function createGaiaWall(owner) {
+  const dir = fighterDirection(owner);
+  game.rockWalls.push({
+    owner,
+    x: clamp(owner.x + dir.x * 112, 45, canvas.width - 45),
+    y: clamp(owner.y + dir.y * 112, 45, canvas.height - 45),
+    angle: Math.atan2(dir.y, dir.x) + Math.PI / 2,
+    width: 34,
+    height: 132,
+    life: 300,
+    hitCooldown: new Map()
+  });
+  addVisualEffect({ type: "rock-burst", x: owner.x + dir.x * 112, y: owner.y + dir.y * 112, color: "#d97706", life: 44, maxLife: 44 });
+}
+
+function activateStoneEdge(owner) {
+  const stacks = owner.rockShardCount;
+  owner.rockShardCount = 0;
+  owner.stoneEdgeStacks += stacks;
+  owner.contactDamage += stacks * 3;
+  owner.damageReduction = Math.min(0.75, (owner.damageReduction || 0) + stacks * 0.03);
+  addSkillPulse(owner, "#facc15");
+  addVisualEffect({ type: "rock-burst", x: owner.x, y: owner.y, color: "#facc15", life: 70, maxLife: 70, radius: 98 });
 }
 
 function useRouletteNormal(owner) {
@@ -6640,6 +6996,16 @@ function triggerNormalSkill(fighter) {
     return;
   }
 
+  if (fighter.kind === "hacker") {
+    delayEnemyCooldowns(fighter);
+    return;
+  }
+
+  if (fighter.kind === "geomancer") {
+    beginGaiaWall(fighter);
+    return;
+  }
+
   if (fighter.kind === "archmage") {
     fighter.mageFireDelay = 180;
     fighter.skillTimer = 660;
@@ -6834,6 +7200,18 @@ function triggerUltimate(fighter) {
     return;
   }
 
+  if (fighter.kind === "hacker") {
+    summonHologram(fighter);
+    fighter.ultimateTimer = 3000;
+    return;
+  }
+
+  if (fighter.kind === "geomancer") {
+    activateStoneEdge(fighter);
+    fighter.ultimateTimer = 1200;
+    return;
+  }
+
   if (fighter.kind === "believer") {
     fighter.faithStacks += 1;
     fighter.faithBurnTick = Math.min(fighter.faithBurnTick, 60);
@@ -6871,7 +7249,7 @@ function fighterByOwnerId(ownerId) {
 
 function skillAvailable(fighter, type) {
   if (!fighter || game?.over || fighter.stunTime > 0 || fighter.silenceTime > 0) return false;
-  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0 || fighter.roperRushHits > 0 || fighter.roperDodgeTime > 0 || fighter.ropeThrowTime > 0) return false;
+  if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0 || fighter.swordUltimateHits > 0 || fighter.demonBurstWindup > 0 || fighter.cosmicBlasterCharging > 0 || fighter.megaBoomWindup > 0 || fighter.houserAirTime > 0 || fighter.houserStrikeTime > 0 || fighter.roperStrikeWindup > 0 || fighter.roperStrikeCharge > 0 || fighter.roperRushHits > 0 || fighter.roperDodgeTime > 0 || fighter.ropeThrowTime > 0 || fighter.gaiaWallWindup > 0) return false;
   if (type === "attack") {
     return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
   }
@@ -7032,6 +7410,8 @@ function moveFighter(fighter, dt) {
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
   if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
   if (fighter.frozenTime > 0) fighter.frozenTime -= dt;
+  if (fighter.hackingMarkTime > 0) fighter.hackingMarkTime -= dt;
+  updateHackingLaserEntity(fighter, dt);
   if (fighter.demonMarkTime > 0) {
     fighter.demonMarkTime -= dt;
     if (fighter.demonMarkTime <= 0) {
@@ -7076,7 +7456,7 @@ function moveFighter(fighter, dt) {
       fighter.mageVaporHealTime -= dt;
       fighter.mageVaporHealTick -= dt;
       while (fighter.mageVaporHealTime > 0 && fighter.mageVaporHealTick <= 0 && !game.over) {
-        heal(fighter, 5);
+        heal(fighter, fighter.mageVaporHealAmount || 10);
         fighter.mageVaporHealTick += 60;
       }
     }
@@ -7135,11 +7515,50 @@ function moveFighter(fighter, dt) {
     }
   }
   if (fighter.kind === "freezer") {
+    if (fighter.blizzardChargeTime > 0) {
+      fighter.blizzardChargeTime -= dt;
+      fighter.vx *= 0.9;
+      fighter.vy *= 0.9;
+      if (game.tick % 8 === 0) {
+        addVisualEffect({
+          type: "blizzard-charge",
+          fighter,
+          color: "#bae6fd",
+          life: 34,
+          maxLife: 34
+        });
+      }
+      if (fighter.blizzardChargeTime <= 0) {
+        launchBlizzardCore(fighter);
+      }
+    }
     fighter.icicleTimer -= dt;
-    if (fighter.icicleTimer <= 0) {
+    if (fighter.icicleTimer <= 0 && fighter.blizzardChargeTime <= 0) {
       fireIcicle(fighter, false);
       fighter.icicleTimer += 180;
     }
+  }
+  if (fighter.kind === "geomancer") {
+    fighter.rockShardTimer -= dt;
+    if (fighter.rockShardTimer <= 0) {
+      fireRockShard(fighter);
+      fighter.rockShardTimer += 60;
+    }
+  }
+  if (fighter.kind === "hacker") {
+    fighter.hackingShotTimer -= dt;
+    if (fighter.hackingShotTimer <= 0) {
+      useHackingAttack(fighter);
+      fighter.hackingShotTimer += 240;
+    }
+  }
+  if (fighter.gaiaWallWindup > 0) {
+    fighter.gaiaWallWindup -= dt;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    updateSkills(fighter, dt);
+    if (fighter.gaiaWallWindup <= 0) createGaiaWall(fighter);
+    return;
   }
   if (fighter.silenceTime > 0) fighter.silenceTime -= dt;
   if (fighter.swordDanceTime > 0 || fighter.swordDanceHits > 0) {
@@ -7753,6 +8172,9 @@ function bounceOnWalls(body) {
     body.vy = -Math.abs(body.vy);
     wallHit = "bottom";
   }
+  if (wallHit && body.kind === "geomancer") {
+    body.rockShardCount = Math.min(3, (body.rockShardCount || 0) + 1);
+  }
   return wallHit;
 }
 
@@ -8027,7 +8449,7 @@ function launchDemonMissile(owner) {
 
 function spawnArtOrb(owner) {
   if (!game || game.artOrbs?.some(orb => orb.owner === owner)) return;
-  const speed = characterBaseSpeed(owner) * 0.605;
+  const speed = characterBaseSpeed(owner) * 0.635;
   const angle = combatRandom(owner, `art-orb-${game.artOrbs?.length || 0}`, 0) * Math.PI * 2;
   const velocity = { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
   game.artOrbs.push({
@@ -8048,7 +8470,7 @@ function updateArtOrbs(dt) {
     .forEach(spawnArtOrb);
   game.artOrbs = game.artOrbs.filter(orb => orb.owner.hp > 0);
   game.artOrbs.forEach(orb => {
-    const speed = characterBaseSpeed(orb.owner) * 0.605 * (orb.owner.artSoulTime > 0 ? 2 : 1);
+    const speed = characterBaseSpeed(orb.owner) * 0.635 * (orb.owner.artSoulTime > 0 ? 2 : 1);
     const currentSpeed = Math.hypot(orb.vx, orb.vy) || speed || 1;
     orb.vx = orb.vx / currentSpeed * speed;
     orb.vy = orb.vy / currentSpeed * speed;
@@ -8264,7 +8686,7 @@ function hitCosmicBlaster(owner) {
     const closestX = line.x1 + lineDx * t;
     const closestY = line.y1 + lineDy * t;
     if (Math.hypot(target.x - closestX, target.y - closestY) < target.radius + 52) {
-      damageCombatTarget(target, 3, owner);
+      damageCombatTarget(target, 3.5, owner);
     }
   });
 }
@@ -8624,7 +9046,7 @@ function createTankBlast(owner) {
     color: "#d5dde8"
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damageCombatTarget(target, 50, owner);
+    damageCombatTarget(target, 45, owner);
     if (!target.owner) target.stunTime = Math.max(target.stunTime, 180);
   }
 }
@@ -8691,6 +9113,61 @@ function throwDrawCard(owner) {
   addSkillPulse(owner, owner.accent);
 }
 
+const POKER_RANKS = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
+const POKER_SUITS = ["♠", "♥", "◆", "♣"];
+const POKER_RANK_VALUE = {
+  A: 14, K: 13, Q: 12, J: 11, "10": 10, "9": 9, "8": 8, "7": 7, "6": 6, "5": 5, "4": 4, "3": 3, "2": 2
+};
+
+function evaluatePokerHand(cards) {
+  const ranks = cards.map(card => card.rank);
+  const values = ranks.map(rank => POKER_RANK_VALUE[rank]).sort((a, b) => b - a);
+  const counts = Object.values(ranks.reduce((acc, rank) => {
+    acc[rank] = (acc[rank] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b - a);
+  const flush = cards.every(card => card.suit === cards[0].suit);
+  const uniqueValues = [...new Set(values)].sort((a, b) => b - a);
+  const wheel = uniqueValues.join(",") === "14,5,4,3,2";
+  const straight = uniqueValues.length === 5 && (wheel || uniqueValues[0] - uniqueValues[4] === 4);
+
+  if (straight && flush && uniqueValues[0] === 14 && uniqueValues[1] === 13) return { label: "로열 플러시", multiplier: 9.5 };
+  if (straight && flush) return { label: "스트레이트 플러시", multiplier: 8 };
+  if (counts[0] === 4) return { label: "포카드", multiplier: 6 };
+  if (counts[0] === 3 && counts[1] === 2) return { label: "풀하우스", multiplier: 4.6 };
+  if (flush) return { label: "플러시", multiplier: 3.8 };
+  if (straight) return { label: "스트레이트", multiplier: 3.4 };
+  if (counts[0] === 3) return { label: "트리플", multiplier: 3 };
+  if (counts[0] === 2 && counts[1] === 2) return { label: "투페어", multiplier: 2.35 };
+  if (counts[0] === 2) return { label: "원페어", multiplier: 1.95 };
+  return { label: "노페어", multiplier: 1.55 };
+}
+
+function dealPokerCards(owner, sequence) {
+  const deck = [];
+  POKER_RANKS.forEach(rank => {
+    POKER_SUITS.forEach(suit => deck.push({ rank, suit }));
+  });
+  const hand = [];
+  for (let index = 0; index < 5; index += 1) {
+    const pick = combatRandomIndex(owner, `poker-card-${sequence}-${index}`, deck.length, index);
+    hand.push(deck.splice(pick, 1)[0]);
+  }
+  return hand;
+}
+
+function dealPvePokerCards() {
+  const deck = [];
+  POKER_RANKS.forEach(rank => {
+    POKER_SUITS.forEach(suit => deck.push({ rank, suit }));
+  });
+  const hand = [];
+  for (let index = 0; index < 5; index += 1) {
+    hand.push(deck.splice(pveRandomIndex(deck.length), 1)[0]);
+  }
+  return hand;
+}
+
 function assassinate(owner) {
   const target = nearestEnemyTarget(owner);
   const startX = owner.x;
@@ -8717,35 +9194,12 @@ function assassinate(owner) {
 
 function dealPokerAttack(owner, options = {}) {
   if ((!owner.canPoker && !options.force) || game.over) return;
-  const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7"];
   const sequence = owner.pokerDealCount = (owner.pokerDealCount || 0) + 1;
-  const hand = Array.from({ length: 5 }, (_, index) => ranks[combatRandomIndex(owner, `poker-hand-${sequence}`, ranks.length, index)]);
-  const counts = Object.values(hand.reduce((acc, rank) => {
-    acc[rank] = (acc[rank] || 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b - a);
-  let multiplier = 1;
-  let label = "노페어";
-  if (counts[0] === 5) {
-    multiplier = 4.5;
-    label = "파이브카드";
-  } else if (counts[0] === 4) {
-    multiplier = 3.5;
-    label = "포카드";
-  } else if (counts[0] === 3 && counts[1] === 2) {
-    multiplier = 3;
-    label = "풀하우스";
-  } else if (counts[0] === 3) {
-    multiplier = 2.2;
-    label = "쓰리페어";
-  } else if (counts[0] === 2 && counts[1] === 2) {
-    multiplier = 1.8;
-    label = "투페어";
-  } else if (counts[0] === 2) {
-    multiplier = 1.35;
-    label = "원페어";
-  }
-  multiplier *= owner.pokerBoostMultiplier;
+  const cards = dealPokerCards(owner, sequence);
+  const hand = cards.map(card => card.rank);
+  const evaluated = evaluatePokerHand(cards);
+  let multiplier = evaluated.multiplier * owner.pokerBoostMultiplier;
+  let label = evaluated.label;
   if (owner.pokerBoostMultiplier > 1) {
     label = `${label} + 킹`;
     owner.pokerBoostMultiplier = 1;
@@ -8766,7 +9220,7 @@ function dealPokerAttack(owner, options = {}) {
       vx: 0,
       vy: 0,
       radius: 10,
-      damage: 1.7 * multiplier,
+      damage: 2.2 * multiplier,
       life: 190,
       delay: index * 9,
       spread: (index - 2) * 0.1,
@@ -8802,23 +9256,18 @@ function updateBalls(dt) {
     if (ball.hitCooldown > 0) ball.hitCooldown -= dt;
     if (!ball.blood && !ball.noBounce) bounceOnWalls(ball);
     if (ball.blizzardCore) {
-      if (game.tick % 6 === 0) {
+      if (game.tick % 10 === 0) {
         addVisualEffect({
-          type: "ice-field",
+          type: "blizzard-release",
           owner: ball.owner,
           x: ball.x,
           y: ball.y,
-          radius: 63,
+          radius: 58,
           color: "#93c5fd",
-          life: 360,
-          maxLife: 360
+          life: 18,
+          maxLife: 18
         });
       }
-      game.fighters.forEach(target => {
-        if (target !== ball.owner && Math.hypot(target.x - ball.x, target.y - ball.y) < target.radius + 72) {
-          target.slowTime = Math.max(target.slowTime, 90);
-        }
-      });
     }
 
     const summonTarget = collidingEnemySummon(ball.owner, ball.x, ball.y, ball.radius);
@@ -8843,20 +9292,23 @@ function updateBalls(dt) {
         if (!ball.persistentArrow) return false;
       }
       if (ball.gunBullet || (ball.freezeBullet && !ball.blizzardCore)) return false;
+      if (ball.hackingBullet) {
+        summonTarget.hackingMarkTime = 360;
+        addVisualEffect({ type: "hacking-glitch", x: summonTarget.x, y: summonTarget.y, color: "#22d3ee", life: 34, maxLife: 34 });
+        return false;
+      }
+      if (ball.rockShard) return false;
       if (ball.blizzardCore) {
-        summonTarget.slowTime = Math.max(summonTarget.slowTime || 0, 90);
+        summonTarget.stunTime = Math.max(summonTarget.stunTime || 0, 180);
+        summonTarget.frozenTime = Math.max(summonTarget.frozenTime || 0, 180);
         addVisualEffect({
-          type: "ice-field",
-          owner: ball.owner,
-          x: ball.x,
-          y: ball.y,
-          radius: 87,
+          type: "ice-prison-burst",
+          fighter: summonTarget,
           color: "#93c5fd",
-          life: 360,
-          maxLife: 360
+          life: 72,
+          maxLife: 72
         });
-        ball.hitCooldown = 24;
-        return true;
+        return false;
       }
       const angle = Math.atan2(summonTarget.y - ball.y, summonTarget.x - ball.x);
       const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 10.2;
@@ -8900,26 +9352,32 @@ function updateBalls(dt) {
           }
           let hitDamage = ball.damage;
           if (ball.freezeBullet) {
-            if (target.stunTime > 0) hitDamage += 5;
-            target.slowTime = Math.max(target.slowTime, ball.blizzardCore ? 180 : 75);
+            if (ball.blizzardCore) {
+              target.stunTime = Math.max(target.stunTime || 0, 180);
+              target.frozenTime = Math.max(target.frozenTime || 0, 180);
+            } else {
+              if (target.stunTime > 0) hitDamage += 5;
+              target.slowTime = Math.max(target.slowTime, 75);
+            }
           }
           damage(target, hitDamage, ball.owner);
-          if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
-          if (ball.blood || ball.riftShot || ball.rouletteShot || ball.gunBullet || (ball.freezeBullet && !ball.blizzardCore) || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
+          if (ball.hackingBullet) {
+            target.hackingMarkTime = 360;
+            addVisualEffect({ type: "hacking-glitch", x: target.x, y: target.y, color: "#22d3ee", life: 34, maxLife: 34 });
+            return false;
+          }
           if (ball.blizzardCore) {
             addVisualEffect({
-              type: "ice-field",
-              owner: ball.owner,
-              x: ball.x,
-              y: ball.y,
-              radius: 96,
-              color: "#93c5fd",
-              life: 360,
-              maxLife: 360
+              type: "ice-prison-burst",
+              fighter: target,
+              color: "#bfdbfe",
+              life: 72,
+              maxLife: 72
             });
-            ball.hitCooldown = 30;
-            break;
+            return false;
           }
+          if (ball.slow) target.slowTime = Math.max(target.slowTime, 180);
+          if (ball.blood || ball.riftShot || ball.rouletteShot || ball.gunBullet || ball.rockShard || (ball.freezeBullet && !ball.blizzardCore) || (ball.summonArrow && !ball.persistentArrow) || (ball.owner.canThrow && !ball.star)) return false;
         }
         const angle = Math.atan2(dy, dx);
         const speed = ball.speed || 10.2;
@@ -9357,6 +9815,7 @@ function drawArena() {
   }
   drawFaithFields();
   drawRopeLinks();
+  drawRockWalls();
   game.grapples.forEach(drawGrapple);
   game.shockwaves.forEach(drawShockwave);
   game.areaAttacks.forEach(drawAreaAttack);
@@ -9499,6 +9958,14 @@ function drawVisualEffect(effect) {
     drawIceField(effect);
     return;
   }
+  if (effect.type === "blizzard-charge") {
+    drawBlizzardCharge(effect);
+    return;
+  }
+  if (effect.type === "blizzard-release") {
+    drawBlizzardRelease(effect);
+    return;
+  }
   if (effect.type === "ice-prison-burst") {
     drawIcePrisonBurst(effect);
     return;
@@ -9519,12 +9986,47 @@ function drawVisualEffect(effect) {
     drawEnergyLine(effect, 7);
     return;
   }
+  if (effect.type === "hacking-beam") {
+    drawEnergyLine(effect, 6);
+    return;
+  }
+  if (effect.type === "hacking-glitch") {
+    drawPointBurst(effect);
+    return;
+  }
+  if (effect.type === "rock-burst") {
+    drawPointBurst(effect);
+    return;
+  }
   if (effect.type === "time-explosion" || effect.type === "void-rift" || effect.type === "rift-hit" || effect.type === "summon-arrival" || effect.type === "mega-explosion") {
     drawPointBurst(effect);
   }
 }
 
 function drawSummon(summon) {
+  if (summon.type === "hologram") {
+    ctx.save();
+    ctx.translate(summon.x, summon.y);
+    ctx.globalAlpha = summon.hitFlash > 0 ? 0.82 : 0.56;
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = "#22d3ee";
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = "rgba(34, 211, 238, 0.32)";
+    ctx.strokeStyle = "#a78bfa";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, summon.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#e0f2fe";
+    ctx.font = "1000 16px Segoe UI, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("#", 0, 1);
+    ctx.restore();
+    drawFighterHealthBar(summon);
+    return;
+  }
   const color = summon.type === "warrior" ? "#4ade80" : "#facc15";
   ctx.save();
   ctx.translate(summon.x, summon.y);
@@ -10386,6 +10888,87 @@ function drawIceField(effect) {
   ctx.restore();
 }
 
+function drawBlizzardCharge(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const pulse = 0.5 + Math.sin(game.tick * 0.18) * 0.5;
+  const radius = fighter.radius + 34 + progress * 24;
+  ctx.save();
+  ctx.translate(fighter.x, fighter.y);
+  ctx.globalCompositeOperation = "lighter";
+  const core = ctx.createRadialGradient(0, 0, fighter.radius * 0.2, 0, 0, radius * 1.35);
+  core.addColorStop(0, "rgba(255,255,255,0.42)");
+  core.addColorStop(0.3, "rgba(186,230,253,0.26)");
+  core.addColorStop(0.68, "rgba(56,189,248,0.12)");
+  core.addColorStop(1, "rgba(15,23,42,0)");
+  ctx.fillStyle = core;
+  ctx.globalAlpha = 0.68;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 1.25, 0, Math.PI * 2);
+  ctx.fill();
+  for (let ring = 0; ring < 3; ring += 1) {
+    ctx.save();
+    ctx.rotate(game.tick * (0.018 + ring * 0.006) + ring * Math.PI / 3);
+    ctx.strokeStyle = ring === 1 ? "#ffffff" : "#7dd3fc";
+    ctx.shadowColor = "#bae6fd";
+    ctx.shadowBlur = 18 + ring * 7;
+    ctx.globalAlpha = 0.58 - ring * 0.1;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, radius * (0.96 + ring * 0.18), radius * (0.36 + ring * 0.06), 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  for (let shard = 0; shard < 10; shard += 1) {
+    const angle = shard * Math.PI * 2 / 10 - game.tick * 0.035;
+    const dist = radius * (0.58 + (shard % 3) * 0.16 + pulse * 0.08);
+    ctx.save();
+    ctx.translate(Math.cos(angle) * dist, Math.sin(angle) * dist);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.fillStyle = shard % 2 ? "#e0f2fe" : "#7dd3fc";
+    ctx.shadowColor = "#bae6fd";
+    ctx.shadowBlur = 16;
+    ctx.globalAlpha = 0.72;
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.lineTo(5, 0);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(-5, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawBlizzardRelease(effect) {
+  const progress = 1 - clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = (effect.radius || 72) * (0.45 + progress * 0.8);
+  const alpha = 1 - progress;
+  ctx.save();
+  ctx.translate(effect.x, effect.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = "#e0f2fe";
+  ctx.fillStyle = "rgba(125,211,252,0.13)";
+  ctx.shadowColor = "#38bdf8";
+  ctx.shadowBlur = 30;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  for (let ray = 0; ray < 8; ray += 1) {
+    const angle = ray * Math.PI / 4 + game.tick * 0.025;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * radius * 0.2, Math.sin(angle) * radius * 0.2);
+    ctx.lineTo(Math.cos(angle) * radius * 1.12, Math.sin(angle) * radius * 1.12);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawIcePrisonBurst(effect) {
   const fighter = effect.fighter;
   if (!fighter) return;
@@ -10683,6 +11266,7 @@ function drawFighter(fighter) {
   ctx.restore();
   if (fighter.frozenTime > 0) drawFrozenPrison(fighter);
   if ((fighter.demonMarkCount || 0) > 0) drawDemonMark(fighter);
+  if (fighter.hackingMarkTime > 0) drawHackingMark(fighter);
   drawMageElementOrbs(fighter);
   drawFighterName(fighter);
   drawFighterHealthBar(fighter);
@@ -10695,6 +11279,9 @@ function drawFighter(fighter) {
   }
   if (fighter.kind === "cosmic") {
     addFighterStatLabel(fighter, `별가루 ${Math.floor(fighter.cosmicDust)}`, fighter.accent);
+  }
+  if (fighter.kind === "geomancer") {
+    addFighterStatLabel(fighter, `파편 ${fighter.rockShardCount || 0}`, fighter.accent);
   }
 }
 
@@ -10831,6 +11418,28 @@ function drawDemonMark(target) {
     ctx.arc(x, y, 6.5, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
+}
+
+function drawHackingMark(target) {
+  ctx.save();
+  ctx.translate(target.x, target.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "#22d3ee";
+  ctx.fillStyle = "#a78bfa";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 5]);
+  ctx.lineDashOffset = -game.tick * 0.8;
+  ctx.beginPath();
+  ctx.rect(-target.radius - 8, -target.radius - 8, (target.radius + 8) * 2, (target.radius + 8) * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font = "1000 14px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("#", 0, -target.radius - 18);
   ctx.restore();
 }
 
@@ -11034,7 +11643,10 @@ function fireStraightBullet(owner, options = {}) {
     noBounce: true,
     gunBullet: options.gunBullet || false,
     freezeBullet: options.freezeBullet || false,
-    blizzardCore: options.blizzardCore || false
+    blizzardCore: options.blizzardCore || false,
+    hackingBullet: options.hackingBullet || false,
+    hackingDamageScale: options.hackingDamageScale || 1,
+    rockShard: options.rockShard || false
   });
 }
 
@@ -11072,28 +11684,55 @@ function fireIcicle(owner, blizzard = false) {
     });
     return;
   }
-  const direction = fighterDirection(owner);
-  fireStraightBullet(owner, {
+  beginEternalBlizzard(owner);
+}
+
+function beginEternalBlizzard(owner) {
+  owner.blizzardChargeTime = 90;
+  owner.blizzardChargeMax = 90;
+  owner.blizzardChargeTarget = nearestEnemyTarget(owner);
+  addSkillPulse(owner, "#bae6fd");
+  addVisualEffect({
+    type: "blizzard-charge",
+    fighter: owner,
+    color: "#bae6fd",
+    life: 90,
+    maxLife: 90
+  });
+}
+
+function launchBlizzardCore(owner) {
+  const target = nearestEnemyTarget(owner);
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const speed = 8.4;
+  game.balls.push({
+    owner,
+    homeTarget: target,
+    homing: true,
+    x: owner.x + Math.cos(angle) * (owner.radius + 24),
+    y: owner.y + Math.sin(angle) * (owner.radius + 24),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    radius: 24,
+    life: 260,
+    hitCooldown: 0,
     damage: 15,
-    speed: 5.4,
-    radius: 22.5,
-    life: 360,
-    color: "#93c5fd",
+    speed,
+    color: "#bae6fd",
+    noBounce: true,
     freezeBullet: true,
     blizzardCore: true
   });
-  if (blizzard) {
-    addVisualEffect({
-      type: "ice-field",
-      owner,
-      x: owner.x + direction.x * (owner.radius + 28),
-      y: owner.y + direction.y * (owner.radius + 28),
-      radius: 117,
-      color: "#93c5fd",
-      life: 360,
-      maxLife: 360
-    });
-  }
+  addVisualEffect({
+    type: "blizzard-release",
+    x: owner.x,
+    y: owner.y,
+    color: "#bae6fd",
+    radius: 132,
+    life: 44,
+    maxLife: 44
+  });
+  owner.blizzardChargeTarget = null;
 }
 
 function castSnowAngel(owner) {
@@ -11152,13 +11791,17 @@ function explodeAt(owner, x, y, radius, damageAmount, options = {}) {
 }
 
 function triggerExplosionBoost(owner) {
-  explodeAt(owner, owner.x, owner.y, 118, 15, {
+  explodeAt(owner, owner.x, owner.y, 118, 10, {
     type: "explosion-boost",
     color: "#fb923c",
     knockback: 24,
     affectsOwner: true
   });
   selfDamage(owner, 5);
+  const target = nearestEnemyTarget(owner);
+  const distance = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
+  owner.vx = owner.vx * 0.25 + ((target.x - owner.x) / distance) * 12.5;
+  owner.vy = owner.vy * 0.25 + ((target.y - owner.y) / distance) * 12.5;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
 }
@@ -11972,6 +12615,7 @@ function stepGame(dt) {
     processSkillEvents(prep);
     game.fighters.forEach(fighter => moveFighter(fighter, dt));
     handleFighterCollision();
+    updateRockWalls(dt);
     updateBalls(dt);
     updateGrapples(dt);
     updatePokerShots(dt);
@@ -12479,21 +13123,11 @@ function dealPvePokerAttack() {
   const player = pveGame.player;
   const target = nearestPveEnemy();
   if (!target) return;
-  const ranks = ["A", "K", "Q", "J", "10", "9"];
-  const hand = Array.from({ length: 5 }, () => ranks[pveRandomIndex(ranks.length)]);
-  const counts = Object.values(hand.reduce((acc, rank) => {
-    acc[rank] = (acc[rank] || 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b - a);
-  let multiplier = 1;
-  let label = "노페어";
-  if (counts[0] === 5) { multiplier = 12; label = "파이브카드"; }
-  else if (counts[0] === 4) { multiplier = 8; label = "포카드"; }
-  else if (counts[0] === 3 && counts[1] === 2) { multiplier = 7; label = "풀하우스"; }
-  else if (counts[0] === 3) { multiplier = 3; label = "쓰리페어"; }
-  else if (counts[0] === 2 && counts[1] === 2) { multiplier = 5; label = "투페어"; }
-  else if (counts[0] === 2) { multiplier = 2; label = "원페어"; }
-  multiplier *= player.pokerBoostMultiplier;
+  const cards = dealPvePokerCards();
+  const hand = cards.map(card => card.rank);
+  const evaluated = evaluatePokerHand(cards);
+  let multiplier = evaluated.multiplier * player.pokerBoostMultiplier;
+  let label = evaluated.label;
   if (player.pokerBoostMultiplier > 1) {
     label = `${label} + 킹`;
     player.pokerBoostMultiplier = 1;
@@ -12505,7 +13139,7 @@ function dealPvePokerAttack() {
     firePvePokerCard({
       target,
       rank,
-      damage: 2.25 * multiplier,
+      damage: 2.35 * multiplier,
       delay: index * 9,
       spread: (index - 2) * 0.1
     });
@@ -16117,6 +16751,7 @@ ui.tierMakerModal?.addEventListener("dragover", event => {
   const zone = event.target.closest("[data-tier-drop], #tierCharacterPool");
   if (!zone) return;
   event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
   zone.classList.add("is-over");
 });
 ui.tierMakerModal?.addEventListener("dragleave", event => {
@@ -16130,7 +16765,9 @@ ui.tierMakerModal?.addEventListener("drop", event => {
   event.preventDefault();
   const kind = event.dataTransfer.getData("text/plain") || draggedTierKind;
   const target = zone.id === "tierCharacterPool" ? "pool" : zone.dataset.tierDrop;
-  moveTierCharacter(kind, target);
+  const beforeChip = event.target.closest("[data-tier-kind]");
+  const beforeKind = beforeChip && zone.contains(beforeChip) ? beforeChip.dataset.tierKind : "";
+  moveTierCharacter(kind, target, beforeKind);
 });
 ui.cancelMatchButton.addEventListener("click", cancelMatchmaking);
 ui.pveModeButton.addEventListener("click", selectPveMode);

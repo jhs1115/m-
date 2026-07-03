@@ -1561,7 +1561,7 @@ begin
     raise exception 'login required';
   end if;
 
-  if normalized_code not in ('wjdgmltjr1115', 'beta_sex', 'noob_coin', 'all_wjdgmltjr') then
+  if normalized_code not in ('wjdgmltjr1115', 'beta_sex', 'noob_coin', 'all_wjdgmltjr', 'ajd40k', 'hologram') then
     raise exception 'invalid code';
   end if;
 
@@ -1574,9 +1574,10 @@ begin
     raise exception 'already used code';
   end if;
 
-  if normalized_code in ('wjdgmltjr1115', 'beta_sex') then
+  if normalized_code in ('wjdgmltjr1115', 'beta_sex', 'hologram') then
     title_key := case
       when normalized_code = 'wjdgmltjr1115' then 'developer'
+      when normalized_code = 'hologram' then 'hologram'
       else 'beta_tester'
     end;
     update public.app_users
@@ -1593,14 +1594,14 @@ begin
           from unnest(owned_titles || array[
             'm_beginner', 'm_skilled', 'm_expert', 'm_progamer', 'pve_progamer',
             'challenger', 'all_collect', 'million_left', 'million_right', 'god_pve',
-            'beta_tester', 'developer',
+            'beta_tester', 'developer', 'hologram',
             'mastery_thrower', 'mastery_charger', 'mastery_grabber', 'mastery_poker',
             'mastery_stealth', 'mastery_enhancer', 'mastery_tank', 'mastery_beamer',
             'mastery_wild', 'mastery_vampire', 'mastery_brawler', 'mastery_timekeeper',
             'mastery_riftmaker', 'mastery_summoner', 'mastery_swordsman', 'mastery_demon',
             'mastery_artist', 'mastery_believer', 'mastery_archmage', 'mastery_gunner',
-            'mastery_freezer', 'mastery_gambler', 'mastery_cosmic', 'mastery_bomberman',
-            'mastery_roper'
+              'mastery_freezer', 'mastery_gambler', 'mastery_cosmic', 'mastery_bomberman',
+              'mastery_roper', 'mastery_hacker', 'mastery_geomancer'
           ]::text[]) as reward_title(key)
         ),
         equipped_title = coalesce(equipped_title, 'developer'),
@@ -1608,7 +1609,7 @@ begin
     where id = active_user.id
     returning * into active_user;
   else
-    coin_reward := 100;
+      coin_reward := case when normalized_code = 'ajd40k' then 50 else 100 end;
     update public.app_users
     set coins = coins + coin_reward,
         redeemed_codes = array_append(redeemed_codes, normalized_code)

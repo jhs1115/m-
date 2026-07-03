@@ -825,6 +825,19 @@ body.low-motion .screen.is-active {
   text-shadow: 0 0 14px rgba(168, 85, 247, 0.54), 0 0 22px rgba(34, 211, 238, 0.18);
 }
 
+.title-hologram {
+  color: #dffcff;
+  background: linear-gradient(90deg, #22d3ee, #ffffff, #a78bfa, #67e8f9, #ffffff);
+  background-size: 230% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0 0 14px rgba(34, 211, 238, 0.78),
+    0 0 30px rgba(167, 139, 250, 0.52),
+    0 0 48px rgba(255, 255, 255, 0.18);
+  animation: title-shine 1.7s linear infinite;
+}
+
 .title-mastery {
   color: var(--title-b, #bfdbfe);
   background: linear-gradient(90deg, var(--title-a, #60a5fa), #ffffff, var(--title-b, #22d3ee), #ffffff, var(--title-a, #60a5fa));
@@ -901,6 +914,7 @@ body.low-motion .screen.is-active {
 .title-god-pve,
 .title-grand-gold,
 .title-mastery,
+.title-hologram,
 .title-developer {
   -webkit-text-fill-color: transparent;
 }
@@ -909,6 +923,7 @@ body.low-motion .screen.is-active {
 .equipped-title.title-god-pve,
 .equipped-title.title-grand-gold,
 .equipped-title.title-mastery,
+.equipped-title.title-hologram,
 .equipped-title.title-developer {
   display: block;
   -webkit-text-fill-color: transparent !important;
@@ -956,6 +971,8 @@ body.low-motion .screen.is-active {
 .title-card strong.title-expert { color: #7dd3fc; }
 .mailbox-item strong.title-pro,
 .title-card strong.title-pro { color: #c4b5fd; }
+.mailbox-item strong.title-hologram,
+.title-card strong.title-hologram { color: #67e8f9; }
 .mailbox-item strong.title-developer,
 .title-card strong.title-developer { color: #c4b5fd; }
 .mailbox-item strong.title-gold,
