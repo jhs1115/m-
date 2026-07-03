@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M zzang</title>
-  <link rel="stylesheet" href="style.css?v=20260703g">
+  <link rel="stylesheet" href="style.css?v=20260704a">
 </head>
 <body>
   <main class="app">
@@ -183,13 +183,30 @@
         <div class="lobby-tab-panel" data-lobby-panel="shop">
           <div class="panel shop-panel">
             <h2>상점</h2>
-            <div class="shop-grid">
-              <div class="shop-art"></div>
-              <div class="gacha-box shop-gacha-box">
+            <p class="shop-subtitle"><span>◇</span> 보유하지 않은 캐릭터를 소환합니다. <span>◇</span></p>
+            <div class="shop-summon-frame">
+              <section class="shop-product-card" aria-label="캐릭터 소환">
+                <div class="shop-card-corner shop-card-corner-top-left"></div>
+                <div class="shop-card-corner shop-card-corner-top-right"></div>
+                <div class="shop-card-corner shop-card-corner-bottom-left"></div>
+                <div class="shop-card-corner shop-card-corner-bottom-right"></div>
+                <h3><span>◆</span> 캐릭터 소환 <span>◆</span></h3>
+                <div class="shop-summon-portrait">
+                  <div class="shop-summon-silhouette">
+                    <span></span>
+                    <i></i>
+                  </div>
+                  <b>✦</b>
+                </div>
+              </section>
+              <section class="shop-buy-card" aria-label="소환 구매">
                 <strong>50C</strong>
-                <span>새 캐릭터를 얻을 수 있습니다.</span>
-                <button id="openGachaButton" class="primary-button">뽑기하러 가기</button>
-              </div>
+                <p>새 캐릭터 1명 획득</p>
+                <button id="openGachaButton" class="primary-button shop-buy-button" type="button">
+                  뽑기하러 가기
+                  <span>→</span>
+                </button>
+              </section>
             </div>
           </div>
         </div>
@@ -357,26 +374,34 @@
       <div class="panel gacha-stage">
         <div class="gacha-header">
           <button id="backFromGachaButton" class="gacha-back-button" type="button">←</button>
-          <span>CHARACTER SUMMON</span>
-          <h1 class="screen-title">캐릭터 소환</h1>
+          <h1 class="screen-title">Mzzang</h1>
         </div>
-        <div class="gacha-machine">
+        <div class="gacha-machine" aria-label="캐릭터 소환">
           <div class="summon-sky"></div>
           <div class="summon-beam"></div>
-          <div class="summon-sigil sigil-one">M</div>
-          <div class="summon-sigil sigil-two">Z</div>
-          <div class="summon-sigil sigil-three">R</div>
           <div class="summon-ring"></div>
           <div class="summon-ring summon-ring-two"></div>
-          <div id="gachaReveal" class="gacha-reveal">
-            <span>?</span>
-            <strong id="gachaResultName"></strong>
+          <div class="gacha-card-zone">
+            <button id="gachaReveal" class="gacha-reveal" type="button" aria-label="소환 카드">
+              <span class="gacha-card-face gacha-card-front">
+                <i></i>
+              </span>
+              <span class="gacha-card-face gacha-card-back">
+                <b id="gachaResultInitial">?</b>
+                <strong id="gachaResultName"></strong>
+              </span>
+            </button>
+            <div class="summon-platform"></div>
           </div>
-          <div class="summon-platform"></div>
+          <div class="gacha-buy-panel">
+            <strong>50C</strong>
+            <button id="gachaButton" class="primary-button gacha-summon-button" type="button">
+              <span></span>
+            </button>
+          </div>
           <label class="bet-label is-hidden" for="gachaPlayer">뽑을 플레이어</label>
           <select id="gachaPlayer" class="player-select is-hidden"></select>
           <p id="gachaMessage" class="status-message gacha-message"></p>
-          <button id="gachaButton" class="primary-button gacha-summon-button">1회 소환</button>
         </div>
       </div>
     </section>
@@ -965,6 +990,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260607v"></script>
-  <script src="game.js?v=20260703h"></script>
+  <script src="game.js?v=20260704a"></script>
 </body>
 </html>

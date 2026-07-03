@@ -214,6 +214,7 @@ const ui = {
   gachaButton: document.getElementById("gachaButton"),
   gachaMessage: document.getElementById("gachaMessage"),
   gachaReveal: document.getElementById("gachaReveal"),
+  gachaResultInitial: document.getElementById("gachaResultInitial"),
   gachaResultName: document.getElementById("gachaResultName"),
   backFromGachaButton: document.getElementById("backFromGachaButton"),
   selectTitle: document.getElementById("selectTitle"),
@@ -787,9 +788,9 @@ const characterGuide = {
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "5초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식이 떠오르며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.1 회복합니다."],
+    attack: ["CODE : AJD40K", "5초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식이 떠오르며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.2 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
-    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 50%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해와 50% 회복량을 가집니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
+    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 65%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 본체가 해킹 레이저를 발사할 때 함께 50% 피해의 레이저를 발사합니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
   },
   geomancer: {
     attack: ["지각파편", "2초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 12의 피해를 줍니다."],
@@ -987,7 +988,7 @@ const codexRatings = {
   gambler: { difficulty: "???", damage: "???", mobility: "???" },
   cosmic: { difficulty: 3, damage: 3, mobility: 1 },
   hacker: { difficulty: 1, damage: 3, mobility: 1 },
-  geomancer: { difficulty: 3, damage: 3, mobility: 2 }
+  geomancer: { difficulty: 3, damage: 3, mobility: 1 }
 };
 
 const enemyCodexRatings = {
@@ -4723,15 +4724,44 @@ function openGachaScreen() {
   option.textContent = `${currentUser.name} (${currentUser.coins}C)`;
   ui.gachaPlayer.appendChild(option);
   ui.gachaPlayer.value = currentUser.id;
-  ui.gachaMessage.textContent = "";
-  ui.gachaResultName.textContent = "";
-  ui.gachaReveal.querySelector("span").textContent = "?";
-  ui.gachaReveal.classList.remove("is-rolling", "is-hit");
+  resetGachaCard();
   showScreen("gacha");
 }
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+let pendingGachaReveal = null;
+
+function resetGachaCard() {
+  pendingGachaReveal = null;
+  ui.gachaMessage.textContent = "";
+  ui.gachaResultName.textContent = "";
+  ui.gachaResultInitial.textContent = "?";
+  ui.gachaReveal.style.removeProperty("--gacha-color-a");
+  ui.gachaReveal.style.removeProperty("--gacha-color-b");
+  ui.gachaReveal.classList.remove("is-rolling", "is-hit", "is-ready", "is-revealed");
+}
+
+function prepareGachaReveal(kind) {
+  const colors = characterColors[kind] || characters[kind]?.gradient || ["#f8d891", "#67e8f9"];
+  pendingGachaReveal = kind;
+  ui.gachaResultInitial.textContent = characterInitial(kind);
+  ui.gachaResultName.textContent = characters[kind].name;
+  ui.gachaReveal.style.setProperty("--gacha-color-a", colors[0]);
+  ui.gachaReveal.style.setProperty("--gacha-color-b", colors[1] || colors[0]);
+  ui.gachaReveal.classList.remove("is-rolling", "is-hit", "is-revealed");
+  ui.gachaReveal.classList.add("is-ready");
+  ui.gachaMessage.textContent = "";
+}
+
+function revealGachaCard() {
+  if (!pendingGachaReveal || ui.gachaReveal.classList.contains("is-revealed")) return;
+  ui.gachaReveal.classList.remove("is-ready");
+  ui.gachaReveal.classList.add("is-hit", "is-revealed");
+  ui.gachaMessage.innerHTML = `${playerNameWithTitle(currentUser)}: ${escapeHtml(characters[pendingGachaReveal].name)} 획득!`;
+  pendingGachaReveal = null;
 }
 
 async function drawCharacter() {
@@ -4746,11 +4776,11 @@ async function drawCharacter() {
   }
 
   ui.gachaButton.disabled = true;
-  ui.gachaMessage.textContent = "돌아가는 중...";
+  ui.gachaMessage.textContent = "";
   ui.gachaResultName.textContent = "";
-  ui.gachaReveal.querySelector("span").textContent = "?";
+  ui.gachaResultInitial.textContent = "?";
   ui.gachaReveal.classList.add("is-rolling");
-  ui.gachaReveal.classList.remove("is-hit");
+  ui.gachaReveal.classList.remove("is-hit", "is-ready", "is-revealed");
   await wait(1300);
 
   try {
@@ -4759,14 +4789,11 @@ async function drawCharacter() {
     currentUser = normalizePlayer(data.user);
     players = players.map(item => item.id === currentUser.id ? currentUser : item);
 
-    ui.gachaReveal.classList.remove("is-rolling");
-    ui.gachaReveal.classList.add("is-hit");
-    ui.gachaReveal.querySelector("span").textContent = characterInitial(picked);
-    ui.gachaResultName.textContent = characters[picked].name;
-    ui.gachaMessage.innerHTML = `${playerNameWithTitle(currentUser)}: ${escapeHtml(characters[picked].name)} 획득!`;
+    prepareGachaReveal(picked);
     renderLobby();
   } catch (error) {
-    ui.gachaReveal.classList.remove("is-rolling");
+    pendingGachaReveal = null;
+    ui.gachaReveal.classList.remove("is-rolling", "is-ready", "is-revealed");
     ui.gachaMessage.textContent = error.message;
   } finally {
     ui.gachaButton.disabled = false;
@@ -6139,11 +6166,6 @@ function updateSummons(dt) {
       if (game.tick % 24 === 0) {
         addVisualEffect({ type: "hacking-glitch", x: summon.x, y: summon.y, color: "#22d3ee", life: 18, maxLife: 18 });
       }
-      summon.attackTimer -= dt;
-      if (summon.attackTimer <= 0) {
-        useHackingAttack(summon, 0.5);
-        summon.attackTimer = 240;
-      }
     } else if (summon.type === "warrior") {
       const speed = ownerSpeed * 0.5;
       summon.vx = dx / distance * speed;
@@ -7025,11 +7047,22 @@ function updateHackingLaserEntity(entity, dt) {
   while (entity.hackingLaserTime > 0 && entity.hackingLaserTick <= 0 && !game.over) {
     damageCombatTarget(target, 1 * (entity.hackingLaserDamageScale || 1), attacker);
     const healTarget = entity.type === "hologram" ? entity : attacker;
-    const healAmount = entity.type === "hologram" ? 0.05 : 0.1;
+    const healAmount = entity.type === "hologram" ? 0.1 : 0.2;
     if (healTarget && healTarget.hp > 0) {
       const before = healTarget.hp;
       healTarget.hp = Math.min(healTarget.maxHp || healTarget.hp, healTarget.hp + healAmount);
-      if (!healTarget.owner) healTarget.healingDone = (healTarget.healingDone || 0) + Math.max(0, healTarget.hp - before);
+      const actualHealing = Math.max(0, healTarget.hp - before);
+      if (!healTarget.owner) healTarget.healingDone = (healTarget.healingDone || 0) + actualHealing;
+      if (actualHealing > 0) {
+        addVisualEffect({
+          type: "hacking-glitch",
+          x: healTarget.x,
+          y: healTarget.y,
+          color: "#34d399",
+          life: 14,
+          maxLife: 14
+        });
+      }
     }
     addVisualEffect({
       type: "hacking-beam",
@@ -7050,7 +7083,7 @@ function summonHologram(owner) {
   const angle = Math.atan2(owner.y - target.y, owner.x - target.x);
   const moveAngle = combatRandom(owner, "hologram-angle", Math.floor(game.tick / 60)) * Math.PI * 2;
   const speed = 5.8;
-  const hp = Math.max(1, owner.hp * 0.5);
+  const hp = Math.max(1, owner.hp * 0.65);
   game.summons.push({
     id: `hologram-${game.tick}-${owner.ownerId}`,
     owner,
@@ -17292,6 +17325,7 @@ ui.lobbyPlayerTwo.addEventListener("change", () => {
   setMatchPlayer("p2", ui.lobbyPlayerTwo.value);
 });
 ui.gachaButton.addEventListener("click", drawCharacter);
+ui.gachaReveal.addEventListener("click", revealGachaCard);
 ui.openGachaButton.addEventListener("click", openGachaScreen);
 ui.backFromGachaButton.addEventListener("click", () => {
   renderLobby();
