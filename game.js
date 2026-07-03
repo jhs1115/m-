@@ -767,7 +767,7 @@ const characterGuide = {
     ultimate: ["이터널 블리자드", "30초", "1.5초 동안 얼음의 정수를 모은 뒤 적에게 유도되는 정수를 발사합니다. 맞은 적은 15의 피해를 받고 3초 동안 얼어붙어 행동할 수 없습니다."]
   },
   bomberman: {
-    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 적을 향해 달려가며, 발동할 때마다 자신은 5의 피해를 받습니다."],
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 랜덤한 방향으로 엄청 빠르게 튕겨나가며, 발동할 때마다 자신은 4의 피해를 받습니다."],
     normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 10의 피해를 받습니다."],
     ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
   },
@@ -787,7 +787,7 @@ const characterGuide = {
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "4초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고 표식을 삭제합니다. 레이저 발사 중 0.1초마다 체력을 0.1 회복합니다."],
+    attack: ["CODE : AJD40K", "5초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식이 떠오르며 해킹 레이저를 따다닥 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.1 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
     ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 50%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해와 50% 회복량을 가집니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
   },
@@ -1504,11 +1504,9 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
         caster.hp = caster.maxHp * 0.62;
       });
       addCodexPreviewEvent(previewGame, 10, () => useHackingAttack(caster));
-      addCodexPreviewEvent(previewGame, 72, () => {
-        dummy.hackingMarkTime = 240;
-        addVisualEffect({ type: "hacking-glitch", x: dummy.x, y: dummy.y, color: "#22d3ee", life: 44, maxLife: 44 });
+      addCodexPreviewEvent(previewGame, 48, () => {
+        if (caster.hackingLaserTime <= 0) triggerHackingBulletHit({ owner: caster, hackingDamageScale: 1 }, dummy);
       });
-      addCodexPreviewEvent(previewGame, 96, () => useHackingAttack(caster));
     } else if (skillIndex === 1) {
       addCodexPreviewEvent(previewGame, 24, () => triggerNormalSkill(caster));
     } else {
@@ -5351,7 +5349,7 @@ function makeCharacterCombatState(kind) {
     cosmicBlasterCharging: 0,
     cosmicBlasterActive: false,
     cosmicBlasterTick: 0,
-    hackingShotTimer: kind === "hacker" ? 240 : Infinity,
+    hackingShotTimer: kind === "hacker" ? 300 : Infinity,
     hackingMarkTime: 0,
     hackingLaserTime: 0,
     hackingLaserTick: 0,
@@ -6944,17 +6942,10 @@ function useRouletteAttack(owner) {
   owner.rouletteAttackTimer = 240;
 }
 
-function hasHackingMark(target) {
-  return target && target.hackingMarkTime > 0;
-}
-
 function useHackingAttack(owner, damageScale = 1) {
   const sourceOwner = owner.owner || owner;
   const target = nearestEnemyTarget(sourceOwner, owner.x, owner.y);
-  if (hasHackingMark(target)) {
-    startSynchronizedHackingLasers(sourceOwner, owner, target, damageScale);
-    return;
-  }
+  if (!target) return;
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   const speed = 29;
   game.balls.push({
@@ -6971,8 +6962,19 @@ function useHackingAttack(owner, damageScale = 1) {
     color: "#22d3ee",
     noBounce: true,
     hackingBullet: true,
-    hackingDamageScale: damageScale
+    hackingDamageScale: damageScale,
+    hackingCaster: owner
   });
+}
+
+function triggerHackingBulletHit(ball, target) {
+  if (!target || target.hp <= 0) return;
+  const sourceOwner = ball.owner?.owner || ball.owner;
+  if (!sourceOwner) return;
+  target.hackingMarkTime = Math.max(target.hackingMarkTime || 0, 126);
+  addVisualEffect({ type: "hacking-glitch", x: target.x, y: target.y, color: "#22d3ee", life: 48, maxLife: 48 });
+  addVisualEffect({ type: "hacking-glitch", x: target.x, y: target.y, color: "#a78bfa", life: 32, maxLife: 32 });
+  startSynchronizedHackingLasers(sourceOwner, ball.hackingCaster || ball.owner, target, ball.hackingDamageScale || 1);
 }
 
 function startSynchronizedHackingLasers(sourceOwner, triggerOwner, target, triggerScale = 1) {
@@ -6986,7 +6988,7 @@ function startSynchronizedHackingLasers(sourceOwner, triggerOwner, target, trigg
     .filter(summon => summon.type === "hologram" && summon.owner === sourceOwner && summon.hp > 0)
     .forEach(addCaster);
   addCaster(triggerOwner);
-  target.hackingMarkTime = 0;
+  target.hackingMarkTime = Math.max(target.hackingMarkTime || 0, 126);
   casters.forEach(caster => {
     const scale = caster.type === "hologram" ? 0.5 : caster === triggerOwner ? Math.max(1, triggerScale) : 1;
     startHackingLaser(caster, target, scale);
@@ -7979,10 +7981,12 @@ function moveFighter(fighter, dt) {
     }
   }
   if (fighter.kind === "hacker") {
-    fighter.hackingShotTimer -= dt;
-    if (fighter.hackingShotTimer <= 0) {
-      useHackingAttack(fighter);
-      fighter.hackingShotTimer += 240;
+    if (fighter.stunTime <= 0) {
+      fighter.hackingShotTimer -= dt;
+      if (fighter.hackingShotTimer <= 0) {
+        useHackingAttack(fighter);
+        fighter.hackingShotTimer += 300;
+      }
     }
   }
   if (fighter.gaiaWallWindup > 0) {
@@ -8306,10 +8310,6 @@ function moveFighter(fighter, dt) {
   if (fighter.cosmicBlasterActive) {
     fighter.vx = 0;
     fighter.vy = 0;
-  } else if (fighter.explosionRushTime > 0) {
-    const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
-    fighter.vx = Math.cos(angle) * targetSpeed;
-    fighter.vy = Math.sin(angle) * targetSpeed;
   } else if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
@@ -9726,16 +9726,15 @@ function updateBalls(dt) {
         });
         return false;
       }
+      if (ball.hackingBullet) {
+        triggerHackingBulletHit(ball, summonTarget);
+        return false;
+      }
       damageSummon(summonTarget, ball.damage, ball.owner);
       if (ball.blood || ball.riftShot || ball.summonArrow || ball.rouletteShot || (ball.owner.canThrow && !ball.star)) {
         if (!ball.persistentArrow) return false;
       }
       if (ball.gunBullet || (ball.freezeBullet && !ball.blizzardCore)) return false;
-      if (ball.hackingBullet) {
-        summonTarget.hackingMarkTime = 360;
-        addVisualEffect({ type: "hacking-glitch", x: summonTarget.x, y: summonTarget.y, color: "#22d3ee", life: 34, maxLife: 34 });
-        return false;
-      }
       if (ball.rockShard) return false;
       if (ball.blizzardCore) {
         summonTarget.stunTime = Math.max(summonTarget.stunTime || 0, 180);
@@ -9789,6 +9788,10 @@ function updateBalls(dt) {
             });
             return false;
           }
+          if (ball.hackingBullet) {
+            triggerHackingBulletHit(ball, target);
+            return false;
+          }
           let hitDamage = ball.damage;
           if (ball.freezeBullet) {
             if (ball.blizzardCore) {
@@ -9800,11 +9803,6 @@ function updateBalls(dt) {
             }
           }
           damage(target, hitDamage, ball.owner);
-          if (ball.hackingBullet) {
-            target.hackingMarkTime = 360;
-            addVisualEffect({ type: "hacking-glitch", x: target.x, y: target.y, color: "#22d3ee", life: 34, maxLife: 34 });
-            return false;
-          }
           if (ball.blizzardCore) {
             addVisualEffect({
               type: "ice-prison-burst",
@@ -12358,11 +12356,10 @@ function triggerExplosionBoost(owner) {
     knockback: 24,
     affectsOwner: true
   });
-  selfDamage(owner, 5);
-  const target = nearestEnemyTarget(owner);
-  const distance = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
-  owner.vx = owner.vx * 0.25 + ((target.x - owner.x) / distance) * 12.5;
-  owner.vy = owner.vy * 0.25 + ((target.y - owner.y) / distance) * 12.5;
+  selfDamage(owner, 4);
+  const angle = combatRandom(owner, "explosion-boost-bounce", game.tick) * Math.PI * 2;
+  owner.vx = Math.cos(angle) * 18;
+  owner.vy = Math.sin(angle) * 18;
   owner.explosionRushTime = 28;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
