@@ -1501,7 +1501,11 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
   if (kind === "hacker") {
     if (skillIndex === 0) {
       addCodexPreviewEvent(previewGame, 10, () => useHackingAttack(caster));
-      addCodexPreviewEvent(previewGame, 95, () => useHackingAttack(caster));
+      addCodexPreviewEvent(previewGame, 72, () => {
+        dummy.hackingMarkTime = 240;
+        addVisualEffect({ type: "hacking-glitch", x: dummy.x, y: dummy.y, color: "#22d3ee", life: 44, maxLife: 44 });
+      });
+      addCodexPreviewEvent(previewGame, 96, () => useHackingAttack(caster));
     } else if (skillIndex === 1) {
       addCodexPreviewEvent(previewGame, 24, () => triggerNormalSkill(caster));
     } else {
@@ -1516,11 +1520,23 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
   if (kind === "geomancer") {
     caster.rockShardCount = 3;
     if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 1, () => {
+        caster.rockShardCount = 3;
+        caster.rockShardTimer = Infinity;
+      });
       addCodexPreviewEvent(previewGame, 15, () => fireRockShard(caster));
       addCodexPreviewEvent(previewGame, 105, () => fireRockShard(caster));
     } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 1, () => {
+        caster.rockShardCount = 2;
+        caster.rockShardTimer = Infinity;
+      });
       addCodexPreviewEvent(previewGame, 25, () => triggerNormalSkill(caster));
     } else {
+      addCodexPreviewEvent(previewGame, 1, () => {
+        caster.rockShardCount = 3;
+        caster.rockShardTimer = Infinity;
+      });
       addCodexPreviewEvent(previewGame, 35, () => triggerUltimate(caster));
     }
     return;
@@ -4757,6 +4773,7 @@ async function drawCharacter() {
 }
 
 function updateCharacterCards(playerKey, player) {
+  ensureCharacterSelectCards();
   const cardPlayerKey = playerKey === "p3" ? "p1" : playerKey;
   const prep = matchPrepState();
   const banPhase = isRankedBanPhase(prep);
@@ -5292,6 +5309,7 @@ function makeCharacterCombatState(kind) {
     blizzardChargeTarget: null,
     explosionTimer: kind === "bomberman" ? 30 : Infinity,
     explosionHitCooldown: 0,
+    explosionRushTime: 0,
     megaBoomWindup: 0,
     houserAirTime: 0,
     houserStrikeTime: 0,
@@ -5511,8 +5529,39 @@ function damage(fighter, amount, attacker = null) {
   }
   updateHud();
   if (fighter.hp <= 0) {
-    const alive = game.fighters.filter(item => item.hp > 0 && item !== fighter);
-    if (alive.length <= 1) finishGame(alive[0] || attacker || game.fighters.find(item => item !== fighter));
+    resolveBattleEnd(attacker);
+  }
+}
+
+function ensureCharacterSelectCards() {
+  ["p1", "p2"].forEach(playerKey => {
+    const grid = document.querySelector(`.character-grid.compact .fighter-card[data-player="${playerKey}"]`)?.closest(".character-grid");
+    if (!grid) return;
+    Object.entries(characters).forEach(([kind, character]) => {
+      if (grid.querySelector(`.fighter-card[data-character="${kind}"]`)) return;
+      const card = document.createElement("button");
+      card.className = "fighter-card";
+      card.type = "button";
+      card.dataset.player = playerKey;
+      card.dataset.character = kind;
+      card.innerHTML = `
+        <span class="fighter-icon ${kind}">${characterInitial(kind)}</span>
+        <strong data-name="${escapeHtml(character.name)}">${escapeHtml(character.name)}</strong>
+      `;
+      grid.appendChild(card);
+    });
+  });
+}
+
+function resolveBattleEnd(fallbackWinner = null) {
+  if (!game || game.over) return;
+  const alive = game.fighters.filter(fighter => fighter.hp > 0);
+  if (alive.length === 0) {
+    finishDraw();
+    return;
+  }
+  if (alive.length === 1) {
+    finishGame(alive[0] || fallbackWinner);
   }
 }
 
@@ -5573,17 +5622,16 @@ function contactDamagePair(a, b) {
     addDamageText(a.x, a.y - a.radius, bDamage);
     addDamageText(b.x, b.y - b.radius, aDamage);
     updateHud();
-    finishDraw();
+    resolveBattleEnd();
     return;
   }
   if (bDamage > 0) damage(a, bDamage, b);
   if (aDamage > 0 && !game.over) damage(b, aDamage, a);
   if (a.hp <= 0 && b.hp <= 0 && a.kind === "charger" && b.kind === "charger") {
-    finishDraw();
+    resolveBattleEnd();
     return;
   }
-  if (a.hp <= 0) finishGame(b);
-  if (b.hp <= 0) finishGame(a);
+  if (a.hp <= 0 || b.hp <= 0) resolveBattleEnd(a.hp > 0 ? a : b.hp > 0 ? b : null);
 }
 
 function addDamageText(x, y, amount) {
@@ -8231,12 +8279,17 @@ function moveFighter(fighter, dt) {
     * (fighter.slowTime > 0 ? 0.58 : 1)
     * (fighter.unstoppableTime > 0 ? 3.525 : 1)
     * (fighter.chaseTime > 0 ? 3 : 1)
+    * (fighter.explosionRushTime > 0 ? 3.2 : 1)
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
     * wildInstinct
     * brawlerBoost;
   if (fighter.cosmicBlasterActive) {
     fighter.vx = 0;
     fighter.vy = 0;
+  } else if (fighter.explosionRushTime > 0) {
+    const angle = Math.atan2(target.y - fighter.y, target.x - fighter.x);
+    fighter.vx = Math.cos(angle) * targetSpeed;
+    fighter.vy = Math.sin(angle) * targetSpeed;
   } else if (speed !== 0) {
     fighter.vx = (fighter.vx / speed) * targetSpeed;
     fighter.vy = (fighter.vy / speed) * targetSpeed;
@@ -8263,6 +8316,7 @@ function moveFighter(fighter, dt) {
   }
   updateSkills(fighter, dt);
   if (fighter.explosionHitCooldown > 0) fighter.explosionHitCooldown -= dt;
+  if (fighter.explosionRushTime > 0) fighter.explosionRushTime -= dt;
 
   if (fighter.rageTime > 0) fighter.rageTime -= dt;
   if (fighter.unstoppableTime > 0) {
@@ -12289,6 +12343,7 @@ function triggerExplosionBoost(owner) {
   const distance = Math.hypot(target.x - owner.x, target.y - owner.y) || 1;
   owner.vx = owner.vx * 0.25 + ((target.x - owner.x) / distance) * 12.5;
   owner.vy = owner.vy * 0.25 + ((target.y - owner.y) / distance) * 12.5;
+  owner.explosionRushTime = 28;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
 }
@@ -17393,23 +17448,22 @@ document.addEventListener("keydown", event => {
   }
 });
 
-ui.cards.forEach(card => {
-  card.addEventListener("click", async () => {
-    if (card.disabled) return;
-    const player = card.dataset.player;
-    const prep = matchPrepState();
-    if (isRankedBanPhase(prep)) {
-      pendingBanKind = card.dataset.character === "random" ? "none" : card.dataset.character;
-      refreshCharacterSelectState();
-      return;
-    }
-    const actualPlayer = player === "p1" && myMatchSlot() === "p3" ? "p3" : player;
-    document.querySelectorAll(`.fighter-card[data-player="${player}"]`).forEach(item => {
-      item.classList.remove("is-selected");
-    });
-    card.classList.add("is-selected");
-    selections[actualPlayer] = card.dataset.character;
+screens.select?.addEventListener("click", event => {
+  const card = event.target.closest(".fighter-card");
+  if (!card || !screens.select.contains(card) || card.disabled) return;
+  const player = card.dataset.player;
+  const prep = matchPrepState();
+  if (isRankedBanPhase(prep)) {
+    pendingBanKind = card.dataset.character === "random" ? "none" : card.dataset.character;
+    refreshCharacterSelectState();
+    return;
+  }
+  const actualPlayer = player === "p1" && myMatchSlot() === "p3" ? "p3" : player;
+  document.querySelectorAll(`.fighter-card[data-player="${player}"]`).forEach(item => {
+    item.classList.remove("is-selected");
   });
+  card.classList.add("is-selected");
+  selections[actualPlayer] = card.dataset.character;
 });
 
 ui.speedButtons.forEach(button => {
