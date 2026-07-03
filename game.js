@@ -4745,7 +4745,7 @@ function resetGachaCard() {
 }
 
 function prepareGachaReveal(kind) {
-  const colors = characterColors[kind] || characters[kind]?.gradient || ["#f8d891", "#67e8f9"];
+  const colors = masteryTitleColors[kind] || [characters[kind]?.color || "#f8d891", characters[kind]?.accent || "#67e8f9"];
   pendingGachaReveal = kind;
   ui.gachaResultInitial.textContent = characterInitial(kind);
   ui.gachaResultName.textContent = characters[kind].name;
