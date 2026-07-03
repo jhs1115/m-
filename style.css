@@ -5694,6 +5694,106 @@ h2 {
   50% { transform: perspective(1100px) rotateY(0deg) translateY(-8px); }
 }
 
+.panel.gacha-stage {
+  width: min(1360px, calc(100vw - 72px));
+  min-height: min(820px, calc(100vh - 42px));
+  padding: 18px 28px 30px;
+}
+
+.gacha-stage .gacha-header {
+  min-height: 104px;
+}
+
+.gacha-stage .gacha-machine {
+  grid-template-columns: minmax(420px, 0.92fr) minmax(360px, 0.68fr);
+  gap: clamp(22px, 3.2vw, 48px);
+  min-height: min(660px, calc(100vh - 158px));
+  align-items: center;
+}
+
+.gacha-card-zone,
+.gacha-buy-panel {
+  min-height: min(560px, 62vh);
+}
+
+.gacha-stage .gacha-reveal {
+  width: min(290px, 25vw);
+  height: min(420px, 37vw);
+  transform: none;
+  transition: transform 240ms ease, filter 260ms ease;
+}
+
+.gacha-stage .gacha-reveal .gacha-card-face {
+  transition: opacity 260ms ease, transform 420ms cubic-bezier(.2, .72, .2, 1);
+}
+
+.gacha-stage .gacha-reveal .gacha-card-front {
+  opacity: 1;
+  transform: none;
+}
+
+.gacha-stage .gacha-reveal .gacha-card-back {
+  opacity: 0;
+  grid-template-rows: 1fr auto;
+  transform: scale(0.96);
+  border-color: color-mix(in srgb, var(--gacha-color-a) 58%, #ffffff 18%);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--gacha-color-a) 36%, transparent), transparent 35%),
+    radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--gacha-color-b) 32%, transparent), transparent 46%),
+    linear-gradient(180deg, rgba(8, 14, 26, 0.98), rgba(3, 7, 14, 0.98));
+}
+
+.gacha-stage .gacha-reveal.is-revealed {
+  transform: scale(1.03);
+}
+
+.gacha-stage .gacha-reveal.is-revealed .gacha-card-front {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+.gacha-stage .gacha-reveal.is-revealed .gacha-card-back {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.gacha-stage .gacha-reveal .gacha-card-back b {
+  align-self: center;
+  width: min(178px, 64%);
+  font-size: clamp(4rem, 6.4vw, 6rem);
+}
+
+.gacha-stage .gacha-reveal .gacha-card-back strong {
+  align-self: start;
+  padding-bottom: 4px;
+}
+
+.gacha-stage .gacha-summon-button {
+  width: min(320px, 88%);
+  min-height: 58px;
+  border-radius: 12px;
+  font-size: clamp(1.15rem, 1.45vw, 1.45rem);
+}
+
+.gacha-stage .gacha-message {
+  left: 50%;
+  right: auto;
+  bottom: clamp(18px, 2.4vw, 30px);
+  transform: translateX(-50%);
+  width: min(520px, 72%);
+  text-align: center;
+}
+
+.shop-panel {
+  width: 100%;
+}
+
+.shop-summon-frame {
+  width: 100%;
+  max-width: 1180px;
+}
+
 .mode-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6489,6 +6589,12 @@ h2 {
   width: 100%;
   max-width: none;
   padding: 24px;
+}
+
+.panel.shop-panel {
+  width: 100%;
+  max-width: none;
+  padding: clamp(22px, 2.4vw, 34px);
 }
 
 .panel.gacha-stage {
