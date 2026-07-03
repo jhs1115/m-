@@ -278,7 +278,6 @@ const patchNoticeVersions = {
       "신규 캐릭터 - 해킹하는 색히, 바위쓰는 색히가 추가되었습니다.",
       "해킹하는 색히 - 해킹 표식, 쿨타임 지연, 홀로그램 분신 스킬을 사용합니다.",
       "바위쓰는 색히 - 지각파편, 바위벽, 스톤 엣지 스킬을 사용합니다.",
-      "신규 코드 추가 - AJD40K 입력 시 50C, HOLOGRAM 입력 시 홀로그램 칭호를 획득할 수 있습니다.",
       "밸런스 조정 - 시간다루는 색히 궁극기 범위와 피해, 그림그리는 색히 공 속도, 우주의 힘쓰는 색히 궁극기 피해를 조정했습니다.",
       "티어표 개선 - 같은 티어 안에서 캐릭터 순서를 직접 조정할 수 있습니다."
     ]
@@ -788,12 +787,12 @@ const characterGuide = {
     ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "4초", "적을 향해 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 2초 동안 0.1초마다 총 15의 피해를 주고 표식을 삭제합니다."],
+    attack: ["CODE : AJD40K", "4초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하면 해킹 표식이 남습니다. 표식이 남은 적이 있다면 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고 표식을 삭제합니다. 레이저 발사 중 0.1초마다 체력을 0.5 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
-    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 60%를 가진 홀로그램 분신을 소환합니다. 분신은 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해를 줍니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
+    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 60%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 해킹하는 색히와 똑같이 일반공격을 시전하지만 50% 피해와 50% 회복량을 가집니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
   },
   geomancer: {
-    attack: ["지각파편", "1초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 1초마다 적을 향해 직선 발사되어 8의 피해를 줍니다."],
+    attack: ["지각파편", "2초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 12의 피해를 줍니다."],
     normal: ["데스오브가이아", "15초", "1초 대기 후 바라보는 방향 조금 앞에 5초 동안 유지되는 바위벽을 소환합니다. 바위쓰는 색히가 벽에 튕기면 지각파편을 얻고, 적이 벽에 닿으면 1의 피해를 입습니다."],
     ultimate: ["스톤 엣지", "20초", "현재 보유한 지각파편을 몸에 둘러 모두 소모합니다. 파편 1개마다 접촉데미지 3과 피해감소 3%를 얻습니다."]
   }
@@ -1499,6 +1498,33 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     }
     return;
   }
+  if (kind === "hacker") {
+    if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 10, () => useHackingAttack(caster));
+      addCodexPreviewEvent(previewGame, 95, () => useHackingAttack(caster));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 24, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 18, () => triggerUltimate(caster));
+      addCodexPreviewEvent(previewGame, 120, () => {
+        dummy.hackingMarkTime = 180;
+        useHackingAttack(caster);
+      });
+    }
+    return;
+  }
+  if (kind === "geomancer") {
+    caster.rockShardCount = 3;
+    if (skillIndex === 0) {
+      addCodexPreviewEvent(previewGame, 15, () => fireRockShard(caster));
+      addCodexPreviewEvent(previewGame, 105, () => fireRockShard(caster));
+    } else if (skillIndex === 1) {
+      addCodexPreviewEvent(previewGame, 25, () => triggerNormalSkill(caster));
+    } else {
+      addCodexPreviewEvent(previewGame, 35, () => triggerUltimate(caster));
+    }
+    return;
+  }
   addCodexPreviewEvent(previewGame, kind === "grabber" && skillIndex === 2 ? 55 : 15, () => {
     if (skillIndex === 0) setupCodexActualBasic(caster, dummy, kind);
     else if (skillIndex === 1) triggerNormalSkill(caster);
@@ -1543,6 +1569,10 @@ function setupCodexActualBasic(caster, dummy, kind) {
   else if (kind === "cosmic") {
     caster.cosmicDustTimer = 1;
     updateCosmicDusts(1);
+  } else if (kind === "hacker") useHackingAttack(caster);
+  else if (kind === "geomancer") {
+    caster.rockShardCount = Math.max(1, caster.rockShardCount || 0);
+    fireRockShard(caster);
   }
 }
 
@@ -1691,6 +1721,35 @@ function drawCodexActualFighter(ctx, fighter, t) {
     ctx.restore();
     drawCodexActualFacingArrow(ctx, radius, tick);
   }
+  if (kind === "hacker") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#22d3ee";
+    ctx.shadowColor = "#22d3ee";
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.lineDashOffset = -tick * 0.8;
+    ctx.strokeRect(-18, -18, 36, 36);
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  if (kind === "geomancer" || state.stoneEdge) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#facc15";
+    ctx.shadowColor = "#facc15";
+    ctx.shadowBlur = state.stoneEdge ? 22 : 12;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(14, 2);
+    ctx.lineTo(0, 24);
+    ctx.lineTo(-14, 2);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
   if (kind === "demon") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -1758,6 +1817,9 @@ function drawCodexActualFighter(ctx, fighter, t) {
   if (state.lockOn) drawCodexActualLockOn(ctx, x, y, radius, tick);
   if (state.demonMarks) drawCodexActualDemonMark(ctx, x, y, radius, tick, state.demonMarks);
   if (state.mageElements) drawCodexActualMageElements(ctx, x, y, radius, tick, state.mageElements);
+  if (state.hackingMark) drawCodexHackingGlitch(ctx, fighter, t, radius + 18);
+  if (state.rocks) drawCodexRockOrbit(ctx, fighter, t, state.rocks);
+  if (state.stoneEdge) drawCodexRockArmor(ctx, fighter, t, 3);
   drawCodexActualHealthBar(ctx, x, y, radius, state.hpRate ?? 0.72, accent);
   if (kind === "cosmic") drawCodexActualStatLabel(ctx, x, y, radius, "별가루 50", accent);
 }
@@ -1986,6 +2048,179 @@ function drawCodexLaser(ctx, caster, dummy, t, accent, wide = false) {
   ctx.moveTo(caster.x + 30, caster.y);
   ctx.lineTo(dummy.x - 25, dummy.y);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexHackingProjectile(ctx, caster, dummy, t) {
+  const p = clamp(t, 0, 1);
+  const x = caster.x + (dummy.x - caster.x) * p;
+  const y = caster.y + (dummy.y - caster.y) * p;
+  const angle = Math.atan2(dummy.y - caster.y, dummy.x - caster.x);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 22;
+  ctx.fillStyle = "rgba(34,211,238,0.24)";
+  ctx.fillRect(-58, -9, 44, 18);
+  ctx.strokeStyle = "#67e8f9";
+  ctx.fillStyle = "#020617";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(34, 0);
+  ctx.lineTo(8, -12);
+  ctx.lineTo(-28, -8);
+  ctx.lineTo(-14, 0);
+  ctx.lineTo(-28, 8);
+  ctx.lineTo(8, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "#a78bfa";
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(-22 + i * 10, -6);
+    ctx.lineTo(-15 + i * 10, 0);
+    ctx.lineTo(-22 + i * 10, 6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCodexHackingBeam(ctx, caster, dummy, t) {
+  if (t < 0.02 || t > 0.98) return;
+  const x1 = caster.x + 28;
+  const y1 = caster.y;
+  const x2 = dummy.x - 24;
+  const y2 = dummy.y;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy) || 1;
+  const angle = Math.atan2(dy, dx);
+  ctx.save();
+  ctx.translate(x1, y1);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  [
+    { width: 34, opacity: 0.12, color: "#7c3aed" },
+    { width: 21, opacity: 0.25, color: "#06b6d4" },
+    { width: 8, opacity: 0.86, color: "#22d3ee" },
+    { width: 3, opacity: 1, color: "#f0fdff" }
+  ].forEach((layer, index) => {
+    ctx.globalAlpha = layer.opacity;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = layer.color;
+    ctx.shadowBlur = 18 + layer.width;
+    ctx.lineWidth = layer.width;
+    ctx.setLineDash(index === 2 ? [16, 7, 4, 7] : index === 1 ? [28, 12] : []);
+    ctx.lineDashOffset = -t * 160;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(length, 0);
+    ctx.stroke();
+  });
+  for (let bit = 0; bit < 8; bit += 1) {
+    const p = ((t * 2.4 + bit * 0.16) % 1) * length;
+    ctx.fillStyle = bit % 2 ? "#a78bfa" : "#67e8f9";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 12;
+    ctx.fillRect(p - 6, Math.sin(t * 18 + bit) * 11 - 2, 12, 4);
+  }
+  ctx.restore();
+}
+
+function drawCodexHackingGlitch(ctx, target, t, radius = 60) {
+  ctx.save();
+  ctx.translate(target.x, target.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "#22d3ee";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 2.5;
+  for (let layer = 0; layer < 3; layer += 1) {
+    const size = radius * (0.35 + layer * 0.18) + Math.sin(t * Math.PI * 8 + layer) * 5;
+    ctx.setLineDash(layer === 1 ? [5, 8] : [12, 6]);
+    ctx.lineDashOffset = -t * 80;
+    ctx.strokeRect(-size, -size, size * 2, size * 2);
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawCodexRockShape(ctx, x, y, size, angle = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 13;
+  const grad = ctx.createLinearGradient(-size, -size, size, size);
+  grad.addColorStop(0, "#fde68a");
+  grad.addColorStop(0.35, "#a16207");
+  grad.addColorStop(1, "#4b2e16");
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = "#fef3c7";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 1.35);
+  ctx.lineTo(size * 0.55, -size * 0.25);
+  ctx.lineTo(size * 0.28, size * 0.62);
+  ctx.lineTo(0, size * 1.32);
+  ctx.lineTo(-size * 0.48, size * 0.44);
+  ctx.lineTo(-size * 0.55, -size * 0.3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCodexRockOrbit(ctx, caster, t, count = 3) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let index = 0; index < count; index += 1) {
+    const angle = t * Math.PI * 2 + index * Math.PI * 2 / count;
+    drawCodexRockShape(ctx, caster.x + Math.cos(angle) * 54, caster.y + Math.sin(angle) * 45, 12, angle);
+  }
+  ctx.restore();
+}
+
+function drawCodexRockProjectile(ctx, caster, dummy, t) {
+  const p = clamp((t - 0.1) / 0.68, 0, 1);
+  const x = caster.x + (dummy.x - caster.x) * p;
+  const y = caster.y + (dummy.y - caster.y) * p;
+  const angle = Math.atan2(dummy.y - caster.y, dummy.x - caster.x) + Math.PI / 2;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "rgba(250,204,21,0.35)";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(caster.x, caster.y);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  drawCodexRockShape(ctx, x, y, 15, angle);
+  ctx.restore();
+}
+
+function drawCodexGaiaWall(ctx, wall, t) {
+  ctx.save();
+  ctx.translate(wall.x, wall.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = clamp(t * 2, 0.25, 1);
+  drawCodexRockShape(ctx, 0, 0, 46, 0);
+  drawCodexRockShape(ctx, 0, -54, 32, 0.08);
+  drawCodexRockShape(ctx, 0, 54, 32, -0.08);
+  ctx.restore();
+}
+
+function drawCodexRockArmor(ctx, caster, t, count = 3) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let index = 0; index < count * 2; index += 1) {
+    const angle = index * Math.PI * 2 / (count * 2) + Math.sin(t * Math.PI * 4 + index) * 0.12;
+    const orbit = caster.radius + 16 + (index % 2) * 8;
+    drawCodexRockShape(ctx, caster.x + Math.cos(angle) * orbit, caster.y + Math.sin(angle) * orbit, 10, angle);
+  }
   ctx.restore();
 }
 
@@ -2559,6 +2794,36 @@ function drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w
     else if (skillIndex === 1) drawCodexAoe(ctx, caster, t, color, accent, 112);
     else drawCodexLaser(ctx, caster, dummy, t, "#93c5fd", true);
     return;
+  }
+
+  if (kind === "hacker") {
+    if (skillIndex === 0) {
+      if (t < 0.48) drawCodexHackingProjectile(ctx, caster, dummy, t / 0.48);
+      else drawCodexHackingBeam(ctx, caster, dummy, (t - 0.48) / 0.45);
+      return { dummyState: { hackingMark: t < 0.52, hpRate: t > 0.55 ? 0.48 : 0.8 }, casterState: { hacking: true } };
+    }
+    if (skillIndex === 1) {
+      drawCodexHackingGlitch(ctx, dummy, t, 80);
+      return { dummyState: { hackingMark: true } };
+    }
+    const holo = { x: caster.x + 72, y: caster.y - 54, radius: caster.radius * 0.86 };
+    drawCodexHackingGlitch(ctx, holo, t, 44);
+    drawCodexHackingBeam(ctx, holo, dummy, t);
+    return { dummyState: { hackingMark: true, hpRate: 0.58 }, casterState: { hacking: true } };
+  }
+
+  if (kind === "geomancer") {
+    if (skillIndex === 0) {
+      drawCodexRockOrbit(ctx, caster, t, 3);
+      drawCodexRockProjectile(ctx, caster, dummy, t);
+      return { casterState: { rocks: 3 }, dummyState: { hpRate: 0.68 } };
+    }
+    if (skillIndex === 1) {
+      drawCodexGaiaWall(ctx, { x: caster.x + 118, y: caster.y }, t);
+      return { casterState: { rocks: 2 } };
+    }
+    drawCodexRockArmor(ctx, caster, t, 3);
+    return { casterState: { stoneEdge: true }, dummyState: { hpRate: 0.75 } };
   }
 
   drawCodexProjectile(ctx, caster, dummy, t, color, accent);
@@ -5073,7 +5338,7 @@ function makeCharacterCombatState(kind) {
     hologramAttackTimer: Infinity,
     hologramDeathStunApplied: false,
     rockShardCount: 0,
-    rockShardTimer: kind === "geomancer" ? 60 : Infinity,
+    rockShardTimer: kind === "geomancer" ? 120 : Infinity,
     gaiaWallWindup: 0,
     stoneEdgeStacks: 0,
     damageDealt: 0,
@@ -5819,11 +6084,12 @@ function updateSummons(dt) {
     const distance = Math.hypot(dx, dy) || 1;
 
     if (summon.type === "hologram") {
-      summon.vx = (summon.owner.x - summon.x) * 0.018;
-      summon.vy = (summon.owner.y - summon.y) * 0.018;
       summon.x += summon.vx * dt;
       summon.y += summon.vy * dt;
       bounceOnWalls(summon);
+      if (game.tick % 24 === 0) {
+        addVisualEffect({ type: "hacking-glitch", x: summon.x, y: summon.y, color: "#22d3ee", life: 18, maxLife: 18 });
+      }
       summon.attackTimer -= dt;
       if (summon.attackTimer <= 0) {
         useHackingAttack(summon, 0.5);
@@ -5960,6 +6226,85 @@ function drawRockWalls() {
     ctx.stroke();
     ctx.restore();
   });
+}
+
+function drawRoughRockShard(x, y, size, angle = 0, alpha = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha *= alpha;
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 12;
+  const grad = ctx.createLinearGradient(-size * 0.5, -size, size * 0.55, size);
+  grad.addColorStop(0, "#fde68a");
+  grad.addColorStop(0.22, "#a16207");
+  grad.addColorStop(0.58, "#4b2e16");
+  grad.addColorStop(1, "#d97706");
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = "#fef3c7";
+  ctx.lineWidth = Math.max(1.5, size * 0.12);
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 1.25);
+  ctx.lineTo(size * 0.48, -size * 0.38);
+  ctx.lineTo(size * 0.34, size * 0.5);
+  ctx.lineTo(0, size * 1.22);
+  ctx.lineTo(-size * 0.44, size * 0.42);
+  ctx.lineTo(-size * 0.56, -size * 0.28);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.42)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.12, -size * 0.82);
+  ctx.lineTo(size * 0.11, size * 0.62);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawRockShardOrbit(fighter) {
+  const count = Math.max(0, Math.min(3, fighter.rockShardCount || 0));
+  if (!count) return;
+  ctx.save();
+  ctx.translate(fighter.x, fighter.y);
+  ctx.globalCompositeOperation = "lighter";
+  for (let index = 0; index < count; index += 1) {
+    const angle = game.tick * 0.05 + index * Math.PI * 2 / count;
+    const orbit = fighter.radius + 25 + Math.sin(game.tick * 0.07 + index) * 3;
+    drawRoughRockShard(Math.cos(angle) * orbit, Math.sin(angle) * orbit, 10, angle + Math.PI / 2, 1);
+  }
+  ctx.restore();
+}
+
+function drawStoneEdgeArmor(fighter) {
+  const stacks = Math.max(0, fighter.stoneEdgeStacks || 0);
+  if (!stacks) return;
+  ctx.save();
+  ctx.translate(fighter.x, fighter.y);
+  ctx.globalCompositeOperation = "lighter";
+  for (let index = 0; index < Math.max(3, stacks * 2); index += 1) {
+    const angle = index * Math.PI * 2 / Math.max(3, stacks * 2) + Math.sin(game.tick * 0.025 + index) * 0.08;
+    const orbit = fighter.radius + 4 + (index % 2) * 5;
+    drawRoughRockShard(Math.cos(angle) * orbit, Math.sin(angle) * orbit, 8 + (index % 2) * 2, angle, 0.92);
+  }
+  ctx.restore();
+}
+
+function drawStoneEdgeArmorEffect(effect) {
+  const fighter = effect.fighter;
+  if (!fighter) return;
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "#facc15";
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 26;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(fighter.x, fighter.y, fighter.radius + 22 + (1 - alpha) * 22, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function resolveFighterSummonImpact(fighter, summon) {
@@ -6560,15 +6905,15 @@ function useHackingAttack(owner, damageScale = 1) {
     return;
   }
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
-  const speed = 12;
+  const speed = 29;
   game.balls.push({
     owner: sourceOwner,
     x: owner.x + Math.cos(angle) * (owner.radius + 14),
     y: owner.y + Math.sin(angle) * (owner.radius + 14),
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    radius: 8,
-    life: 160,
+    radius: 7,
+    life: 120,
     hitCooldown: 0,
     damage: 0,
     speed,
@@ -6608,7 +6953,14 @@ function updateHackingLaserEntity(entity, dt) {
     ? entity.hackingLaserTarget
     : nearestEnemyTarget(attacker, entity.x, entity.y);
   while (entity.hackingLaserTime > 0 && entity.hackingLaserTick <= 0 && !game.over) {
-    damageCombatTarget(target, 0.75 * (entity.hackingLaserDamageScale || 1), attacker);
+    damageCombatTarget(target, 1 * (entity.hackingLaserDamageScale || 1), attacker);
+    const healTarget = entity.type === "hologram" ? entity : attacker;
+    const healAmount = entity.type === "hologram" ? 0.25 : 0.5;
+    if (healTarget && healTarget.hp > 0) {
+      const before = healTarget.hp;
+      healTarget.hp = Math.min(healTarget.maxHp || healTarget.hp, healTarget.hp + healAmount);
+      if (!healTarget.owner) healTarget.healingDone = (healTarget.healingDone || 0) + Math.max(0, healTarget.hp - before);
+    }
     addVisualEffect({
       type: "hacking-beam",
       x1: entity.x,
@@ -6626,6 +6978,8 @@ function updateHackingLaserEntity(entity, dt) {
 function summonHologram(owner) {
   const target = opponentOf(owner);
   const angle = Math.atan2(owner.y - target.y, owner.x - target.x);
+  const moveAngle = combatRandom(owner, "hologram-angle", Math.floor(game.tick / 60)) * Math.PI * 2;
+  const speed = 5.8;
   const hp = Math.max(1, owner.hp * 0.6);
   game.summons.push({
     id: `hologram-${game.tick}-${owner.ownerId}`,
@@ -6633,8 +6987,8 @@ function summonHologram(owner) {
     type: "hologram",
     x: clamp(owner.x + Math.cos(angle) * 70, 24, canvas.width - 24),
     y: clamp(owner.y + Math.sin(angle) * 70, 24, canvas.height - 24),
-    vx: 0,
-    vy: 0,
+    vx: Math.cos(moveAngle) * speed,
+    vy: Math.sin(moveAngle) * speed,
     radius: 25,
     hp,
     maxHp: hp,
@@ -6656,9 +7010,9 @@ function fireRockShard(owner, forced = false) {
   if (!forced && owner.rockShardCount <= 0) return;
   if (!forced) owner.rockShardCount = Math.max(0, owner.rockShardCount - 1);
   fireStraightBullet(owner, {
-    damage: 8,
-    speed: 13,
-    radius: 10,
+    damage: 12,
+    speed: 14,
+    radius: 12,
     life: 150,
     color: "#a16207",
     rockShard: true
@@ -6679,9 +7033,9 @@ function createGaiaWall(owner) {
     owner,
     x: clamp(owner.x + dir.x * 112, 45, canvas.width - 45),
     y: clamp(owner.y + dir.y * 112, 45, canvas.height - 45),
-    angle: Math.atan2(dir.y, dir.x) + Math.PI / 2,
-    width: 34,
-    height: 132,
+    angle: 0,
+    width: 42,
+    height: 168,
     life: 300,
     hitCooldown: new Map()
   });
@@ -6695,7 +7049,7 @@ function activateStoneEdge(owner) {
   owner.contactDamage += stacks * 3;
   owner.damageReduction = Math.min(0.75, (owner.damageReduction || 0) + stacks * 0.03);
   addSkillPulse(owner, "#facc15");
-  addVisualEffect({ type: "rock-burst", x: owner.x, y: owner.y, color: "#facc15", life: 70, maxLife: 70, radius: 98 });
+  addVisualEffect({ type: "stone-edge-armor", fighter: owner, color: "#facc15", life: 70, maxLife: 70 });
 }
 
 function useRouletteNormal(owner) {
@@ -7553,7 +7907,7 @@ function moveFighter(fighter, dt) {
     fighter.rockShardTimer -= dt;
     if (fighter.rockShardTimer <= 0) {
       fireRockShard(fighter);
-      fighter.rockShardTimer += 60;
+      fighter.rockShardTimer += 120;
     }
   }
   if (fighter.kind === "hacker") {
@@ -9998,15 +10352,19 @@ function drawVisualEffect(effect) {
     return;
   }
   if (effect.type === "hacking-beam") {
-    drawEnergyLine(effect, 6);
+    drawHackingBeam(effect);
     return;
   }
   if (effect.type === "hacking-glitch") {
-    drawPointBurst(effect);
+    drawHackingGlitch(effect);
     return;
   }
   if (effect.type === "rock-burst") {
     drawPointBurst(effect);
+    return;
+  }
+  if (effect.type === "stone-edge-armor") {
+    drawStoneEdgeArmorEffect(effect);
     return;
   }
   if (effect.type === "time-explosion" || effect.type === "void-rift" || effect.type === "rift-hit" || effect.type === "summon-arrival" || effect.type === "mega-explosion") {
@@ -10018,17 +10376,27 @@ function drawSummon(summon) {
   if (summon.type === "hologram") {
     ctx.save();
     ctx.translate(summon.x, summon.y);
-    ctx.globalAlpha = summon.hitFlash > 0 ? 0.82 : 0.56;
+    ctx.globalAlpha = summon.hitFlash > 0 ? 0.9 : 0.66;
     ctx.globalCompositeOperation = "lighter";
     ctx.shadowColor = "#22d3ee";
-    ctx.shadowBlur = 24;
-    ctx.fillStyle = "rgba(34, 211, 238, 0.32)";
+    ctx.shadowBlur = 30;
+    const grad = ctx.createRadialGradient(-8, -8, 2, 0, 0, summon.radius * 1.6);
+    grad.addColorStop(0, "rgba(240,253,255,0.9)");
+    grad.addColorStop(0.35, "rgba(34,211,238,0.36)");
+    grad.addColorStop(1, "rgba(88,28,135,0.2)");
+    ctx.fillStyle = grad;
     ctx.strokeStyle = "#a78bfa";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(0, 0, summon.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    ctx.strokeStyle = "rgba(103,232,249,0.82)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.lineDashOffset = -game.tick;
+    ctx.strokeRect(-summon.radius * 0.82, -summon.radius * 0.82, summon.radius * 1.64, summon.radius * 1.64);
+    ctx.setLineDash([]);
     ctx.fillStyle = "#e0f2fe";
     ctx.font = "1000 16px Segoe UI, Arial";
     ctx.textAlign = "center";
@@ -10101,6 +10469,75 @@ function drawEnergyLine(effect, width = 6) {
     ctx.lineTo(effect.x2, effect.y2);
     ctx.stroke();
   });
+  ctx.restore();
+}
+
+function drawHackingBeam(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const dx = effect.x2 - effect.x1;
+  const dy = effect.y2 - effect.y1;
+  const length = Math.hypot(dx, dy) || 1;
+  const angle = Math.atan2(dy, dx);
+  ctx.save();
+  ctx.translate(effect.x1, effect.y1);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "butt";
+  [
+    { width: 34, opacity: 0.12, color: "#7c3aed" },
+    { width: 22, opacity: 0.22, color: "#06b6d4" },
+    { width: 9, opacity: 0.78, color: "#22d3ee" },
+    { width: 3, opacity: 1, color: "#f0fdff" }
+  ].forEach((layer, index) => {
+    ctx.globalAlpha = alpha * layer.opacity;
+    ctx.strokeStyle = layer.color;
+    ctx.shadowColor = layer.color;
+    ctx.shadowBlur = 18 + layer.width;
+    ctx.lineWidth = layer.width;
+    ctx.setLineDash(index === 2 ? [16, 7, 4, 7] : index === 1 ? [28, 12] : []);
+    ctx.lineDashOffset = -game.tick * (index + 1.8);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(length, 0);
+    ctx.stroke();
+  });
+  for (let bit = 0; bit < 9; bit += 1) {
+    const p = ((game.tick * 0.025 + bit * 0.137) % 1) * length;
+    const y = Math.sin(game.tick * 0.21 + bit) * 11;
+    ctx.globalAlpha = alpha * 0.62;
+    ctx.fillStyle = bit % 2 ? "#a78bfa" : "#67e8f9";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 12;
+    ctx.fillRect(p - 6, y - 2, 12, 4);
+  }
+  ctx.restore();
+}
+
+function drawHackingGlitch(effect) {
+  const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+  const radius = effect.radius || 58;
+  ctx.save();
+  ctx.translate(effect.x, effect.y);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = "#22d3ee";
+  ctx.fillStyle = "rgba(167,139,250,0.22)";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 24;
+  for (let i = 0; i < 4; i += 1) {
+    const size = radius * (0.45 + i * 0.18) * (1.18 - alpha * 0.18);
+    ctx.lineWidth = 2.4 - i * 0.25;
+    ctx.setLineDash(i % 2 ? [8, 7] : [3, 9]);
+    ctx.lineDashOffset = -game.tick * (1.2 + i * 0.3);
+    ctx.strokeRect(-size, -size * 0.58, size * 2, size * 1.16);
+  }
+  ctx.setLineDash([]);
+  for (let i = 0; i < 12; i += 1) {
+    const x = Math.sin(game.tick * 0.31 + i * 1.7) * radius;
+    const y = Math.cos(game.tick * 0.23 + i * 2.1) * radius * 0.66;
+    ctx.fillStyle = i % 2 ? "#a78bfa" : "#67e8f9";
+    ctx.fillRect(x, y, 10 + (i % 3) * 5, 2);
+  }
   ctx.restore();
 }
 
@@ -11181,6 +11618,41 @@ function drawFighter(fighter) {
     ctx.restore();
     drawCosmicFacingArrow(fighter);
   }
+  if (fighter.kind === "hacker") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#22d3ee";
+    ctx.fillStyle = "rgba(167,139,250,0.35)";
+    ctx.shadowColor = "#22d3ee";
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 4]);
+    ctx.lineDashOffset = -game.tick * 0.8;
+    ctx.strokeRect(-18, -18, 36, 36);
+    ctx.setLineDash([]);
+    for (let i = 0; i < 4; i += 1) {
+      const y = -12 + i * 8;
+      ctx.fillRect(-22, y, 8 + i * 4, 2);
+      ctx.fillRect(12 - i * 2, y + 3, 12, 2);
+    }
+    ctx.restore();
+  }
+  if (fighter.kind === "geomancer") {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "#facc15";
+    ctx.shadowColor = "#facc15";
+    ctx.shadowBlur = 14;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(14, 2);
+    ctx.lineTo(0, 24);
+    ctx.lineTo(-14, 2);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
   if (fighter.kind === "demon") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -11275,6 +11747,10 @@ function drawFighter(fighter) {
     ctx.restore();
   });
   ctx.restore();
+  if (fighter.kind === "geomancer") {
+    drawRockShardOrbit(fighter);
+    drawStoneEdgeArmor(fighter);
+  }
   if (fighter.frozenTime > 0) drawFrozenPrison(fighter);
   if ((fighter.demonMarkCount || 0) > 0) drawDemonMark(fighter);
   if (fighter.hackingMarkTime > 0) drawHackingMark(fighter);
@@ -11290,9 +11766,6 @@ function drawFighter(fighter) {
   }
   if (fighter.kind === "cosmic") {
     addFighterStatLabel(fighter, `별가루 ${Math.floor(fighter.cosmicDust)}`, fighter.accent);
-  }
-  if (fighter.kind === "geomancer") {
-    addFighterStatLabel(fighter, `파편 ${fighter.rockShardCount || 0}`, fighter.accent);
   }
 }
 
@@ -11436,21 +11909,24 @@ function drawHackingMark(target) {
   ctx.save();
   ctx.translate(target.x, target.y);
   ctx.globalCompositeOperation = "lighter";
-  ctx.strokeStyle = "#22d3ee";
-  ctx.fillStyle = "#a78bfa";
   ctx.shadowColor = "#22d3ee";
-  ctx.shadowBlur = 18;
+  ctx.shadowBlur = 24;
+  const pulse = 0.5 + Math.sin(game.tick * 0.18) * 0.5;
   ctx.lineWidth = 2.5;
-  ctx.setLineDash([6, 5]);
-  ctx.lineDashOffset = -game.tick * 0.8;
-  ctx.beginPath();
-  ctx.rect(-target.radius - 8, -target.radius - 8, (target.radius + 8) * 2, (target.radius + 8) * 2);
-  ctx.stroke();
+  for (let layer = 0; layer < 3; layer += 1) {
+    const size = target.radius + 10 + layer * 7 + pulse * 3;
+    ctx.strokeStyle = layer % 2 ? "rgba(167,139,250,0.82)" : "rgba(34,211,238,0.88)";
+    ctx.setLineDash(layer === 1 ? [4, 8] : [10, 5]);
+    ctx.lineDashOffset = -game.tick * (0.8 + layer * 0.28);
+    ctx.strokeRect(-size, -size, size * 2, size * 2);
+  }
   ctx.setLineDash([]);
-  ctx.font = "1000 14px Segoe UI, Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("#", 0, -target.radius - 18);
+  for (let i = 0; i < 10; i += 1) {
+    const angle = i * Math.PI * 2 / 10 + game.tick * 0.04;
+    const orbit = target.radius + 21 + (i % 2) * 4;
+    ctx.fillStyle = i % 2 ? "#a78bfa" : "#67e8f9";
+    ctx.fillRect(Math.cos(angle) * orbit - 5, Math.sin(angle) * orbit - 1.5, 10, 3);
+  }
   ctx.restore();
 }
 
@@ -12177,6 +12653,14 @@ function drawBall(ball) {
     drawIceProjectile(ball);
     return;
   }
+  if (ball.hackingBullet) {
+    drawHackingProjectile(ball);
+    return;
+  }
+  if (ball.rockShard) {
+    drawRockProjectile(ball);
+    return;
+  }
   drawCheapTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, ball.color, ball.star ? 0.78 : 0.46);
   if (ball.summonArrow) {
     ctx.save();
@@ -12308,6 +12792,55 @@ function drawBall(ball) {
   ctx.arc(ball.x - 3, ball.y - 4, 3, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.fill();
+  ctx.restore();
+}
+
+function drawHackingProjectile(ball) {
+  const angle = Math.atan2(ball.vy, ball.vx);
+  ctx.save();
+  ctx.translate(ball.x, ball.y);
+  ctx.rotate(angle);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 22;
+  for (let layer = 0; layer < 3; layer += 1) {
+    ctx.globalAlpha = 0.34 - layer * 0.08;
+    ctx.fillStyle = layer % 2 ? "#a78bfa" : "#22d3ee";
+    ctx.fillRect(-ball.radius * (5.4 + layer), -ball.radius * (0.55 + layer * 0.18), ball.radius * (4.8 + layer), ball.radius * (1.1 + layer * 0.36));
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "#67e8f9";
+  ctx.fillStyle = "#020617";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(ball.radius * 2.2, 0);
+  ctx.lineTo(ball.radius * 0.4, -ball.radius);
+  ctx.lineTo(-ball.radius * 1.9, -ball.radius * 0.72);
+  ctx.lineTo(-ball.radius * 1.15, 0);
+  ctx.lineTo(-ball.radius * 1.9, ball.radius * 0.72);
+  ctx.lineTo(ball.radius * 0.4, ball.radius);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "#a78bfa";
+  ctx.lineWidth = 1.4;
+  for (let i = 0; i < 4; i += 1) {
+    const x = -ball.radius * 1.4 + i * ball.radius * 0.82;
+    ctx.beginPath();
+    ctx.moveTo(x, -ball.radius * 0.46);
+    ctx.lineTo(x + ball.radius * 0.5, 0);
+    ctx.lineTo(x, ball.radius * 0.46);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawRockProjectile(ball) {
+  const angle = Math.atan2(ball.vy, ball.vx) + Math.PI / 2;
+  drawCheapTrail(ctx, ball.x, ball.y, ball.vx, ball.vy, ball.radius, "#facc15", 0.34);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  drawRoughRockShard(ball.x, ball.y, ball.radius, angle, 1);
   ctx.restore();
 }
 

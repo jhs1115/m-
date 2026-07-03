@@ -5693,6 +5693,20 @@ h2 {
   box-shadow: 0 0 28px rgba(147, 197, 253, 0.46);
 }
 
+.fighter-icon.hacker {
+  color: #e0faff;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(7, 24, 39, 0.9) 48%, rgba(167, 139, 250, 0.95)),
+    #071827;
+  box-shadow: 0 0 28px rgba(34, 211, 238, 0.42), inset 0 0 18px rgba(167, 139, 250, 0.3);
+}
+
+.fighter-icon.geomancer {
+  color: #fff7d6;
+  background: linear-gradient(145deg, #fde68a, #a16207 42%, #4b2e16 74%, #facc15);
+  box-shadow: 0 0 24px rgba(250, 204, 21, 0.34), inset 0 0 16px rgba(75, 46, 22, 0.42);
+}
+
 .fighter-card strong {
   display: block;
   margin-bottom: 12px;

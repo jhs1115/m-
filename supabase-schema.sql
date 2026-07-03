@@ -898,7 +898,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler', 'timekeeper',
     'riftmaker', 'summoner', 'swordsman', 'demon', 'artist',
-    'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic'
+    'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic', 'hacker', 'geomancer'
   ];
 begin
   active_user := public.app_user_from_token(session_token);
@@ -1356,7 +1356,7 @@ begin
   from unnest(array[
     'charger', 'grabber', 'poker', 'stealth', 'enhancer',
     'tank', 'beamer', 'wild', 'vampire', 'brawler',
-    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic'
+    'timekeeper', 'riftmaker', 'summoner', 'swordsman', 'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'bomberman', 'roper', 'gambler', 'cosmic', 'hacker', 'geomancer'
   ]::text[]) as kind
   where kind <> all(active_user.owned_characters);
 
@@ -1437,7 +1437,7 @@ declare
     'thrower', 'charger', 'grabber', 'poker', 'stealth', 'enhancer', 'tank', 'beamer',
     'wild', 'vampire', 'brawler', 'timekeeper', 'riftmaker', 'summoner', 'swordsman',
     'demon', 'artist', 'believer', 'archmage', 'gunner', 'freezer', 'gambler', 'cosmic',
-    'bomberman', 'roper'
+    'bomberman', 'roper', 'hacker', 'geomancer'
   ];
   mastery_kind text;
 begin
