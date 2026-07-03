@@ -273,6 +273,14 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.5": {
+    title: "beta v1.5 업데이트",
+    items: [
+      "상점 UI와 캐릭터 뽑기 화면을 개편했습니다.",
+      "뽑기 카드 등장/확인 연출을 추가했습니다.",
+      "해킹하는 색히와 바위쓰는 색히 밸런스를 조정했습니다."
+    ]
+  },
   "beta-v1.4": {
     title: "beta v1.4 업데이트",
     items: [
@@ -3417,8 +3425,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "beta-v1.4") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.4"];
+function renderPatchNotice(version = "beta-v1.5") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.5"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -3433,7 +3441,7 @@ function renderPatchNotice(version = "beta-v1.4") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("beta-v1.4");
+  if (open) renderPatchNotice("beta-v1.5");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -4760,11 +4768,16 @@ function revealGachaCard() {
   if (!pendingGachaReveal || ui.gachaReveal.classList.contains("is-revealed")) return;
   ui.gachaReveal.classList.remove("is-ready");
   ui.gachaReveal.classList.add("is-hit", "is-revealed");
-  ui.gachaMessage.innerHTML = `${playerNameWithTitle(currentUser)}: ${escapeHtml(characters[pendingGachaReveal].name)} 획득!`;
+  ui.gachaMessage.textContent = `${characters[pendingGachaReveal].name} 획득!`;
   pendingGachaReveal = null;
+  ui.gachaButton.disabled = false;
 }
 
 async function drawCharacter() {
+  if (pendingGachaReveal) {
+    ui.gachaMessage.textContent = "카드를 먼저 확인하세요.";
+    return;
+  }
   const player = getPlayer(ui.gachaPlayer.value);
   if (!player) {
     ui.gachaMessage.textContent = "뽑을 플레이어가 없습니다.";
@@ -4795,8 +4808,9 @@ async function drawCharacter() {
     pendingGachaReveal = null;
     ui.gachaReveal.classList.remove("is-rolling", "is-ready", "is-revealed");
     ui.gachaMessage.textContent = error.message;
-  } finally {
     ui.gachaButton.disabled = false;
+  } finally {
+    if (!pendingGachaReveal) ui.gachaButton.disabled = false;
   }
 }
 
