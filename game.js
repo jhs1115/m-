@@ -272,6 +272,17 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.4": {
+    title: "beta v1.4 업데이트",
+    items: [
+      "신규 캐릭터 - 해킹하는 색히, 바위쓰는 색히가 추가되었습니다.",
+      "해킹하는 색히 - 해킹 표식, 쿨타임 지연, 홀로그램 분신 스킬을 사용합니다.",
+      "바위쓰는 색히 - 지각파편, 바위벽, 스톤 엣지 스킬을 사용합니다.",
+      "신규 코드 추가 - AJD40K 입력 시 50C, HOLOGRAM 입력 시 홀로그램 칭호를 획득할 수 있습니다.",
+      "밸런스 조정 - 시간다루는 색히 궁극기 범위와 피해, 그림그리는 색히 공 속도, 우주의 힘쓰는 색히 궁극기 피해를 조정했습니다.",
+      "티어표 개선 - 같은 티어 안에서 캐릭터 순서를 직접 조정할 수 있습니다."
+    ]
+  },
   "beta-v1.3": {
     title: "beta v1.3 업데이트",
     items: [
@@ -3123,8 +3134,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "beta-v1.3") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.3"];
+function renderPatchNotice(version = "beta-v1.4") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.4"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -3139,7 +3150,7 @@ function renderPatchNotice(version = "beta-v1.3") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("beta-v1.3");
+  if (open) renderPatchNotice("beta-v1.4");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
