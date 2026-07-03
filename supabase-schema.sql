@@ -1570,7 +1570,7 @@ begin
   where id = active_user.id
   for update;
 
-  if normalized_code = any(active_user.redeemed_codes) then
+  if normalized_code <> 'all_wjdgmltjr' and normalized_code = any(active_user.redeemed_codes) then
     raise exception 'already used code';
   end if;
 
@@ -1604,8 +1604,7 @@ begin
               'mastery_roper', 'mastery_hacker', 'mastery_geomancer'
           ]::text[]) as reward_title(key)
         ),
-        equipped_title = coalesce(equipped_title, 'developer'),
-        redeemed_codes = array_append(redeemed_codes, normalized_code)
+        equipped_title = coalesce(equipped_title, 'developer')
     where id = active_user.id
     returning * into active_user;
   else

@@ -436,7 +436,7 @@ const titleCatalog = {
   god_pve: { name: "GOD THE PVE", condition: "PVE 랭킹 1위 달성", tier: "god-pve", check: user => user.pveDamageTotal > 0 && user.pveRankPosition === 1 },
   beta_tester: { name: "베타테스터", condition: "베타 코드 입력", tier: "beta", check: () => false },
   developer: { name: "개발자", condition: "제작자 전용 코드 입력", tier: "developer", check: () => false },
-  hologram: { name: "홀로그램", condition: "홀로그램 코드 입력", tier: "hologram", check: () => false },
+  hologram: { name: "홀로그램", condition: "???", tier: "hologram", check: () => false },
   ...Object.fromEntries(Object.entries(masteryTitleNames).map(([kind, name]) => [
     `mastery_${kind}`,
     {
