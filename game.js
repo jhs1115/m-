@@ -16,7 +16,7 @@ const TIER_MAKER_ZONES = ["pool", ...TIER_MAKER_TIERS.map(([id]) => id)];
 const FIXED_STEP_MS = 1000 / 60;
 const NETWORK_BUFFER_TICKS = 18;
 const SIMULATION_VERSION = "20260616a";
-const VOID_RIFT_RADIUS = 200;
+const VOID_RIFT_RADIUS = 220;
 const ART_TRAIL_MAX_POINTS = 800;
 const SUPABASE_CONFIG = window.MATCHZZANG_SUPABASE || {};
 const SUPABASE_READY = Boolean(
@@ -671,52 +671,52 @@ const skillNames = {
 
 const characterGuide = {
   thrower: {
-    attack: ["공 투척", "3초", "5의 피해를 주는 공을 발사합니다. 공은 벽과 캐릭터에 튕기며 지속시간 동안 남습니다."],
+    attack: ["공 투척", "3초", "5의 피해를 주는 공을 발사합니다. 공은 벽에 튕기며 지속시간 동안 남습니다."],
     normal: ["룩 온", "12초", "현재 맵에 있는 자신의 모든 공이 4초 동안 유도탄으로 변경됩니다."],
-    ultimate: ["스타 스트라이크", "30초", "지속시간이 3배 긴 별의 탄환 2개를 발사합니다."]
+    ultimate: ["스타 스트라이크", "30초", "지속시간이 3배 긴 별의 탄환 2개를 발사합니다. 이 탄환은 적에게 맞아도 사라지지 않습니다."]
   },
   charger: {
     attack: ["몸통 박치기", "접촉", "적에게 충돌하면 10의 피해를 주고 서로 튕겨납니다."],
-    normal: ["격노", "10초", "3초 동안 이동속도가 크게 증가하고 몸의 색이 진해집니다."],
+    normal: ["격노", "10초", "격노하며 3초 동안 이동속도가 크게 증가합니다."],
     ultimate: ["불가항력", "23초", "잠시 멈춰 힘을 모은 뒤 바라보는 방향으로 폭발적으로 돌진합니다. 캐릭터와 오오라에 닿은 적에게 40의 피해를 줍니다."]
   },
   grabber: {
-    attack: ["그랩", "자동", "선을 발사해 적을 끌어당기고 20의 피해와 0.5초 기절을 줍니다."],
-    normal: ["강화 그랩", "15초", "일반 그랩보다 사거리가 2배 길고 더 빠른 강화 그랩을 즉시 발사합니다."],
-    ultimate: ["충격파", "28초", "주변 넓은 범위에 30의 피해를 주고 적을 1초 동안 기절시킵니다."]
+    attack: ["그랩", "2.5초", "선을 발사해 적을 끌어당기고 20의 피해와 0.5초 기절을 줍니다."],
+    normal: ["강화 그랩", "15초", "일반 그랩보다 사거리가 2배 길고 더 빠른 강화 그랩을 발사합니다."],
+    ultimate: ["충격파", "30초", "주변 넓은 범위에 40의 피해를 주고 적을 1초 동안 기절시킵니다."]
   },
   poker: {
-    attack: ["포커 핸드", "자동", "52장 덱에서 실제 포커처럼 카드 5장을 뽑고, 족보 배율이 적용된 비유도 카드 탄환을 발사합니다."],
-    normal: ["드로우", "10초", "조커, 에이스, 킹, 퀸, 잭 중 카드 한 장을 던집니다. JOKER: 1~45의 무작위 피해. A: 7.5 피해. K: 피해는 없지만 다음 포커 핸드를 강화합니다. Q: 7.5 피해. J: 4.5 피해."],
+    attack: ["포커 핸드", "4.5초", "카드 5장을 뽑아 나온 패에 따라 배율이 적용된채로 적에게 날립니다."],
+    normal: ["드로우", "10초", "조커, 에이스, 킹, 퀸, 잭 중 카드 한 장을 던집니다. JOKER: 1~22의 무작위 피해. A: 6 피해. K: 피해는 없지만 다음 포커 핸드를 강화합니다. Q: 6 피해. J: 4 피해."],
     ultimate: ["힐 다이스", "40초", "주사위를 굴려 나온 눈의 5배만큼 체력을 회복합니다."]
   },
   stealth: {
     attack: ["은신 돌파", "8초", "3초 동안 은신해 피해와 충돌을 무시하고 적을 관통할 때 15의 피해를 줍니다."],
     normal: ["암살", "17초", "은신 상태에서만 사용할 수 있으며 즉시 적의 뒤로 이동합니다."],
-    ultimate: ["하이퍼 히든", "45초", "다음 은신이 1초 길어지고 이동속도가 크게 증가하며 관통 피해가 10으로 변경됩니다."]
+    ultimate: ["하이퍼 히든", "45초", "다음 은신의 지속시간이 1초 늘어나고 이동속도가 초대폭 상승하지만, 데미지가 10으로 조정됩니다."]
   },
   enhancer: {
-    attack: ["강화 타격", "2초당 강화", "적과 닿지 않은 동안 2초마다 공격력이 1 증가합니다. 충돌 시 현재 공격력만큼 피해를 줍니다. 최대 40."],
-    normal: ["용광로", "10초", "다음 2번의 자연 강화에서 공격력이 총 2씩 증가합니다."],
+    attack: ["강화 타격", "2초", "2초마다 공격력이 1 증가합니다. 충돌 시 현재 공격력만큼 피해를 줍니다. 최대 40."],
+    normal: ["용광로", "10초", "다음 2번의 강화에서 공격력이 총 2씩 증가합니다."],
     ultimate: ["갓 웨폰", "5초", "현재 공격력을 가진 무기를 추가 소환하고 공격력을 0으로 초기화합니다. 각 무기는 5초마다 공격합니다."]
   },
   tank: {
-    attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 주며 받는 모든 피해가 20% 감소합니다."],
+    attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 줍니다. 또한 받는 모든 피해가 20% 감소합니다."],
     normal: ["도발", "14초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
     ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 45의 피해와 3초 기절을 줍니다."]
   },
   beamer: {
-    attack: ["천공 레이저", "3초", "적의 위치에 예고 후 세로 레이저를 포격해 45의 피해를 줍니다."],
-    normal: ["슬로우 빔", "12초", "넓은 직선 빔으로 5의 피해를 주고 적을 3초 동안 느리게 만듭니다."],
-    ultimate: ["절멸자", "60초", "3초 동안 천공 레이저의 공격 주기가 0.2초로 변경됩니다."]
+    attack: ["천공 레이저", "3초", "적의 위치를 지정한후 잠시후에 레이저를 포격해 45의 피해를 줍니다."],
+    normal: ["슬로우 빔", "12초", "직선 방향으로 레이저를 발사해 5의 피해를 주고 적을 3초 동안 느리게 만듭니다."],
+    ultimate: ["절멸자", "60초", "3초 동안 일반공격의 공격 속도가 0.2초로 변경됩니다."]
   },
   wild: {
-    attack: ["할퀴기", "3초", "맵의 무작위 위치 3곳을 할퀴어 범위 안의 적에게 20의 피해를 줍니다. 적과 충돌해도 발동합니다."],
-    normal: ["추격", "18초", "5초 동안 속도가 3배가 되고 이동 방향이 계속 적을 향합니다."],
+    attack: ["할퀴기", "3초", "맵의 무작위 3곳을 할퀴어 범위 안의 적에게 20의 피해를 줍니다. 적과 충돌해도 발동합니다."],
+    normal: ["추격", "18초", "5초 동안 속도가 3배가 되고 이동 방향이 계속 해서 적을 향합니다."],
     ultimate: ["야생의 본능", "패시브", "상대 체력이 50% 이하가 되면 이동속도가 3.5배 증가합니다."]
   },
   vampire: {
-    attack: ["피의 탄환", "3초", "벽에 튕기지 않는 빠른 피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 35."],
+    attack: ["피의 탄환", "3초", "피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 35."],
     normal: ["흡혈", "패시브", "자신이 입힌 피해의 30%만큼 체력을 회복합니다."],
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
@@ -727,21 +727,21 @@ const characterGuide = {
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
-    normal: ["건너뛰기", "4초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 다음 초침 피해가 7로 변경됩니다. 벽은 통과하지 못합니다."],
+    normal: ["건너뛰기", "9초", "바라보는 방향으로 순간이동하고 초침 쿨타임을 초기화합니다. 1초동안 한정으로 초침 데미지가 20으로 조정됩니다."],
     ultimate: ["리플레이", "40초", "초침 쿨타임을 즉시 초기화합니다. 0.5초 집중 후 3초 전 위치로 돌아가 잃은 체력의 30%를 회복하고, 넓은 범위에 30 피해의 시간 폭발을 일으킵니다."]
   },
   riftmaker: {
-    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결 광선에 닿은 적에게 5의 피해를 주고 연결된 일반 균열을 소모합니다."],
-    normal: ["보이드", "10초", "가장 가까운 균열에 3초 동안 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 5의 피해를 줍니다."],
-    ultimate: ["게이트", "5초", "모든 균열에서 적을 향해 튕기지 않는 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
+    attack: ["균열", "벽 충돌", "벽에 닿을 때 균열을 남깁니다. 연결된 균열에 닿은 적에게 5의 피해를 주고 연결된 균열은 사라집니다."],
+    normal: ["보이드", "10초", "가장 가까운 균열에 3초 동안 더 넓은 공허를 열어 범위 안의 적을 천천히 끌어당기고 초당 7의 피해를 줍니다."],
+    ultimate: ["게이트", "5초", "모든 균열에서 적을 향해 균열 탄환을 발사합니다. 적중 시 10의 피해를 줍니다."]
   },
   summoner: {
-    attack: ["일어나라!", "4초", "맵 가장자리의 무작위 위치에 현재 체제의 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
-    normal: ["체제 전환", "12초", "소환 체제를 전사와 궁수 사이에서 전환합니다. 전사는 추격과 접촉 공격, 궁수는 거리 유지와 원거리 공격을 담당합니다."],
-    ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 지속 근접전을, 강화 궁수는 튕기는 강력한 화살 공격을 수행합니다."]
+    attack: ["일어나라!", "4초", "맵 가장자리의 무작위 위치에 소환수를 소환합니다. 일반 전사는 체력 12, 일반 궁수는 8 피해의 화살을 사용하며 모든 소환수는 적의 공격을 대신 맞습니다."],
+    normal: ["체제 전환", "12초", "소환 체제를 전사와 궁수 사이에서 전환합니다. 전사는 접촉 공격, 궁수는 원거리 공격을 담당합니다."],
+    ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 체력이 높으며,강화 궁수는 튕기는 화살을 발사합니다."]
   },
   swordsman: {
-    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않고 체력은 125입니다."],
+    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않습니다."],
     normal: ["제 1식", "30초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 2의 피해를 받습니다."],
     ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
   },
@@ -751,7 +751,7 @@ const characterGuide = {
     ultimate: ["로스트 엔젤", "30초", "적을 관통해 20의 피해를 줍니다. 표식이 없으면 8초 동안 표식 2개를 남기고, 표식이 있으면 모두 지워 표식마다 일반 스킬 쿨타임을 7.5초 줄입니다."]
   },
   artist: {
-    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 60.5%입니다."],
+    attack: ["예술의 궤도", "패시브", "공 1개가 맵을 돌아다니며 반투명한 궤적을 남깁니다. 공은 적에게 닿아도 튕기지 않고 벽에서만 튕기며, 속도는 이동속도의 65.5%입니다."],
     normal: ["드로잉", "3초", "현재 궤도에 그림을 그려 궤도 위의 적에게 25의 피해를 줍니다. 궤도가 겹쳐도 한 대상에게 한 번만 피해를 줍니다."],
     ultimate: ["내면의 평화", "20초", "현재 궤도 안에 있는 모든 캐릭터의 체력을 30 회복시킵니다. 이후 현재 그려진 궤도가 삭제됩니다."]
   },
@@ -786,23 +786,23 @@ const characterGuide = {
     ultimate: ["로프 러쉬", "30초", "적의 주위를 긴 로프로 빠르게 돌며 1.5초 간격으로 4번 집어 던집니다. 던질 때마다 5의 피해를 주고, 벽에 닿으면 5의 추가 피해와 1초 기절을 받습니다."]
   },
   gambler: {
-    attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다. 애매한 접촉형 공격은 짧은 시간 몸통 피해 버프로 바뀝니다."],
-    normal: ["스킬 룰렛", "8초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다. 추격 같은 지속형 스킬은 지속시간 동안 해당 캐릭터처럼 판정됩니다."],
-    ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다. 지속형 궁극기는 지속시간 동안 해당 캐릭터 효과를 빌려옵니다."]
+    attack: ["룰렛", "4초", "패시브가 아닌 랜덤 캐릭터의 일반공격을 즉시 사용합니다."],
+    normal: ["스킬 룰렛", "8초", "패시브가 아닌 랜덤 캐릭터의 일반 스킬을 사용합니다."],
+    ultimate: ["궁극 룰렛", "20초", "패시브가 아닌 랜덤 캐릭터의 궁극기를 사용합니다."]
   },
   cosmic: {
     attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
     normal: ["초신성", "14초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 15개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 방향으로 다시 사용하기 전까지 폭넓은 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다."]
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다. 스킬을 재사용하면 사용을 종료합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "5초", "적을 향해 빠른 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식이 떠오르며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.2 회복합니다."],
+    attack: ["CODE : AJD40K", "5초", "적을 향해 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식을 입히며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.2 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
     ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 65%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 본체가 해킹 레이저를 발사할 때 함께 50% 피해의 레이저를 발사합니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
   },
   geomancer: {
-    attack: ["지각파편", "2초", "벽에 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 12의 피해를 줍니다."],
-    normal: ["데스오브가이아", "15초", "1초 대기 후 바라보는 방향 조금 앞에 5초 동안 유지되는 바위벽을 소환합니다. 바위쓰는 색히가 벽에 튕기면 지각파편을 얻고, 적이 벽에 닿으면 1의 피해를 입습니다."],
+    attack: ["지각파편", "2초", "벽에 2번 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 15의 피해를 줍니다."],
+    normal: ["데스오브가이아", "15초", "1초 대기 후 바라보는 방향 조금 앞에 5초 동안 유지되는 바위벽을 소환합니다. 바위쓰는 색히가 벽에 2번 튕기면 지각파편을 얻고, 적이 벽에 닿으면 1의 피해를 입습니다."],
     ultimate: ["스톤 엣지", "20초", "현재 보유한 지각파편을 몸에 둘러 모두 소모합니다. 파편 1개마다 접촉데미지 2와 피해감소 3%를 얻습니다."]
   }
 };
@@ -4761,7 +4761,7 @@ function prepareGachaReveal(kind) {
   ui.gachaReveal.style.setProperty("--gacha-color-b", colors[1] || colors[0]);
   ui.gachaReveal.classList.remove("is-rolling", "is-hit", "is-revealed");
   ui.gachaReveal.classList.add("is-ready");
-  ui.gachaMessage.textContent = "";
+  ui.gachaMessage.textContent = "카드를 클릭하세요!";
 }
 
 function revealGachaCard() {
@@ -5185,7 +5185,7 @@ function ultimateCooldown(kind) {
   return {
     thrower: 1800,
     charger: 1380,
-    grabber: 1680,
+    grabber: 1800,
     poker: 2400,
     stealth: 2700,
     enhancer: 300,
@@ -5246,7 +5246,7 @@ function makeCharacterCombatState(kind) {
     canStealth: character.canStealth,
     throwTimer: character.canThrow ? 180 : Infinity,
     grabTimer: character.canGrab ? 150 : Infinity,
-    pokerTimer: character.canPoker ? 150 : Infinity,
+    pokerTimer: character.canPoker ? 270 : Infinity,
     pokerHand: [],
     pokerReveal: 0,
     pokerLabel: "",
@@ -5299,6 +5299,7 @@ function makeCharacterCombatState(kind) {
     idleAttackTime: 0,
     clockHandTimer: kind === "timekeeper" ? 240 : Infinity,
     clockDamageOverride: 0,
+    clockDamageBoostTime: 0,
     timeHistory: [],
     replayWindup: 0,
     replayTarget: null,
@@ -5397,7 +5398,8 @@ function makeCharacterCombatState(kind) {
     hologramOwner: null,
     hologramAttackTimer: Infinity,
     hologramDeathStunApplied: false,
-    rockShardCount: 0,
+    rockShardCount: kind === "geomancer" ? 1 : 0,
+    rockShardBounceCount: 0,
     rockShardTimer: kind === "geomancer" ? 120 : Infinity,
     gaiaWallWindup: 0,
     stoneEdgeStacks: 0,
@@ -5730,7 +5732,8 @@ function skipTime(fighter) {
   fighter.x = clamp(fighter.x + direction.x * distance, fighter.radius, canvas.width - fighter.radius);
   fighter.y = clamp(fighter.y + direction.y * distance, fighter.radius, canvas.height - fighter.radius);
   fighter.clockHandTimer = 0;
-  fighter.clockDamageOverride = 7;
+  fighter.clockDamageOverride = 0;
+  fighter.clockDamageBoostTime = 60;
   addVisualEffect({
     type: "time-skip",
     x1: fromX,
@@ -5804,7 +5807,7 @@ function finishReplay(fighter) {
 
 function swingClockHand(fighter) {
   const target = nearestEnemyTarget(fighter);
-  const damageAmount = fighter.clockDamageOverride || 15;
+  const damageAmount = fighter.clockDamageBoostTime > 0 ? 20 : (fighter.clockDamageOverride || 15);
   fighter.clockDamageOverride = 0;
   const dx = target.x - fighter.x;
   const dy = target.y - fighter.y;
@@ -6272,7 +6275,7 @@ function updateRockWalls(dt) {
       fighter.vx = nx * speed;
       fighter.vy = ny * speed;
       if (fighter === wall.owner && fighter.kind === "geomancer") {
-        fighter.rockShardCount = Math.min(3, fighter.rockShardCount + 1);
+        addGeomancerBounceShard(fighter);
       } else if (wall.hitCooldown.get(fighter) !== game.tick) {
         damage(fighter, 1, wall.owner);
         wall.hitCooldown.set(fighter, game.tick);
@@ -7127,7 +7130,7 @@ function fireRockShard(owner, forced = false) {
   if (!forced && owner.rockShardCount <= 0) return;
   if (!forced) owner.rockShardCount = Math.max(0, owner.rockShardCount - 1);
   fireStraightBullet(owner, {
-    damage: 12,
+    damage: 15,
     speed: 14,
     radius: 12,
     life: 150,
@@ -7349,7 +7352,7 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "grabber") {
     throwGrapple(fighter, true);
-    fighter.skillTimer = 1020;
+    fighter.skillTimer = 900;
     return;
   }
 
@@ -7540,7 +7543,7 @@ function triggerUltimate(fighter) {
 
   if (fighter.kind === "grabber") {
     createShockwave(fighter);
-    fighter.ultimateTimer = 1680;
+    fighter.ultimateTimer = 1800;
     return;
   }
 
@@ -8490,6 +8493,7 @@ function moveFighter(fighter, dt) {
   }
 
   if (fighter.kind === "timekeeper") {
+    if (fighter.clockDamageBoostTime > 0) fighter.clockDamageBoostTime = Math.max(0, fighter.clockDamageBoostTime - dt);
     fighter.clockHandTimer -= dt;
     if (fighter.clockHandTimer <= 0) {
       const targetDistance = Math.hypot(target.x - fighter.x, target.y - fighter.y);
@@ -8619,7 +8623,7 @@ function moveFighter(fighter, dt) {
     fighter.pokerTimer -= dt;
     if (fighter.pokerTimer <= 0) {
       dealPokerAttack(fighter);
-      fighter.pokerTimer = 300;
+      fighter.pokerTimer = 270;
     }
     if (fighter.pokerReveal > 0) fighter.pokerReveal -= dt;
   }
@@ -8659,9 +8663,16 @@ function bounceOnWalls(body) {
     wallHit = "bottom";
   }
   if (wallHit && body.kind === "geomancer") {
-    body.rockShardCount = Math.min(3, (body.rockShardCount || 0) + 1);
+    addGeomancerBounceShard(body);
   }
   return wallHit;
+}
+
+function addGeomancerBounceShard(fighter) {
+  fighter.rockShardBounceCount = (fighter.rockShardBounceCount || 0) + 1;
+  if (fighter.rockShardBounceCount < 2) return;
+  fighter.rockShardBounceCount = 0;
+  fighter.rockShardCount = Math.min(3, (fighter.rockShardCount || 0) + 1);
 }
 
 function handleFighterCollision() {
@@ -9402,7 +9413,7 @@ function throwGrapple(owner, enhanced = false, force = false) {
 
 function createShockwave(owner) {
   const target = nearestEnemyTarget(owner);
-  const range = 192;
+  const range = 230;
   game.shockwaves.push({
     owner,
     x: owner.x,
@@ -9413,7 +9424,7 @@ function createShockwave(owner) {
     color: owner.accent
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damageCombatTarget(target, 30, owner);
+    damageCombatTarget(target, 40, owner);
     if (!target.owner) {
       target.stunTime = Math.max(target.stunTime, 60);
       target.vx *= 0.25;
@@ -9481,7 +9492,7 @@ function fireBloodBullet(owner) {
   const target = nearestEnemyTarget(owner);
   const hpMissing = 1 - owner.hp / owner.maxHp;
   const damageAmount = 10 + hpMissing * 25;
-  const speed = 12.5 + hpMissing * 9.5;
+  const speed = 12.5 + hpMissing * 12.35;
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
   game.balls.push({
     owner,
@@ -9617,16 +9628,16 @@ function evaluatePokerHand(cards) {
   const wheel = uniqueValues.join(",") === "14,5,4,3,2";
   const straight = uniqueValues.length === 5 && (wheel || uniqueValues[0] - uniqueValues[4] === 4);
 
-  if (straight && flush && uniqueValues[0] === 14 && uniqueValues[1] === 13) return { label: "로열 플러시", multiplier: 9.5 };
-  if (straight && flush) return { label: "스트레이트 플러시", multiplier: 8 };
-  if (counts[0] === 4) return { label: "포카드", multiplier: 6 };
-  if (counts[0] === 3 && counts[1] === 2) return { label: "풀하우스", multiplier: 4.6 };
-  if (flush) return { label: "플러시", multiplier: 3.8 };
-  if (straight) return { label: "스트레이트", multiplier: 3.4 };
-  if (counts[0] === 3) return { label: "트리플", multiplier: 3 };
-  if (counts[0] === 2 && counts[1] === 2) return { label: "투페어", multiplier: 2.35 };
-  if (counts[0] === 2) return { label: "원페어", multiplier: 1.95 };
-  return { label: "노페어", multiplier: 1.55 };
+  if (straight && flush && uniqueValues[0] === 14 && uniqueValues[1] === 13) return { label: "로열 플러시", multiplier: 10.5 };
+  if (straight && flush) return { label: "스트레이트 플러시", multiplier: 8.8 };
+  if (counts[0] === 4) return { label: "포카드", multiplier: 6.6 };
+  if (counts[0] === 3 && counts[1] === 2) return { label: "풀하우스", multiplier: 5 };
+  if (flush) return { label: "플러시", multiplier: 4.2 };
+  if (straight) return { label: "스트레이트", multiplier: 3.75 };
+  if (counts[0] === 3) return { label: "트리플", multiplier: 3.25 };
+  if (counts[0] === 2 && counts[1] === 2) return { label: "투페어", multiplier: 2.6 };
+  if (counts[0] === 2) return { label: "원페어", multiplier: 2.15 };
+  return { label: "노페어", multiplier: 1.75 };
 }
 
 function dealPokerCards(owner, sequence) {
@@ -12404,12 +12415,22 @@ function triggerExplosionBoost(owner) {
     affectsOwner: true
   });
   selfDamage(owner, 4);
-  const angle = combatRandom(owner, "explosion-boost-bounce", game.tick) * Math.PI * 2;
+  const angle = explosionBounceAngle(owner);
   owner.vx = Math.cos(angle) * 18;
   owner.vy = Math.sin(angle) * 18;
   owner.explosionRushTime = 28;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
+}
+
+function explosionBounceAngle(owner) {
+  const margin = owner.radius + 76;
+  const random = combatRandom(owner, "explosion-boost-bounce", game.tick);
+  if (owner.y < margin) return Math.PI * (0.18 + random * 0.64);
+  if (owner.y > canvas.height - margin) return Math.PI * (1.18 + random * 0.64);
+  if (owner.x < margin) return Math.PI * (-0.32 + random * 0.64);
+  if (owner.x > canvas.width - margin) return Math.PI * (0.68 + random * 0.64);
+  return random * Math.PI * 2;
 }
 
 function beginMegaBoom(owner) {
@@ -13970,8 +13991,8 @@ function usePveSkill(type) {
       player.ultimateTimer = 1380;
       addPveFloating("집중...", player.accent);
     } else if (player.kind === "grabber") {
-      createPveAreaAttack(player.x, player.y, 192, 30, 0, player.accent, "shockwave", 60);
-      player.ultimateTimer = 1680;
+      createPveAreaAttack(player.x, player.y, 230, 40, 0, player.accent, "shockwave", 60);
+      player.ultimateTimer = 1800;
       addPveFloating("충격파!", player.accent);
     } else if (player.kind === "poker") {
       const roll = pveRandomIndex(6) + 1;
@@ -14198,7 +14219,7 @@ function stepPve() {
       player.shotTimer = 150;
     } else if (player.kind === "poker") {
       dealPvePokerAttack();
-      player.shotTimer = 300;
+      player.shotTimer = 270;
     } else if (player.kind === "beamer") {
       if (closest) createPveAreaAttack(closest.x, closest.y, 62, 45, 60, player.accent, "laser");
       player.shotTimer = player.annihilatorTime > 0 ? 12 : 180;
@@ -14213,7 +14234,7 @@ function stepPve() {
       player.shotTimer = 180;
     } else if (player.kind === "vampire") {
       const missing = 1 - player.hp / player.maxHp;
-      firePvePlayerShot({ blood: true, damage: 10 + missing * 25, speed: 12.5 + missing * 9.5 });
+      firePvePlayerShot({ blood: true, damage: 10 + missing * 25, speed: 12.5 + missing * 12.35 });
       player.shotTimer = player.bloodPreludeTime > 0 ? 60 : 180;
     } else if (player.kind === "brawler") {
       if (closest && Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius + 52) {
