@@ -273,6 +273,16 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.6": {
+    title: "beta v1.6 업데이트",
+    items: [
+      "돌진하는 색히 - 불가항력 쿨타임 증가, 격노 지속시간 증가",
+      "그랩하는 색히 - 그랩, 충격파, 강화 그랩 구조 변경",
+      "개쳐맞는 색히 - 중장갑 반격 충격파와 기사의 방패 조정",
+      "피흡하는 색히 - 흡혈 패시브화, 블러드 버스터 추가",
+      "맨몸격투, 칼쓰는 색히, 폭발하는 색히, 우주의 힘쓰는 색히, 해킹하는 색히 밸런스 조정"
+    ]
+  },
   "beta-v1.5": {
     title: "beta v1.5 업데이트",
     items: [
@@ -513,7 +523,7 @@ const characters = {
     name: "개쳐맞는 색히",
     color: "#75808f",
     accent: "#d5dde8",
-    contactDamage: 5
+    contactDamage: 0
   },
   beamer: {
     name: "빔쏘는 색히",
@@ -642,14 +652,14 @@ const gachaPool = ["charger", "grabber", "poker", "stealth", "enhancer", "tank",
 const skillNames = {
   thrower: { normal: "룩 온", ultimate: "스타 스트라이크" },
   charger: { normal: "격노", ultimate: "불가항력" },
-  grabber: { normal: "그랩", ultimate: "충격파" },
+  grabber: { normal: "충격파", ultimate: "강화 그랩" },
   poker: { normal: "드로우", ultimate: "힐 다이스" },
   stealth: { normal: "암살", ultimate: "하이퍼 히든" },
   enhancer: { normal: "용광로", ultimate: "갓 웨폰" },
-  tank: { normal: "도발", ultimate: "야수의 방패" },
+  tank: { normal: "도발", ultimate: "기사의 방패" },
   beamer: { normal: "슬로우 빔", ultimate: "절멸자" },
   wild: { normal: "추격", ultimate: "야생의 본능" },
-  vampire: { normal: "흡혈", ultimate: "핏빛 서곡" },
+  vampire: { normal: "블러드 버스터", ultimate: "핏빛 서곡" },
   brawler: { normal: "투지", ultimate: "신룡권" },
   timekeeper: { normal: "건너뛰기", ultimate: "리플레이" },
   riftmaker: { normal: "보이드", ultimate: "게이트" },
@@ -677,13 +687,13 @@ const characterGuide = {
   },
   charger: {
     attack: ["몸통 박치기", "접촉", "적에게 충돌하면 10의 피해를 주고 서로 튕겨납니다."],
-    normal: ["격노", "10초", "격노하며 3초 동안 이동속도가 크게 증가합니다."],
-    ultimate: ["불가항력", "23초", "잠시 멈춰 힘을 모은 뒤 바라보는 방향으로 폭발적으로 돌진합니다. 캐릭터와 오오라에 닿은 적에게 40의 피해를 줍니다."]
+    normal: ["격노", "10초", "격노하며 3.5초 동안 이동속도가 크게 증가합니다."],
+    ultimate: ["불가항력", "30초", "잠시 멈춰 힘을 모은 뒤 바라보는 방향으로 폭발적으로 돌진합니다. 캐릭터와 오오라에 닿은 적에게 40의 피해를 줍니다."]
   },
   grabber: {
-    attack: ["그랩", "2.5초", "선을 발사해 적을 끌어당기고 20의 피해와 0.5초 기절을 줍니다."],
-    normal: ["강화 그랩", "15초", "일반 그랩보다 사거리가 2배 길고 더 빠른 강화 그랩을 발사합니다."],
-    ultimate: ["충격파", "30초", "주변 넓은 범위에 40의 피해를 주고 적을 1초 동안 기절시킵니다."]
+    attack: ["그랩", "2.5초", "그랩을 발사하여 적을 끌어당기고 15의 피해를 주며 1초 동안 기절시킵니다. 이미 기절 중인 적에게는 10의 추가 피해를 줍니다."],
+    normal: ["충격파", "9초", "주변에 충격파를 발생시켜 5의 피해를 주고 2초 동안 기절시킵니다. 이미 기절 중인 적에게는 5의 추가 피해와 5초 동안 50% 둔화를 줍니다."],
+    ultimate: ["강화 그랩", "30초", "다음 3번의 그랩 속도가 40%, 크기가 45% 증가하고 기절 지속시간이 0.5초 증가합니다. 강화 그랩으로 기절 중인 적을 맞추면 초당 2의 영구 피해를 부여합니다."]
   },
   poker: {
     attack: ["포커 핸드", "4.5초", "카드 5장을 뽑아 나온 패에 따라 배율이 적용된채로 적에게 날립니다."],
@@ -701,9 +711,9 @@ const characterGuide = {
     ultimate: ["갓 웨폰", "5초", "현재 공격력을 가진 무기를 추가 소환하고 공격력을 0으로 초기화합니다. 각 무기는 5초마다 공격합니다."]
   },
   tank: {
-    attack: ["중장갑 충돌", "접촉", "충돌 시 5의 피해를 줍니다. 또한 받는 모든 피해가 20% 감소합니다."],
+    attack: ["중장갑", "1초", "받는 모든 피해가 20% 감소합니다. 피해를 받을 때마다 주변 좁은 범위에 충격파를 터트려 5의 피해와 0.5초 기절을 줍니다."],
     normal: ["도발", "14초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
-    ultimate: ["야수의 방패", "40초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 45의 피해와 3초 기절을 줍니다."]
+    ultimate: ["기사의 방패", "35초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 50의 피해와 3초 기절을 줍니다."]
   },
   beamer: {
     attack: ["천공 레이저", "3초", "적의 위치를 지정한후 잠시후에 레이저를 포격해 45의 피해를 줍니다."],
@@ -716,14 +726,14 @@ const characterGuide = {
     ultimate: ["야생의 본능", "패시브", "상대 체력이 50% 이하가 되면 이동속도가 3.5배 증가합니다."]
   },
   vampire: {
-    attack: ["피의 탄환", "3초", "피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 35."],
-    normal: ["흡혈", "패시브", "자신이 입힌 피해의 30%만큼 체력을 회복합니다."],
+    attack: ["피의 탄환", "3초", "피의 탄환을 발사합니다. 체력이 낮을수록 피해와 탄속이 증가합니다. 최대 피해 35. 입히는 모든 피해의 30%만큼 체력을 회복합니다."],
+    normal: ["블러드 버스터", "15초", "적의 뒤로 순간이동한 뒤 뒷덜미를 물어 적의 잃은 체력의 20%만큼 피해를 줍니다."],
     ultimate: ["핏빛 서곡", "50초", "현재 체력의 50%를 소모하고 3초 동안 공격속도 3배, 이동속도 2배를 얻습니다."]
   },
   brawler: {
-    attack: ["격투", "1초", "적이 사거리 내에 들어오면 8의 피해를 입힙니다."],
+    attack: ["격투", "1초", "적이 사거리 내에 들어오면 5의 피해를 입힙니다."],
     normal: ["투지", "14초", "이 게임에서 이동속도를 영구히 25% 증가시킵니다. 체력이 절반 이하라면 이동속도 대신 체력을 10~20 회복합니다."],
-    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 이동속도 증가량에 비례해 피해가 증가합니다. 용권 상태에서는 2초마다 이동 궤적이 적을 바라보도록 보정됩니다."]
+    ultimate: ["신룡권", "45초", "8초 동안 용의 권 상태가 됩니다. 기본 공격이 용권으로 변경되고, 투지 1스택마다 용권 피해가 4 증가합니다. 용권 상태에서는 2초마다 이동 궤적이 적을 바라보도록 보정됩니다."]
   },
   timekeeper: {
     attack: ["초침", "4초", "적이 일정 범위 안에 들어오면 적을 향해 초침을 휘둘러 넓은 원뿔 범위에 15의 피해를 줍니다."],
@@ -741,8 +751,8 @@ const characterGuide = {
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 체력이 높으며,강화 궁수는 튕기는 화살을 발사합니다."]
   },
   swordsman: {
-    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 8의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않습니다."],
-    normal: ["제 1식", "30초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 2의 피해를 받습니다."],
+    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 10의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않습니다."],
+    normal: ["제 1식", "14초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 1의 피해를 받습니다."],
     ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
   },
   demon: {
@@ -776,7 +786,7 @@ const characterGuide = {
     ultimate: ["이터널 블리자드", "30초", "1.5초 동안 얼음의 정수를 모은 뒤 적에게 유도되는 정수를 발사합니다. 맞은 적은 15의 피해를 받고 3초 동안 얼어붙어 행동할 수 없습니다."]
   },
   bomberman: {
-    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 랜덤한 방향으로 엄청 빠르게 튕겨나가며, 발동할 때마다 자신은 4의 피해를 받습니다."],
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 랜덤한 방향으로 튕겨나가며, 발동할 때마다 자신은 2의 피해를 받습니다."],
     normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 10의 피해를 받습니다."],
     ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
   },
@@ -793,12 +803,12 @@ const characterGuide = {
   cosmic: {
     attack: ["별가루 수집", "0.75초", "맵 밖 화면 끝에서 작은 십자가 모양 별가루가 다가옵니다. 별가루가 닿으면 스택 1을 얻고, 기본 50개를 가지고 시작합니다."],
     normal: ["초신성", "14초", "0.5초 후 자신의 주변에 큰 초신성 폭발을 일으킵니다. 범위 안의 적에게 15의 피해를 주고 3초 동안 기절시킵니다. 별가루 15개를 소모합니다."],
-    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 8개를 소모합니다. 스킬을 재사용하면 사용을 종료합니다."]
+    ultimate: ["코스믹 블래스터", "0초", "1초 동안 기를 모은 후 바라보는 레이저를 발사합니다. 0.1초마다 3.5의 피해를 주고 초당 별가루 6개를 소모합니다. 스킬을 재사용하면 사용을 종료합니다."]
   },
   hacker: {
-    attack: ["CODE : AJD40K", "5초", "적을 향해 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식을 입히며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.2 회복합니다."],
+    attack: ["CODE : AJD40K", "4초", "적을 향해 해킹 탄환을 발사합니다. 적중하는 즉시 해킹 표식을 입히며 해킹 레이저를 발사해 총 20의 피해를 0.1초 간격으로 주고, 레이저가 끝나면 표식이 사라집니다. 레이저 발사 중 0.1초마다 체력을 0.2 회복합니다."],
     normal: ["CODE : COOLTIME", "14초", "적의 일반공격, 일반스킬, 궁극기 쿨타임을 20% 지연시킵니다."],
-    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 65%를 가진 홀로그램 분신을 소환합니다. 분신은 맵을 튕기며 본체가 해킹 레이저를 발사할 때 함께 50% 피해의 레이저를 발사합니다. 홀로그램이 죽으면 본체는 과부화로 3초 기절합니다."]
+    ultimate: ["CODE : HOLOGRAM", "50초", "현재 체력의 60%를 가진 홀로그램 분신을 소환합니다. 분신은 고정 속도로 맵을 튕기며 모든 공격과 접촉 피해를 받습니다. 홀로그램이 죽으면 본체는 과부화로 2초 기절합니다."]
   },
   geomancer: {
     attack: ["지각파편", "2초", "벽에 2번 튕길 때마다 지각파편을 얻습니다. 지각파편은 최대 3개까지 보유하며 2초마다 적을 향해 직선 발사되어 15의 피해를 줍니다."],
@@ -972,14 +982,14 @@ let codexPreviewState = null;
 const codexRatings = {
   thrower: { difficulty: 1, damage: 3, mobility: 1 },
   charger: { difficulty: 2, damage: 1, mobility: 3 },
-  grabber: { difficulty: 2, damage: 2, mobility: 1 },
+  grabber: { difficulty: 3, damage: 3, mobility: 1 },
   poker: { difficulty: 1, damage: 3, mobility: 1 },
   stealth: { difficulty: 1, damage: 1, mobility: 3 },
   enhancer: { difficulty: 1, damage: 3, mobility: 1 },
-  tank: { difficulty: 1, damage: 1, mobility: 1 },
+  tank: { difficulty: 1, damage: 2, mobility: 1 },
   beamer: { difficulty: 2, damage: 3, mobility: 1 },
   wild: { difficulty: 1, damage: 2, mobility: 3 },
-  vampire: { difficulty: 1, damage: 2, mobility: 2 },
+  vampire: { difficulty: 1, damage: 2, mobility: 3 },
   brawler: { difficulty: 1, damage: 2, mobility: 3 },
   timekeeper: { difficulty: 3, damage: 1, mobility: 3 },
   riftmaker: { difficulty: 1, damage: 2, mobility: 1 },
@@ -1146,10 +1156,12 @@ function makeCodexPreviewFighter(kind, label, ownerId, x, y) {
 function createCodexActualPreviewGame(kind, skillIndex, width, height) {
   const caster = makeCodexPreviewFighter(kind, characters[kind]?.name || "캐릭터", "codex-1", width * 0.24, height * 0.55);
   const dummy = makeCodexPreviewFighter("tank", "더미", "codex-2", width * 0.76, height * 0.55);
+  dummy.kind = "dummy";
   dummy.color = "#8b95a7";
   dummy.accent = "#e5e7eb";
   dummy.damageReduction = 0;
   dummy.contactDamage = 0;
+  dummy.tankCounterShockCooldown = Infinity;
   dummy.vx = -0.5;
   dummy.vy = 0.15;
   caster.maxHp = characterMaxHp(kind);
@@ -1266,12 +1278,21 @@ function configureCodexPreviewScene(previewGame, kind, skillIndex) {
     caster.y = dummy.y = h * 0.55;
     caster.vx = dummy.vx = 0;
     caster.vy = dummy.vy = 0;
+    dummy.stunTime = 120;
   }
   if (kind === "poker" && skillIndex === 2) caster.hp = caster.maxHp * 0.45;
   if (kind === "wild" && skillIndex === 2) dummy.hp = dummy.maxHp * 0.48;
   if (kind === "vampire") {
     if (skillIndex > 0) caster.hp = caster.maxHp * 0.28;
+    if (skillIndex === 1) dummy.hp = dummy.maxHp * 0.42;
     else dummy.hp = dummy.maxHp;
+  }
+  if (kind === "tank" && skillIndex === 0) {
+    caster.x = w * 0.46;
+    dummy.x = w * 0.56;
+    caster.y = dummy.y = h * 0.55;
+    caster.vx = dummy.vx = 0;
+    caster.vy = dummy.vy = 0;
   }
   if (kind === "brawler") {
     caster.x = w * 0.42;
@@ -1364,7 +1385,7 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     return;
   }
   if (kind === "vampire" && skillIndex === 1) {
-    addCodexPreviewEvent(previewGame, 20, () => fireBloodBullet(caster));
+    addCodexPreviewEvent(previewGame, 35, () => triggerNormalSkill(caster));
     return;
   }
   if (kind === "vampire" && skillIndex === 2) {
@@ -1381,6 +1402,16 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
   }
   if (kind === "brawler" && skillIndex === 2) {
     addCodexPreviewEvent(previewGame, 90, () => triggerUltimate(caster));
+    return;
+  }
+  if (kind === "tank" && skillIndex === 0) {
+    addCodexPreviewEvent(previewGame, 40, () => damage(caster, 12, dummy));
+    addCodexPreviewEvent(previewGame, 120, () => damage(caster, 12, dummy));
+    return;
+  }
+  if (kind === "grabber" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 18, () => triggerUltimate(caster));
+    addCodexPreviewEvent(previewGame, 62, () => throwGrapple(caster, false, true));
     return;
   }
   if (kind === "timekeeper" && skillIndex === 1) {
@@ -5153,19 +5184,19 @@ function normalSkillCooldown(kind) {
   return {
     thrower: 720,
     charger: 600,
-    grabber: 900,
+    grabber: 540,
     poker: 600,
     stealth: 1020,
     enhancer: 600,
     tank: 840,
     beamer: 720,
     wild: 1080,
-    vampire: 0,
+    vampire: 900,
     brawler: 0,
     timekeeper: 540,
     riftmaker: 600,
     summoner: 720,
-    swordsman: 1800,
+    swordsman: 840,
     demon: 540,
     artist: 180,
     believer: 1200,
@@ -5184,12 +5215,12 @@ function normalSkillCooldown(kind) {
 function ultimateCooldown(kind) {
   return {
     thrower: 1800,
-    charger: 1380,
+    charger: 1800,
     grabber: 1800,
     poker: 2400,
     stealth: 2700,
     enhancer: 300,
-    tank: 2400,
+    tank: 2100,
     beamer: 3600,
     wild: 0,
     vampire: 3000,
@@ -5259,7 +5290,7 @@ function makeCharacterCombatState(kind) {
     hyperStealthActive: false,
     hyperStealthNext: false,
     stealthDamageCooldown: 0,
-    skillTimer: kind === "vampire" ? 0 : 480,
+    skillTimer: 480,
     ultimateTimer: kind === "wild" ? 0 : kind === "cosmic" ? 300 : 480,
     rageTime: 0,
     unstoppableWindup: 0,
@@ -5280,6 +5311,8 @@ function makeCharacterCombatState(kind) {
     furnaceCharges: 0,
     godWeapons: [],
     damageReduction: kind === "tank" ? 0.2 : 0,
+    tankCounterShockLock: false,
+    tankCounterShockCooldown: 0,
     shieldTime: 0,
     shieldBlastPending: false,
     silenceTime: 0,
@@ -5391,7 +5424,10 @@ function makeCharacterCombatState(kind) {
     cosmicBlasterCharging: 0,
     cosmicBlasterActive: false,
     cosmicBlasterTick: 0,
-    hackingShotTimer: kind === "hacker" ? 300 : Infinity,
+    hackingShotTimer: kind === "hacker" ? 240 : Infinity,
+    enhancedGrabCharges: 0,
+    grabBleedOwner: null,
+    grabBleedTick: 60,
     hackingMarkTime: 0,
     hackingLaserTime: 0,
     hackingLaserTick: 0,
@@ -5553,7 +5589,7 @@ function updateHud() {
   }
 }
 
-function damage(fighter, amount, attacker = null) {
+function damage(fighter, amount, attacker = null, options = {}) {
   if (amount <= 0 || game.over) return;
   if (fighter.stealthTime > 0) return;
   if (fighter.phaseTime > 0) return;
@@ -5571,10 +5607,36 @@ function damage(fighter, amount, attacker = null) {
   if (fighterActsLike(attacker, "vampire")) {
     heal(attacker, finalAmount * 0.3);
   }
+  if (actualDamage > 0 && !options.noTankCounter && attacker && attacker !== fighter) {
+    triggerTankCounterShock(fighter, attacker);
+  }
   updateHud();
   if (fighter.hp <= 0) {
     resolveBattleEnd(attacker);
   }
+}
+
+function triggerTankCounterShock(owner, attacker) {
+  if (!fighterActsLike(owner, "tank") || owner.tankCounterShockLock || owner.tankCounterShockCooldown > 0 || owner.hp <= 0) return;
+  owner.tankCounterShockLock = true;
+  owner.tankCounterShockCooldown = 60;
+  const range = 82;
+  game.shockwaves.push({
+    owner,
+    x: owner.x,
+    y: owner.y,
+    radius: 12,
+    maxRadius: range,
+    life: 18,
+    color: owner.accent || "#d5dde8"
+  });
+  [attacker, ...enemySummonsOf(owner)].forEach(target => {
+    if (!target || target.hp <= 0) return;
+    if (Math.hypot(target.x - owner.x, target.y - owner.y) > target.radius + range) return;
+    damageCombatTarget(target, 5, owner, { noTankCounter: true });
+    target.stunTime = Math.max(target.stunTime || 0, 30);
+  });
+  owner.tankCounterShockLock = false;
 }
 
 function ensureCharacterSelectCards() {
@@ -6240,7 +6302,7 @@ function updateSummons(dt) {
     const alive = summon.hp > 0 && summon.life > 0;
     if (!alive && summon.type === "hologram" && summon.owner?.hp > 0 && !summon.hologramDeathStunApplied) {
       summon.hologramDeathStunApplied = true;
-      summon.owner.stunTime = Math.max(summon.owner.stunTime || 0, 180);
+      summon.owner.stunTime = Math.max(summon.owner.stunTime || 0, 120);
       addVisualEffect({ type: "hacking-glitch", x: summon.owner.x, y: summon.owner.y, color: "#a78bfa", life: 58, maxLife: 58 });
     }
     return alive;
@@ -6668,9 +6730,9 @@ function nearestEnemyTarget(owner, x = owner.x, y = owner.y) {
   }, null) || fighter;
 }
 
-function damageCombatTarget(target, amount, attacker) {
+function damageCombatTarget(target, amount, attacker, options = {}) {
   if (target?.owner) damageSummon(target, amount, attacker);
-  else damage(target, amount, attacker);
+  else damage(target, amount, attacker, options);
 }
 
 function dodgesProjectile(target) {
@@ -7100,7 +7162,7 @@ function summonHologram(owner) {
   const angle = Math.atan2(owner.y - target.y, owner.x - target.x);
   const moveAngle = combatRandom(owner, "hologram-angle", Math.floor(game.tick / 60)) * Math.PI * 2;
   const speed = 5.8;
-  const hp = Math.max(1, owner.hp * 0.65);
+  const hp = Math.max(1, owner.hp * 0.6);
   game.summons.push({
     id: `hologram-${game.tick}-${owner.ownerId}`,
     owner,
@@ -7176,7 +7238,7 @@ function useRouletteNormal(owner) {
   const kind = roulettePick(rouletteNormalPool, owner, "normal");
   announceRoulette(owner, kind, "스킬");
   if (kind === "charger") {
-    owner.rageTime = 180;
+    owner.rageTime = 210;
     owner.gamblerBodyDamage = 10;
     owner.gamblerBodyDamageTime = 180;
   } else if (kind === "wild") {
@@ -7204,7 +7266,14 @@ function useRouletteNormal(owner) {
     target.lockOnTime = 90;
     target.lockOnPulse = 0;
   } else if (kind === "grabber") {
-    throwGrapple(owner, true, true);
+    createShockwave(owner, {
+      range: 184,
+      damage: 5,
+      stun: 120,
+      bonusDamage: 5,
+      slow: 300,
+      slowFactor: 0.5
+    });
   } else if (kind === "poker") {
     throwDrawCard(owner);
   } else if (kind === "timekeeper") {
@@ -7338,7 +7407,7 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "charger") {
-    fighter.rageTime = 180;
+    fighter.rageTime = 210;
     addVisualEffect({
       type: "rage-burst",
       fighter,
@@ -7351,8 +7420,15 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "grabber") {
-    throwGrapple(fighter, true);
-    fighter.skillTimer = 900;
+    createShockwave(fighter, {
+      range: 184,
+      damage: 5,
+      stun: 120,
+      bonusDamage: 5,
+      slow: 300,
+      slowFactor: 0.5
+    });
+    fighter.skillTimer = 540;
     return;
   }
 
@@ -7402,6 +7478,11 @@ function triggerNormalSkill(fighter) {
     fighter.chaseTime = 300;
     addSkillPulse(fighter, fighter.accent);
     fighter.skillTimer = 1080;
+    return;
+  }
+
+  if (fighter.kind === "vampire") {
+    useBloodBuster(fighter);
     return;
   }
 
@@ -7537,12 +7618,13 @@ function triggerUltimate(fighter) {
     fighter.unstoppableTime = 0;
     fighter.unstoppableHit = false;
     addSkillPulse(fighter, fighter.accent);
-    fighter.ultimateTimer = 1380;
+    fighter.ultimateTimer = 1800;
     return;
   }
 
   if (fighter.kind === "grabber") {
-    createShockwave(fighter);
+    fighter.enhancedGrabCharges = 3;
+    addSkillPulse(fighter, fighter.accent);
     fighter.ultimateTimer = 1800;
     return;
   }
@@ -7578,7 +7660,7 @@ function triggerUltimate(fighter) {
     fighter.shieldTime = 180;
     fighter.shieldBlastPending = true;
     addSkillPulse(fighter, fighter.accent);
-    fighter.ultimateTimer = 2400;
+    fighter.ultimateTimer = 2100;
     return;
   }
 
@@ -7739,7 +7821,6 @@ function skillAvailable(fighter, type) {
     return fighter.kind === "archmage" && fighter.mageLightningTimer <= 0;
   }
   if (type === "normal") {
-    if (fighter.kind === "vampire") return false;
     if (fighter.skillTimer > 0) return false;
     if (fighter.kind === "stealth" && fighter.stealthTime <= 0) return false;
     if (fighter.kind === "riftmaker" && !nearestOwnedRift(fighter)) return false;
@@ -7862,7 +7943,7 @@ function updateSkillHud() {
   ui.ultimateSkillButton.removeAttribute("data-cost");
   if (fighter.kind === "cosmic") {
     ui.normalSkillButton.setAttribute("data-cost", "별가루 15");
-    ui.ultimateSkillButton.setAttribute("data-cost", "초당 8");
+    ui.ultimateSkillButton.setAttribute("data-cost", "초당 6");
     ui.normalSkillCooldown.textContent = normalCooldown > 0 ? normalCooldown : "";
     ui.ultimateSkillCooldown.textContent = fighter.cosmicBlasterActive ? "종료" : "";
   } else {
@@ -7894,9 +7975,17 @@ function moveFighter(fighter, dt) {
   fighter.timeHistory.push({ x: fighter.x, y: fighter.y, hp: fighter.hp });
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
   if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
+  if (fighter.tankCounterShockCooldown > 0) fighter.tankCounterShockCooldown -= dt;
   if (fighter.frozenTime > 0) fighter.frozenTime -= dt;
   if (fighter.hackingMarkTime > 0) fighter.hackingMarkTime -= dt;
   updateHackingLaserEntity(fighter, dt);
+  if (fighter.grabBleedOwner?.hp > 0) {
+    fighter.grabBleedTick -= dt;
+    while (fighter.grabBleedTick <= 0 && fighter.hp > 0 && !game.over) {
+      damage(fighter, 2, fighter.grabBleedOwner, { noTankCounter: true });
+      fighter.grabBleedTick += 60;
+    }
+  }
   if (fighter.demonMarkTime > 0) {
     fighter.demonMarkTime -= dt;
     if (fighter.demonMarkTime <= 0) {
@@ -8035,7 +8124,7 @@ function moveFighter(fighter, dt) {
       fighter.hackingShotTimer -= dt;
       if (fighter.hackingShotTimer <= 0) {
         useHackingAttack(fighter);
-        fighter.hackingShotTimer += 300;
+        fighter.hackingShotTimer += 240;
       }
     }
   }
@@ -8096,7 +8185,7 @@ function moveFighter(fighter, dt) {
     }
     while (fighter.swordDanceTime <= 0 && fighter.swordDanceHits > 0 && fighter.swordDanceTimer <= 0) {
       const target = swordEnemyTarget(fighter);
-      damageCombatTarget(target, 2, fighter);
+      damageCombatTarget(target, 1, fighter);
       if (!target.owner) target.stunTime = Math.max(target.stunTime || 0, 6);
       fighter.swordDanceHits -= 1;
       fighter.swordDanceTimer += 6;
@@ -8563,6 +8652,14 @@ function moveFighter(fighter, dt) {
     }
     if (fighter.stealthTime > 0 && fighter.rouletteFormKind === "stealth") {
       fighter.stealthTime -= dt;
+      fighter.stealthDamageCooldown = Math.max(0, fighter.stealthDamageCooldown - dt);
+      const stealthTarget = nearestEnemyTarget(fighter);
+      if (stealthTarget?.hp > 0
+        && fighter.stealthDamageCooldown <= 0
+        && Math.hypot(stealthTarget.x - fighter.x, stealthTarget.y - fighter.y) < stealthTarget.radius + fighter.radius + 24) {
+        damageCombatTarget(stealthTarget, fighter.stealthDamage || 10, fighter);
+        fighter.stealthDamageCooldown = 24;
+      }
       if (fighter.stealthTime <= 0) {
         fighter.hyperStealthActive = false;
         fighter.stealthDamage = 15;
@@ -8598,7 +8695,7 @@ function moveFighter(fighter, dt) {
           fighter.throwTimer = 180;
           break;
         }
-        fighter.cosmicDust = Math.max(0, fighter.cosmicDust - 0.8);
+        fighter.cosmicDust = Math.max(0, fighter.cosmicDust - 0.6);
         hitCosmicBlaster(fighter);
         fighter.cosmicBlasterTick += 6;
       }
@@ -8775,7 +8872,7 @@ function useSwordBasic(owner) {
   owner.y = clamp(target.y, owner.radius, canvas.height - owner.radius);
   owner.vx = 0;
   owner.vy = 0;
-  applySwordCircle(owner, 8, 88);
+  applySwordCircle(owner, 10, 88);
   addVisualEffect({
     type: "sword-step",
     x1: fromX,
@@ -8840,7 +8937,7 @@ function beginSwordDance(owner) {
   owner.swordDanceTime = 180;
   owner.swordDanceTimer = 180;
   owner.swordDanceHits = 10;
-  owner.skillTimer = 1800;
+  owner.skillTimer = 840;
   addSkillPulse(owner, owner.accent);
 }
 
@@ -9399,21 +9496,25 @@ function throwGrapple(owner, enhanced = false, force = false) {
   if ((!owner.canGrab && !force) || game.over) return;
   const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const empowered = !enhanced && owner.enhancedGrabCharges > 0;
+  if (empowered) owner.enhancedGrabCharges -= 1;
   game.grapples.push({
     owner,
     angle,
     length: owner.radius + 8,
     maxLength: enhanced ? 940 : 470,
-    speed: enhanced ? 19 : 11,
+    speed: enhanced ? 19 : empowered ? 15.4 : 11,
     enhanced,
+    empowered,
+    radius: empowered ? 20.3 : 14,
     hit: false,
     life: 50
   });
 }
 
-function createShockwave(owner) {
+function createShockwave(owner, options = {}) {
   const target = nearestEnemyTarget(owner);
-  const range = 230;
+  const range = options.range || 230;
   game.shockwaves.push({
     owner,
     x: owner.x,
@@ -9424,11 +9525,19 @@ function createShockwave(owner) {
     color: owner.accent
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damageCombatTarget(target, 40, owner);
+    const wasStunned = (target.stunTime || 0) > 0 || (target.frozenTime || 0) > 0;
+    damageCombatTarget(target, (options.damage || 40) + (wasStunned ? options.bonusDamage || 0 : 0), owner);
     if (!target.owner) {
-      target.stunTime = Math.max(target.stunTime, 60);
-      target.vx *= 0.25;
-      target.vy *= 0.25;
+      target.stunTime = Math.max(target.stunTime, options.stun || 60);
+      if (wasStunned && options.slow) {
+        target.slowTime = Math.max(target.slowTime || 0, options.slow);
+        const slowFactor = options.slowFactor || 0.5;
+        target.vx *= slowFactor;
+        target.vy *= slowFactor;
+      } else {
+        target.vx *= 0.25;
+        target.vy *= 0.25;
+      }
     }
   }
 }
@@ -9512,6 +9621,30 @@ function fireBloodBullet(owner) {
   });
 }
 
+function useBloodBuster(owner) {
+  const target = opponentOf(owner);
+  if (!target || target.hp <= 0) return;
+  const angle = Math.atan2(target.vy || target.y - owner.y, target.vx || target.x - owner.x);
+  const backAngle = Number.isFinite(angle) ? angle + Math.PI : Math.atan2(owner.y - target.y, owner.x - target.x);
+  owner.x = clamp(target.x + Math.cos(backAngle) * (target.radius + owner.radius + 10), owner.radius, canvas.width - owner.radius);
+  owner.y = clamp(target.y + Math.sin(backAngle) * (target.radius + owner.radius + 10), owner.radius, canvas.height - owner.radius);
+  owner.vx = Math.cos(backAngle) * 7.5;
+  owner.vy = Math.sin(backAngle) * 7.5;
+  const missingHpDamage = Math.max(0, target.maxHp - target.hp) * 0.2;
+  damage(target, missingHpDamage, owner);
+  addVisualEffect({
+    type: "demon-claw",
+    x: target.x,
+    y: target.y,
+    color: "#ff5f87",
+    life: 28,
+    maxLife: 28
+  });
+  addSkillPulse(owner, owner.accent);
+  owner.skillTimer = 900;
+}
+
+
 function launchGodWeapon(owner, power) {
   const target = nearestEnemyTarget(owner);
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
@@ -9543,14 +9676,14 @@ function createTankBlast(owner) {
     color: "#d5dde8"
   });
   if (Math.hypot(target.x - owner.x, target.y - owner.y) < target.radius + range) {
-    damageCombatTarget(target, 45, owner);
+    damageCombatTarget(target, 50, owner);
     if (!target.owner) target.stunTime = Math.max(target.stunTime, 180);
   }
 }
 
 function punchTarget(owner, target) {
-  const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
-  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
+  const stackBonus = Math.min(20, owner.brawlerSpeedStacks * 4);
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + stackBonus : 5;
   damage(target, baseDamage, owner);
   owner.punchTimer = 60;
   owner.idleAttackTime = 0;
@@ -9564,8 +9697,8 @@ function punchTarget(owner, target) {
 }
 
 function punchSummon(owner, summon) {
-  const speedRatio = Math.min(1, owner.brawlerSpeedStacks * 0.2);
-  const baseDamage = owner.dragonFistTime > 0 ? 15 + speedRatio * 15 : 8;
+  const stackBonus = Math.min(20, owner.brawlerSpeedStacks * 4);
+  const baseDamage = owner.dragonFistTime > 0 ? 15 + stackBonus : 5;
   damageSummon(summon, baseDamage, owner);
   owner.punchTimer = 60;
   owner.idleAttackTime = 0;
@@ -9897,28 +10030,36 @@ function updateGrapples(dt) {
   game.grapples = game.grapples.filter(grapple => {
     grapple.length += grapple.speed * dt;
     grapple.life -= dt;
-    const target = grapple.owner === game.fighters[0] ? game.fighters[1] : game.fighters[0];
+    const target = opponentOf(grapple.owner);
     const endX = grapple.owner.x + Math.cos(grapple.angle) * grapple.length;
     const endY = grapple.owner.y + Math.sin(grapple.angle) * grapple.length;
-    const summonTarget = collidingEnemySummon(grapple.owner, endX, endY, 14);
+    const hitRadius = grapple.radius || 14;
+    const summonTarget = collidingEnemySummon(grapple.owner, endX, endY, hitRadius);
     if (summonTarget && !grapple.hit) {
       grapple.hit = true;
-      damageSummon(summonTarget, 20, grapple.owner);
+      const stunned = (summonTarget.stunTime || 0) > 0;
+      damageSummon(summonTarget, 15 + (stunned && !grapple.empowered ? 10 : 0), grapple.owner);
+      summonTarget.stunTime = Math.max(summonTarget.stunTime || 0, grapple.empowered ? 90 : 60);
       return false;
     }
-    const hit = Math.hypot(target.x - endX, target.y - endY) < target.radius + 14;
+    const hit = Math.hypot(target.x - endX, target.y - endY) < target.radius + hitRadius;
 
     if (hit && !grapple.hit) {
       if (target.stealthTime > 0) return false;
       grapple.hit = true;
+      const wasStunned = (target.stunTime || 0) > 0 || (target.frozenTime || 0) > 0;
       const pullAngle = Math.atan2(grapple.owner.y - target.y, grapple.owner.x - target.x);
       target.x += Math.cos(pullAngle) * 70;
       target.y += Math.sin(pullAngle) * 70;
       target.vx = Math.cos(pullAngle) * 5.2;
       target.vy = Math.sin(pullAngle) * 5.2;
       bounceOnWalls(target);
-      damage(target, 20, grapple.owner);
-      target.stunTime = Math.max(target.stunTime, 30);
+      damage(target, 15 + (wasStunned && !grapple.empowered ? 10 : 0), grapple.owner);
+      target.stunTime = Math.max(target.stunTime, grapple.empowered ? 90 : 60);
+      if (grapple.empowered && wasStunned) {
+        target.grabBleedOwner = grapple.owner;
+        target.grabBleedTick = Math.min(target.grabBleedTick || 60, 60);
+      }
       return false;
     }
     return grapple.length < grapple.maxLength && grapple.life > 0;
@@ -12414,10 +12555,10 @@ function triggerExplosionBoost(owner) {
     knockback: 24,
     affectsOwner: true
   });
-  selfDamage(owner, 4);
+  selfDamage(owner, 2);
   const angle = explosionBounceAngle(owner);
-  owner.vx = Math.cos(angle) * 18;
-  owner.vy = Math.sin(angle) * 18;
+  owner.vx = Math.cos(angle) * 9;
+  owner.vy = Math.sin(angle) * 9;
   owner.explosionRushTime = 28;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
@@ -13744,6 +13885,10 @@ function damagePvePlayer(amount) {
   player.damageTaken += actualDamage;
   pveGame.player.hitFlash = 10;
   addPveDamage(player.x, player.y - 36, Math.round(amount * 10) / 10);
+  if (actualDamage > 0 && player.kind === "tank" && player.tankCounterShockCooldown <= 0) {
+    player.tankCounterShockCooldown = 60;
+    createPveAreaAttack(player.x, player.y, 82, 5, 0, player.accent, "shockwave", 30);
+  }
   if (player.hp <= 0) finishPve(false);
 }
 
@@ -13893,12 +14038,16 @@ function launchPveGodWeapon(power) {
 function firePveGrapple(enhanced = false) {
   const target = nearestPveEnemy();
   if (!target) return;
+  const empowered = !enhanced && pveGame.player.enhancedGrabCharges > 0;
+  if (empowered) pveGame.player.enhancedGrabCharges -= 1;
   pveGame.grapples.push({
     angle: Math.atan2(target.y - pveGame.player.y, target.x - pveGame.player.x),
     length: pveGame.player.radius,
     maxLength: enhanced ? 940 : 470,
-    speed: enhanced ? 19 : 11,
+    speed: enhanced ? 19 : empowered ? 15.4 : 11,
     enhanced,
+    empowered,
+    radius: empowered ? 20.3 : 14,
     life: enhanced ? 70 : 50
   });
 }
@@ -13911,7 +14060,7 @@ function usePveSkill(type) {
   if (!pveGame || pveGame.over) return;
   const player = pveGame.player;
   if (player.stunTime > 0 || player.silenceTime > 0) return;
-  if (type === "normal" && (player.kind === "vampire" || player.kind === "brawler")) return;
+  if (type === "normal" && player.kind === "brawler") return;
   if (type === "ultimate" && (player.kind === "wild" || player.kind === "brawler")) return;
   const timerKey = type === "normal" ? "skillTimer" : "ultimateTimer";
   if (player[timerKey] > 0) return;
@@ -13926,13 +14075,13 @@ function usePveSkill(type) {
       player.skillTimer = 840;
       addPveFloating("룩 온!", player.accent);
     } else if (player.kind === "charger") {
-      player.rageTime = 180;
+      player.rageTime = 210;
       player.skillTimer = 600;
       addPveFloating("격노!", player.accent);
     } else if (player.kind === "grabber") {
-      firePveGrapple(true);
-      player.skillTimer = 900;
-      addPveFloating("강화 그랩!", player.accent);
+      createPveAreaAttack(player.x, player.y, 184, 5, 0, player.accent, "shockwave", 120);
+      player.skillTimer = 540;
+      addPveFloating("충격파!", player.accent);
     } else if (player.kind === "poker") {
       throwPveDrawCard();
       player.skillTimer = 600;
@@ -13972,6 +14121,13 @@ function usePveSkill(type) {
       player.chaseTime = 300;
       player.skillTimer = 1080;
       addPveFloating("추격!", player.accent);
+    } else if (player.kind === "vampire" && target) {
+      const angle = Math.atan2(player.y - target.y, player.x - target.x);
+      player.x = clamp(target.x + Math.cos(angle) * (target.radius + player.radius + 10), player.radius, pveCanvas.width - player.radius);
+      player.y = clamp(target.y + Math.sin(angle) * (target.radius + player.radius + 10), player.radius, pveCanvas.height - player.radius);
+      damagePveEnemy(target, Math.max(0, target.maxHp - target.hp) * 0.2);
+      player.skillTimer = 900;
+      addPveFloating("블러드 버스터!", player.accent);
     }
   } else {
     if (player.kind === "thrower") {
@@ -13988,12 +14144,12 @@ function usePveSkill(type) {
       player.unstoppableWindup = 24;
       player.unstoppableTime = 0;
       player.unstoppableHits = [];
-      player.ultimateTimer = 1380;
+      player.ultimateTimer = 1800;
       addPveFloating("집중...", player.accent);
     } else if (player.kind === "grabber") {
-      createPveAreaAttack(player.x, player.y, 230, 40, 0, player.accent, "shockwave", 60);
+      player.enhancedGrabCharges = 3;
       player.ultimateTimer = 1800;
-      addPveFloating("충격파!", player.accent);
+      addPveFloating("강화 그랩!", player.accent);
     } else if (player.kind === "poker") {
       const roll = pveRandomIndex(6) + 1;
       healPvePlayer(roll * 5);
@@ -14011,8 +14167,8 @@ function usePveSkill(type) {
     } else if (player.kind === "tank") {
       player.shieldTime = 180;
       player.shieldBlastPending = true;
-      player.ultimateTimer = 2400;
-      addPveFloating("야수의 방패!", player.accent);
+      player.ultimateTimer = 2100;
+      addPveFloating("기사의 방패!", player.accent);
     } else if (player.kind === "beamer") {
       player.annihilatorTime = 180;
       player.shotTimer = 1;
@@ -14033,7 +14189,7 @@ function updatePveSkillHud() {
   if (!pveGame) return;
   const player = pveGame.player;
   const names = skillNames[player.kind];
-  const passiveNormal = player.kind === "vampire" || player.kind === "brawler";
+  const passiveNormal = player.kind === "brawler";
   const passiveUltimate = player.kind === "wild" || player.kind === "brawler";
   const normalCooldown = cooldownSeconds(player.skillTimer);
   const ultimateCooldown = cooldownSeconds(player.ultimateTimer);
@@ -14209,6 +14365,7 @@ function stepPve() {
   }
   bouncePveBody(player);
   if (player.hitFlash > 0) player.hitFlash -= 1;
+  if (player.tankCounterShockCooldown > 0) player.tankCounterShockCooldown -= 1;
   player.shotTimer -= 1;
   if (player.shotTimer <= 0) {
     if (player.kind === "thrower") {
@@ -14239,7 +14396,7 @@ function stepPve() {
     } else if (player.kind === "brawler") {
       if (closest && Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius + 52) {
         const directContact = Math.hypot(closest.x - player.x, closest.y - player.y) < player.radius + closest.radius;
-        damagePveEnemy(closest, directContact ? 8 : 5);
+        damagePveEnemy(closest, 5);
         player.idleAttackTime = 0;
       }
       player.shotTimer = 90;
@@ -14492,16 +14649,18 @@ function stepPve() {
     grapple.life -= 1;
     const endX = player.x + Math.cos(grapple.angle) * grapple.length;
     const endY = player.y + Math.sin(grapple.angle) * grapple.length;
+    const grappleRadius = grapple.radius || 14;
     const enemy = pveGame.enemies.find(item => item.hp > 0
-      && Math.hypot(item.x - endX, item.y - endY) < item.radius + 14);
+      && Math.hypot(item.x - endX, item.y - endY) < item.radius + grappleRadius);
     if (enemy) {
+      const wasStunned = (enemy.stunTime || 0) > 0;
       const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
       enemy.x += Math.cos(angle) * 70;
       enemy.y += Math.sin(angle) * 70;
       enemy.vx = Math.cos(angle) * 5.2;
       enemy.vy = Math.sin(angle) * 5.2;
-      enemy.stunTime = 30;
-      damagePveEnemy(enemy, 20);
+      enemy.stunTime = grapple.empowered ? 90 : 60;
+      damagePveEnemy(enemy, 15 + (wasStunned && !grapple.empowered ? 10 : 0));
       return false;
     }
     return grapple.life > 0 && grapple.length < grapple.maxLength;
