@@ -13626,7 +13626,23 @@ const SURVIVAL_WEAPONS = {
   growingFaith: { name: "커져가는 신앙", awakenedName: "황금 십자가", icon: "H", color: "#facc15", item: "holyRelic", baseCooldown: 450, description: "맵 중앙의 십자가 빛이 적을 태우고 자신을 조금 회복합니다.", awakenedDescription: "커다란 황금 십자가가 여러 번 빛나며 전장을 정화합니다." },
   mageLightning: { name: "벼락", awakenedName: "천벌 기록", icon: "Z", color: "#facc15", item: "akashicTome", baseCooldown: 300, description: "가까운 적에게 낙뢰를 떨어뜨려 피해를 줍니다.", awakenedDescription: "연속 낙뢰가 여러 적을 강타하고 작은 폭발을 남깁니다." },
   mageFire: { name: "작열", awakenedName: "멸화 운석", icon: "火", color: "#fb923c", item: "akashicTome", baseCooldown: 480, description: "잠시 후 적 위치에 커다란 파이어 볼을 떨어뜨립니다.", awakenedDescription: "거대한 운석 3개가 넓은 범위를 불태웁니다." },
-  mageSea: { name: "창해", awakenedName: "심해 성역", icon: "海", color: "#38bdf8", item: "akashicTome", baseCooldown: 600, description: "전장에 심해의 물결을 일으켜 적을 느리게 만들고 피해를 줍니다.", awakenedDescription: "맵 전체에 강한 심해 파동이 반복적으로 밀려옵니다." }
+  mageSea: { name: "창해", awakenedName: "심해 성역", icon: "海", color: "#38bdf8", item: "akashicTome", baseCooldown: 600, description: "전장에 심해의 물결을 일으켜 적을 느리게 만들고 피해를 줍니다.", awakenedDescription: "맵 전체에 강한 심해 파동이 반복적으로 밀려옵니다." },
+  pistol: { name: "권총 난사", awakenedName: "황금 탄막", icon: "Y", color: "#f59e0b", item: "quickLoader", baseCooldown: 150, description: "가장 가까운 적에게 빠른 총알을 연속 발사합니다.", awakenedDescription: "황금 총알이 부채꼴로 쏟아지고 적을 관통합니다." },
+  machineGun: { name: "기관총", awakenedName: "불릿 스톰", icon: "Y", color: "#fb923c", item: "gunBarrel", baseCooldown: 420, description: "짧은 시간 여러 발의 기관총 탄환을 퍼붓습니다.", awakenedDescription: "훨씬 많은 탄환이 화면을 가르며 일부가 적을 추적합니다." },
+  icicleShot: { name: "고드름", awakenedName: "빙결 창우", icon: "I", color: "#7dd3fc", item: "frostCrystal", baseCooldown: 230, description: "얼음 고드름 두 개를 발사해 적을 느리게 만듭니다.", awakenedDescription: "거대한 고드름들이 관통하며 얼음 파편 폭발을 남깁니다." },
+  blizzardEssence: { name: "얼음 정수", awakenedName: "이터널 블리자드", icon: "I", color: "#bae6fd", item: "snowHalo", baseCooldown: 540, description: "느리게 유도되는 얼음 정수를 날려 범위 피해와 둔화를 줍니다.", awakenedDescription: "영롱한 얼음 정수 3개가 적을 추적하고 얼음 폭발을 일으킵니다." },
+  explosionBoost: { name: "익스플로전 부스트", awakenedName: "연쇄 폭압", icon: "X", color: "#fb7185", item: "blastCore", baseCooldown: 210, description: "자신 주변에 폭발을 일으키고 가까운 적을 밀어냅니다.", awakenedDescription: "여러 번의 연쇄 폭발이 자신과 적 주변에서 터집니다." },
+  houserImpact: { name: "하우저 임팩트", awakenedName: "폭격 축제", icon: "X", color: "#f97316", item: "detonator", baseCooldown: 520, description: "무작위 적 주변에 폭발 포격을 떨어뜨립니다.", awakenedDescription: "전장 곳곳에 초대형 폭발 포격이 연속으로 떨어집니다." },
+  ropeStrike: { name: "로프 타격", awakenedName: "와이어 스매시", icon: "O", color: "#d6a35d", item: "ropeHook", baseCooldown: 260, description: "로프를 타고 날아드는 충격파를 발사해 적을 기절시킵니다.", awakenedDescription: "굵은 와이어 타격 3개가 적을 관통하며 강하게 기절시킵니다." },
+  ropeRush: { name: "로프 러쉬", awakenedName: "타잔 러쉬", icon: "O", color: "#fbbf24", item: "swingTotem", baseCooldown: 510, description: "적 주변을 연속 타격하는 로프 충격을 일으킵니다.", awakenedDescription: "퍽퍽 터지는 로프 타격이 여러 적 위치에서 연속 발생합니다." },
+  rouletteShot: { name: "룰렛", awakenedName: "잭팟 룰렛", icon: "?", color: "#fb7185", item: "luckyChip", baseCooldown: 300, description: "무작위 형태의 탄환이나 폭발 공격을 발동합니다.", awakenedDescription: "여러 룰렛 공격이 동시에 터지며 운 좋으면 거대한 잭팟 폭발이 발생합니다." },
+  ultimateRoulette: { name: "궁극 룰렛", awakenedName: "카오스 카지노", icon: "?", color: "#facc15", item: "chaosDice", baseCooldown: 720, description: "서로 다른 무작위 공격을 세 번 연속 발동합니다.", awakenedDescription: "화면을 뒤덮는 룰렛 연쇄 공격이 여섯 번 발동합니다." },
+  supernova: { name: "초신성", awakenedName: "은하 붕괴", icon: "U", color: "#818cf8", item: "stardust", baseCooldown: 430, description: "적 주변에 큰 초신성 폭발을 일으킵니다.", awakenedDescription: "별빛 고리가 겹쳐지는 초대형 은하 폭발이 연속 발생합니다." },
+  cosmicBlaster: { name: "코스믹 블래스터", awakenedName: "우주 절단포", icon: "U", color: "#a78bfa", item: "cosmicLens", baseCooldown: 560, description: "적 방향으로 넓은 우주 레이저를 발사합니다.", awakenedDescription: "검푸른 우주 광선 여러 줄이 전장을 절단합니다." },
+  hackingBullet: { name: "해킹 탄환", awakenedName: "코드 침식", icon: "#", color: "#34d399", item: "codeChip", baseCooldown: 300, description: "빠른 해킹 탄환을 맞힌 뒤 코드 레이저로 추가 피해를 줍니다.", awakenedDescription: "해킹 탄환이 분열하고 코드 레이저가 적을 연속 침식합니다." },
+  hologramLaser: { name: "홀로그램", awakenedName: "다중 홀로그램", icon: "#", color: "#22d3ee", item: "holoCore", baseCooldown: 620, description: "가상 분신 위치에서 해킹 레이저를 발사합니다.", awakenedDescription: "여러 홀로그램이 동시에 교차 레이저를 쏩니다." },
+  rockShard: { name: "지각파편", awakenedName: "암석 난류", icon: "G", color: "#a16207", item: "stoneShard", baseCooldown: 240, description: "투박한 바위 파편을 적에게 발사합니다.", awakenedDescription: "거대한 암석 파편들이 적을 관통하고 묵직한 파열을 남깁니다." },
+  gaiaWall: { name: "데스오브가이아", awakenedName: "가이아 성벽", icon: "G", color: "#78716c", item: "gaiaRune", baseCooldown: 500, description: "적 앞에 세로로 솟는 바위벽을 세워 피해를 줍니다.", awakenedDescription: "여러 개의 거대한 바위벽이 전장을 갈라버립니다." }
 };
 
 const SURVIVAL_ITEMS = {
@@ -13648,7 +13664,23 @@ const SURVIVAL_ITEMS = {
   demonSigil: { name: "악마의 표식", icon: "M", weapon: "deathSword", description: "악마 계열 공격이 적을 둔화시키고 입힌 피해 일부를 회복합니다.", effect: "검기 둔화 + 흡혈" },
   prismInk: { name: "프리즘 물감", icon: "A", weapon: "artOrbit", description: "예술 구체의 수와 유지 시간이 증가합니다.", effect: "궤도 구체 강화" },
   holyRelic: { name: "성스러운 유물", icon: "H", weapon: "growingFaith", description: "신앙 계열 공격이 발동할 때 회복량과 빛의 횟수가 증가합니다.", effect: "신앙 회복 강화" },
-  akashicTome: { name: "아카식 기록서", icon: "Z", weapon: "mageLightning", description: "대마법 계열 무기의 범위와 타격 횟수가 증가합니다.", effect: "원소 마법 강화" }
+  akashicTome: { name: "아카식 기록서", icon: "Z", weapon: "mageLightning", description: "대마법 계열 무기의 범위와 타격 횟수가 증가합니다.", effect: "원소 마법 강화" },
+  quickLoader: { name: "고속 탄창", icon: "Y", weapon: "pistol", description: "권총 계열 탄환 수와 탄속이 증가합니다.", effect: "권총 탄막 강화" },
+  gunBarrel: { name: "냉각 총열", icon: "Y", weapon: "machineGun", description: "기관총 계열 탄환이 더 오래 유지되고 일부가 관통합니다.", effect: "기관총 지속 강화" },
+  frostCrystal: { name: "서리 결정", icon: "I", weapon: "icicleShot", description: "얼음 탄환이 더 넓게 퍼지고 둔화가 강해집니다.", effect: "고드름 강화" },
+  snowHalo: { name: "빙설의 고리", icon: "I", weapon: "blizzardEssence", description: "얼음 정수 폭발 범위와 둔화 효과가 증가합니다.", effect: "정수 폭발 강화" },
+  blastCore: { name: "폭압 코어", icon: "X", weapon: "explosionBoost", description: "폭발 계열 공격의 범위와 밀쳐내는 힘이 증가합니다.", effect: "폭발 범위 증가" },
+  detonator: { name: "원격 기폭장치", icon: "X", weapon: "houserImpact", description: "포격 폭발 횟수와 폭발 예고 시간이 증가합니다.", effect: "폭격 연쇄 강화" },
+  ropeHook: { name: "강철 갈고리", icon: "O", weapon: "ropeStrike", description: "로프 계열 타격이 더 넓어지고 기절 시간이 증가합니다.", effect: "로프 기절 강화" },
+  swingTotem: { name: "스윙 토템", icon: "O", weapon: "ropeRush", description: "로프 러쉬의 타격 횟수와 타격감이 증가합니다.", effect: "연속 타격 강화" },
+  luckyChip: { name: "행운 칩", icon: "?", weapon: "rouletteShot", description: "룰렛 공격이 더 강한 결과를 뽑을 확률이 증가합니다.", effect: "룰렛 확률 강화" },
+  chaosDice: { name: "혼돈 주사위", icon: "?", weapon: "ultimateRoulette", description: "궁극 룰렛이 더 많은 공격을 섞어 발동합니다.", effect: "룰렛 연쇄 강화" },
+  stardust: { name: "별가루", icon: "U", weapon: "supernova", description: "우주 계열 폭발의 범위와 기절 시간이 증가합니다.", effect: "초신성 강화" },
+  cosmicLens: { name: "우주 렌즈", icon: "U", weapon: "cosmicBlaster", description: "코스믹 블래스터가 더 넓어지고 검푸른 잔광을 남깁니다.", effect: "우주 광선 강화" },
+  codeChip: { name: "코드 칩", icon: "#", weapon: "hackingBullet", description: "해킹 탄환이 더 빨라지고 레이저 타격 수가 증가합니다.", effect: "코드 침식 강화" },
+  holoCore: { name: "홀로 코어", icon: "#", weapon: "hologramLaser", description: "홀로그램 레이저의 발사 위치가 늘어납니다.", effect: "분신 레이저 강화" },
+  stoneShard: { name: "압축 암편", icon: "G", weapon: "rockShard", description: "지각파편의 피해와 관통력이 증가합니다.", effect: "암석 파편 강화" },
+  gaiaRune: { name: "가이아 룬", icon: "G", weapon: "gaiaWall", description: "바위벽이 더 크게 솟고 여러 줄로 갈라집니다.", effect: "바위벽 강화" }
 };
 
 const SURVIVAL_SUBS = [
@@ -15063,6 +15095,7 @@ function spawnSurvivalProjectile(options) {
     bounce: Boolean(options.bounce),
     homing: Boolean(options.homing),
     slow: Boolean(options.slow),
+    stun: options.stun || 0,
     visual: options.visual || "orb",
     label: options.label || "",
     trail: options.trail || "",
@@ -15603,6 +15636,316 @@ function fireSurvivalWeapon(id) {
         type: "shockwave",
         slow: true,
         pull: itemOwned || entry.awakened ? 32 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "pistol") {
+    const count = entry.awakened ? 7 : itemOwned ? 3 : 2;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.075, entry.awakened ? 28 : itemOwned ? 25 : 22, entry.awakened ? 8.5 : 7.5, 5.5, {
+        color: entry.awakened ? "#fde68a" : "#f59e0b",
+        pierce: entry.awakened ? 3 : itemOwned ? 1 : 0,
+        life: 95,
+        visual: "bullet",
+        trail: entry.awakened ? "#fef3c7" : "#f59e0b"
+      });
+    }
+  } else if (id === "machineGun") {
+    const count = entry.awakened ? 28 : itemOwned ? 18 : 12;
+    for (let index = 0; index < count; index += 1) {
+      const jitter = (pveRandomIndex(101) - 50) / 1000;
+      projectile((index - (count - 1) / 2) * 0.014 + jitter, entry.awakened ? 23 : 19, entry.awakened ? 2 : 1.2, entry.awakened ? 4.8 : 3.8, {
+        color: index % 3 === 0 ? "#fde68a" : "#fb923c",
+        homing: entry.awakened && index % 4 === 0,
+        pierce: entry.awakened ? 1 : itemOwned && index % 3 === 0 ? 1 : 0,
+        life: 105 + index * 2,
+        visual: "bullet",
+        trail: "#fb923c"
+      });
+    }
+  } else if (id === "icicleShot") {
+    const count = entry.awakened ? 5 : 2;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.12, entry.awakened ? 18 : 16, entry.awakened ? 10 : 7, entry.awakened ? 10 : 7, {
+        color: index % 2 ? "#e0f2fe" : "#7dd3fc",
+        pierce: entry.awakened ? 4 : itemOwned ? 1 : 0,
+        life: 150,
+        slow: true,
+        visual: "iceShard",
+        trail: "#bae6fd",
+        explosionRadius: entry.awakened ? 48 : itemOwned ? 26 : 0,
+        explosionDamage: entry.awakened ? 4 * stats.damageScale : itemOwned ? 2 * stats.damageScale : 0
+      });
+    }
+  } else if (id === "blizzardEssence") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.18, entry.awakened ? 9.5 : 7.5, entry.awakened ? 16 : 12, entry.awakened ? 17 : 13, {
+        color: "#bae6fd",
+        homing: true,
+        pierce: entry.awakened ? 4 : 1,
+        life: 270,
+        slow: true,
+        stun: entry.awakened ? 42 : itemOwned ? 20 : 0,
+        visual: "iceShard",
+        trail: "#e0f2fe",
+        explosionRadius: (entry.awakened ? 120 : itemOwned ? 82 : 58) * stats.sizeScale,
+        explosionDamage: (entry.awakened ? 12 : 7) * stats.damageScale
+      });
+    }
+  } else if (id === "explosionBoost") {
+    const blasts = entry.awakened ? 4 : itemOwned ? 2 : 1;
+    for (let index = 0; index < blasts; index += 1) {
+      const blastAngle = angle + index * Math.PI * 2 / blasts;
+      pveGame.areaAttacks.push({
+        x: player.x + Math.cos(blastAngle) * (index ? 80 : 0),
+        y: player.y + Math.sin(blastAngle) * (index ? 80 : 0),
+        radius: (entry.awakened ? 145 : itemOwned ? 112 : 90) * stats.sizeScale,
+        damage: (entry.awakened ? 18 : 12) * stats.damageScale,
+        delay: index * 7,
+        life: 34 + index * 7,
+        hit: false,
+        color: index % 2 ? "#f97316" : "#fb7185",
+        type: "shockwave",
+        stun: entry.awakened ? 12 : 0,
+        pull: itemOwned ? -48 : -28,
+        survival: true
+      });
+    }
+  } else if (id === "houserImpact") {
+    const targets = pveGame.enemies.filter(enemy => enemy.hp > 0);
+    const count = entry.awakened ? 12 : itemOwned ? 7 : 4;
+    for (let index = 0; index < count; index += 1) {
+      const victim = targets[pveRandomIndex(Math.max(1, targets.length))] || target;
+      pveGame.areaAttacks.push({
+        x: clamp(victim.x + pveRandomIndex(181) - 90, 50, pveCanvas.width - 50),
+        y: clamp(victim.y + pveRandomIndex(181) - 90, 50, pveCanvas.height - 50),
+        radius: (entry.awakened ? 115 : 78) * stats.sizeScale,
+        damage: (entry.awakened ? 22 : 14) * stats.damageScale,
+        delay: 22 + index * (entry.awakened ? 5 : 8),
+        life: 56 + index * 7,
+        hit: false,
+        color: index % 3 === 0 ? "#fde68a" : "#f97316",
+        type: "shockwave",
+        stun: entry.awakened && index % 3 === 0 ? 14 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "ropeStrike") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.16, 21, entry.awakened ? 13 : 9, itemOwned ? 15 : 11, {
+        color: "#d6a35d",
+        pierce: entry.awakened ? 8 : 2,
+        life: 105,
+        visual: "rope",
+        trail: "#fbbf24",
+        stun: entry.awakened ? 36 : itemOwned ? 24 : 14,
+        pullStrength: itemOwned || entry.awakened ? 18 : 0
+      });
+    }
+  } else if (id === "ropeRush") {
+    const targets = pveGame.enemies.filter(enemy => enemy.hp > 0);
+    const count = entry.awakened ? 8 : itemOwned ? 5 : 4;
+    for (let index = 0; index < count; index += 1) {
+      const victim = targets[pveRandomIndex(Math.max(1, targets.length))] || target;
+      pveGame.areaAttacks.push({
+        x: victim.x + Math.cos(index * 2.4) * 45,
+        y: victim.y + Math.sin(index * 2.4) * 45,
+        radius: (entry.awakened ? 74 : 54) * stats.sizeScale,
+        damage: (entry.awakened ? 13 : 8) * stats.damageScale,
+        delay: 12 + index * 9,
+        life: 38 + index * 9,
+        hit: false,
+        color: index % 2 ? "#d6a35d" : "#fbbf24",
+        type: "shockwave",
+        stun: 18,
+        pull: itemOwned ? 18 : 0,
+        survival: true
+      });
+    }
+  } else if (id === "rouletteShot") {
+    const jackpot = entry.awakened || (itemOwned && pveRandomIndex(100) < 18);
+    const roll = pveRandomIndex(4);
+    if (roll === 0) {
+      const count = jackpot ? 5 : 2;
+      for (let index = 0; index < count; index += 1) {
+        projectile((index - (count - 1) / 2) * 0.13, 18, jackpot ? 12 : 8, 8, {
+          color: index % 2 ? "#facc15" : "#fb7185",
+          pierce: jackpot ? 3 : 0,
+          life: 140,
+          visual: "card",
+          label: "?",
+          trail: "#facc15"
+        });
+      }
+    } else if (roll === 1) {
+      pveGame.areaAttacks.push({
+        x: target.x, y: target.y, radius: (jackpot ? 150 : 90) * stats.sizeScale,
+        damage: (jackpot ? 24 : 13) * stats.damageScale, delay: 18, life: 48,
+        hit: false, color: "#facc15", type: "shockwave", stun: jackpot ? 28 : 0, survival: true
+      });
+    } else if (roll === 2) {
+      projectile(0, 16, jackpot ? 20 : 11, jackpot ? 15 : 10, {
+        color: "#22d3ee", homing: true, pierce: jackpot ? 4 : 1, life: 220, visual: "star", trail: "#22d3ee"
+      });
+    } else {
+      const length = Math.hypot(pveCanvas.width, pveCanvas.height);
+      pveGame.areaAttacks.push({
+        x: player.x, y: player.y, x1: player.x, y1: player.y,
+        x2: player.x + Math.cos(angle) * length,
+        y2: player.y + Math.sin(angle) * length,
+        radius: (jackpot ? 34 : 21) * stats.sizeScale,
+        damage: (jackpot ? 22 : 12) * stats.damageScale,
+        delay: 8, life: 32, hit: false, color: "#a78bfa", type: "lineLaser", survival: true
+      });
+    }
+  } else if (id === "ultimateRoulette") {
+    const repeats = entry.awakened ? 6 : itemOwned ? 4 : 3;
+    for (let index = 0; index < repeats; index += 1) {
+      const roll = pveRandomIndex(3);
+      const color = ["#facc15", "#fb7185", "#22d3ee"][roll];
+      pveGame.areaAttacks.push({
+        x: roll === 0 ? target.x : pveRandomIndex(pveCanvas.width),
+        y: roll === 0 ? target.y : pveRandomIndex(pveCanvas.height),
+        radius: (entry.awakened ? 130 : 88) * stats.sizeScale,
+        damage: (entry.awakened ? 20 : 12) * stats.damageScale,
+        delay: 12 + index * 11,
+        life: 46 + index * 11,
+        hit: false,
+        color,
+        type: roll === 2 ? "slash" : "shockwave",
+        stun: roll === 1 ? 24 : 0,
+        slow: roll === 2,
+        survival: true
+      });
+    }
+  } else if (id === "supernova") {
+    const count = entry.awakened ? 3 : 1;
+    for (let index = 0; index < count; index += 1) {
+      const novaX = entry.awakened ? clamp(target.x + (index - 1) * 110, 80, pveCanvas.width - 80) : target.x;
+      pveGame.areaAttacks.push({
+        x: novaX,
+        y: target.y,
+        radius: (entry.awakened ? 170 : itemOwned ? 135 : 110) * stats.sizeScale,
+        damage: (entry.awakened ? 25 : 15) * stats.damageScale,
+        delay: 34 + index * 12,
+        life: 72 + index * 12,
+        hit: false,
+        color: index % 2 ? "#22d3ee" : "#818cf8",
+        type: "shockwave",
+        stun: itemOwned || entry.awakened ? 42 : 24,
+        survival: true
+      });
+    }
+  } else if (id === "cosmicBlaster") {
+    const count = entry.awakened ? 3 : 1;
+    const length = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.25;
+    for (let index = 0; index < count; index += 1) {
+      const beamAngle = angle + (index - (count - 1) / 2) * 0.14;
+      pveGame.areaAttacks.push({
+        x: player.x, y: player.y, x1: player.x, y1: player.y,
+        x2: player.x + Math.cos(beamAngle) * length,
+        y2: player.y + Math.sin(beamAngle) * length,
+        radius: (entry.awakened ? 48 : itemOwned ? 38 : 30) * stats.sizeScale,
+        damage: (entry.awakened ? 24 : 14) * stats.damageScale,
+        delay: 18 + index * 5,
+        life: 56 + index * 5,
+        hit: false,
+        color: index % 2 ? "#4c1d95" : "#a78bfa",
+        type: "lineLaser",
+        slow: itemOwned || entry.awakened,
+        survival: true
+      });
+    }
+  } else if (id === "hackingBullet") {
+    const count = entry.awakened ? 3 : itemOwned ? 2 : 1;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.1, entry.awakened ? 25 : 22, entry.awakened ? 12 : 8, 7, {
+        color: "#34d399",
+        homing: itemOwned || entry.awakened,
+        pierce: entry.awakened ? 3 : 0,
+        life: 140,
+        visual: "hacking",
+        trail: "#22c55e",
+        explosionRadius: entry.awakened ? 52 : 0,
+        explosionDamage: entry.awakened ? 5 * stats.damageScale : 0
+      });
+    }
+    const length = Math.hypot(target.x - player.x, target.y - player.y);
+    pveGame.areaAttacks.push({
+      x: player.x, y: player.y, x1: player.x, y1: player.y,
+      x2: player.x + Math.cos(angle) * Math.max(220, length + 80),
+      y2: player.y + Math.sin(angle) * Math.max(220, length + 80),
+      radius: (entry.awakened ? 18 : 12) * stats.sizeScale,
+      damage: (entry.awakened ? 10 : 6) * stats.damageScale,
+      delay: 16,
+      life: 38,
+      hit: false,
+      color: "#34d399",
+      type: "lineLaser",
+      slow: itemOwned,
+      survival: true
+    });
+    healPvePlayer((entry.awakened ? 2.4 : 1.2) * stats.damageScale);
+  } else if (id === "hologramLaser") {
+    const count = entry.awakened ? 5 : itemOwned ? 3 : 2;
+    const length = Math.hypot(pveCanvas.width, pveCanvas.height) * 1.1;
+    for (let index = 0; index < count; index += 1) {
+      const offsetAngle = angle + Math.PI / 2;
+      const offset = (index - (count - 1) / 2) * 72;
+      const startX = clamp(player.x + Math.cos(offsetAngle) * offset, 25, pveCanvas.width - 25);
+      const startY = clamp(player.y + Math.sin(offsetAngle) * offset, 25, pveCanvas.height - 25);
+      const beamAngle = Math.atan2(target.y - startY, target.x - startX);
+      pveGame.areaAttacks.push({
+        x: startX, y: startY, x1: startX, y1: startY,
+        x2: startX + Math.cos(beamAngle) * length,
+        y2: startY + Math.sin(beamAngle) * length,
+        radius: (entry.awakened ? 20 : 14) * stats.sizeScale,
+        damage: (entry.awakened ? 13 : 8) * stats.damageScale,
+        delay: 18 + index * 5,
+        life: 48 + index * 5,
+        hit: false,
+        color: index % 2 ? "#22d3ee" : "#34d399",
+        type: "lineLaser",
+        survival: true
+      });
+    }
+  } else if (id === "rockShard") {
+    const count = entry.awakened ? 5 : itemOwned ? 3 : 2;
+    for (let index = 0; index < count; index += 1) {
+      projectile((index - (count - 1) / 2) * 0.13, entry.awakened ? 14 : 12, entry.awakened ? 18 : 12, entry.awakened ? 13 : 10, {
+        color: index % 2 ? "#78716c" : "#a16207",
+        pierce: entry.awakened ? 5 : itemOwned ? 2 : 0,
+        life: 180,
+        visual: "rockShard",
+        trail: "#a16207",
+        explosionRadius: entry.awakened ? 58 : 0,
+        explosionDamage: entry.awakened ? 6 * stats.damageScale : 0
+      });
+    }
+  } else if (id === "gaiaWall") {
+    const count = entry.awakened ? 4 : itemOwned ? 2 : 1;
+    const wallAngle = angle + Math.PI / 2;
+    for (let index = 0; index < count; index += 1) {
+      const offset = (index - (count - 1) / 2) * 88;
+      const centerX = clamp(target.x + Math.cos(wallAngle) * offset, 70, pveCanvas.width - 70);
+      const centerY = clamp(target.y + Math.sin(wallAngle) * offset, 70, pveCanvas.height - 70);
+      pveGame.areaAttacks.push({
+        x: centerX,
+        y: centerY,
+        x1: centerX,
+        y1: centerY - (entry.awakened ? 145 : 105) * stats.sizeScale,
+        x2: centerX,
+        y2: centerY + (entry.awakened ? 145 : 105) * stats.sizeScale,
+        radius: (entry.awakened ? 38 : 28) * stats.sizeScale,
+        damage: (entry.awakened ? 22 : 12) * stats.damageScale,
+        delay: 28 + index * 8,
+        life: 72 + index * 8,
+        hit: false,
+        color: index % 2 ? "#a16207" : "#78716c",
+        type: "lineLaser",
+        stun: itemOwned || entry.awakened ? 18 : 0,
         survival: true
       });
     }
@@ -16498,6 +16841,7 @@ function stepSurvivalPve() {
           });
         }
         if (projectile.slow) enemy.slowTime = Math.max(enemy.slowTime, 150);
+        if (projectile.stun) enemy.stunTime = Math.max(enemy.stunTime, projectile.stun);
         if (projectile.pierce > 0) projectile.pierce -= 1;
         else return false;
       }
@@ -16858,6 +17202,61 @@ function drawSurvivalAreaAttack(attack) {
     return;
   }
 
+  if (visual.startsWith("explosionBoost") || visual.startsWith("houserImpact")) {
+    pveCtx.translate(attack.x, attack.y);
+    const blast = pveCtx.createRadialGradient(0, 0, 0, 0, 0, attack.radius);
+    blast.addColorStop(0, "#fff7ed");
+    blast.addColorStop(0.22, "#facc15");
+    blast.addColorStop(0.48, attack.color);
+    blast.addColorStop(0.72, "#7f1d1d");
+    blast.addColorStop(1, "rgba(0,0,0,0)");
+    pveCtx.fillStyle = blast;
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, attack.radius * (0.38 + progress * 0.58), 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.strokeStyle = "#fff7ed";
+    pveCtx.lineWidth = attack.awakened ? 5 : 3;
+    for (let shard = 0; shard < (attack.awakened ? 18 : 11); shard += 1) {
+      const angle = shard * Math.PI * 2 / (attack.awakened ? 18 : 11) + pveGame.tick * 0.014;
+      const inner = attack.radius * (0.16 + progress * 0.12);
+      const outer = attack.radius * (0.78 + Math.sin(pveGame.tick * 0.11 + shard) * 0.1);
+      pveCtx.beginPath();
+      pveCtx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      pveCtx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("supernova") || visual.startsWith("ultimateRoulette")) {
+    pveCtx.translate(attack.x, attack.y);
+    pveCtx.rotate(pveGame.tick * 0.012);
+    const rings = attack.awakened ? 7 : 5;
+    for (let ring = 0; ring < rings; ring += 1) {
+      const rate = ring / rings;
+      pveCtx.globalAlpha = alpha * (0.82 - rate * 0.45);
+      pveCtx.strokeStyle = ring % 2 ? "#f7fbff" : attack.color;
+      pveCtx.lineWidth = attack.awakened ? 5 : 3;
+      pveCtx.setLineDash(ring % 2 ? [18, 12] : [7, 9]);
+      pveCtx.lineDashOffset = -pveGame.tick * (1 + ring * 0.25);
+      pveCtx.beginPath();
+      pveCtx.arc(0, 0, attack.radius * (0.25 + rate * 0.64 + progress * 0.16), 0, Math.PI * 2);
+      pveCtx.stroke();
+    }
+    pveCtx.setLineDash([]);
+    const core = pveCtx.createRadialGradient(0, 0, 0, 0, 0, attack.radius * 0.56);
+    core.addColorStop(0, "rgba(255,255,255,0.95)");
+    core.addColorStop(0.32, `${attack.color}dd`);
+    core.addColorStop(1, "rgba(0,0,0,0)");
+    pveCtx.fillStyle = core;
+    pveCtx.beginPath();
+    pveCtx.arc(0, 0, attack.radius * (0.32 + progress * 0.16), 0, Math.PI * 2);
+    pveCtx.fill();
+    pveCtx.restore();
+    return;
+  }
+
   if (visual.startsWith("swordDance") || attack.type === "slash" || visual.startsWith("wild")) {
     pveCtx.translate(attack.x, attack.y);
     pveCtx.rotate(pveGame.tick * 0.035);
@@ -17078,6 +17477,96 @@ function drawSurvivalPve() {
       pveCtx.textAlign = "center";
       pveCtx.textBaseline = "middle";
       pveCtx.fillText(projectile.label, 0, 0);
+    } else if (projectile.visual === "bullet") {
+      const length = projectile.radius * 4.4 + speed * 0.3;
+      const gradient = pveCtx.createLinearGradient(-length * 0.5, 0, length * 0.5, 0);
+      gradient.addColorStop(0, "rgba(255,255,255,0)");
+      gradient.addColorStop(0.25, projectile.color);
+      gradient.addColorStop(0.72, "#fff7d6");
+      gradient.addColorStop(1, "#ffffff");
+      pveCtx.fillStyle = gradient;
+      pveCtx.beginPath();
+      pveCtx.roundRect(-length * 0.45, -projectile.radius * 0.45, length, projectile.radius * 0.9, projectile.radius * 0.45);
+      pveCtx.fill();
+      pveCtx.fillStyle = "#fff7ed";
+      pveCtx.beginPath();
+      pveCtx.arc(length * 0.48, 0, projectile.radius * 0.58, 0, Math.PI * 2);
+      pveCtx.fill();
+    } else if (projectile.visual === "iceShard") {
+      const length = projectile.radius * 3.4;
+      pveCtx.fillStyle = "#e0f2fe";
+      pveCtx.strokeStyle = projectile.color;
+      pveCtx.lineWidth = 2;
+      pveCtx.beginPath();
+      pveCtx.moveTo(length * 0.58, 0);
+      pveCtx.lineTo(-length * 0.22, -projectile.radius * 0.88);
+      pveCtx.lineTo(-length * 0.58, 0);
+      pveCtx.lineTo(-length * 0.22, projectile.radius * 0.88);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.stroke();
+      pveCtx.globalAlpha *= 0.55;
+      pveCtx.strokeStyle = "#ffffff";
+      pveCtx.beginPath();
+      pveCtx.moveTo(-length * 0.36, 0);
+      pveCtx.lineTo(length * 0.42, 0);
+      pveCtx.stroke();
+    } else if (projectile.visual === "hacking") {
+      const size = projectile.radius * 2.1;
+      pveCtx.strokeStyle = "#d1fae5";
+      pveCtx.lineWidth = 2.2;
+      pveCtx.rotate(-angle + pveGame.tick * 0.12);
+      pveCtx.strokeRect(-size * 0.5, -size * 0.5, size, size);
+      pveCtx.rotate(Math.PI / 4);
+      pveCtx.strokeRect(-size * 0.42, -size * 0.42, size * 0.84, size * 0.84);
+      pveCtx.fillStyle = projectile.color;
+      for (let node = 0; node < 4; node += 1) {
+        const nodeAngle = node * Math.PI / 2 + pveGame.tick * 0.08;
+        pveCtx.beginPath();
+        pveCtx.arc(Math.cos(nodeAngle) * size * 0.48, Math.sin(nodeAngle) * size * 0.48, 2.4, 0, Math.PI * 2);
+        pveCtx.fill();
+      }
+    } else if (projectile.visual === "rope") {
+      const length = projectile.radius * 5;
+      pveCtx.strokeStyle = "#fbbf24";
+      pveCtx.lineWidth = 3;
+      pveCtx.setLineDash([6, 5]);
+      pveCtx.lineDashOffset = -pveGame.tick * 2;
+      pveCtx.beginPath();
+      pveCtx.moveTo(-length * 0.65, 0);
+      for (let step = 0; step <= 6; step += 1) {
+        const t = step / 6;
+        pveCtx.lineTo(-length * 0.65 + length * t, Math.sin(t * Math.PI * 3 + pveGame.tick * 0.18) * projectile.radius * 0.2);
+      }
+      pveCtx.stroke();
+      pveCtx.setLineDash([]);
+      pveCtx.fillStyle = "#d6a35d";
+      pveCtx.beginPath();
+      pveCtx.moveTo(length * 0.54, 0);
+      pveCtx.lineTo(length * 0.22, -projectile.radius * 0.82);
+      pveCtx.lineTo(length * 0.08, projectile.radius * 0.82);
+      pveCtx.closePath();
+      pveCtx.fill();
+    } else if (projectile.visual === "rockShard") {
+      const length = projectile.radius * 2.9;
+      pveCtx.fillStyle = "#7c4a18";
+      pveCtx.strokeStyle = "#e7c78e";
+      pveCtx.lineWidth = 2;
+      pveCtx.beginPath();
+      pveCtx.moveTo(length * 0.62, 0);
+      pveCtx.lineTo(projectile.radius * 0.2, -projectile.radius);
+      pveCtx.lineTo(-length * 0.48, -projectile.radius * 0.36);
+      pveCtx.lineTo(-length * 0.36, projectile.radius * 0.72);
+      pveCtx.lineTo(projectile.radius * 0.28, projectile.radius * 0.94);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.stroke();
+      pveCtx.strokeStyle = "#292524";
+      pveCtx.globalAlpha *= 0.35;
+      pveCtx.beginPath();
+      pveCtx.moveTo(-length * 0.25, -projectile.radius * 0.25);
+      pveCtx.lineTo(projectile.radius * 0.4, projectile.radius * 0.26);
+      pveCtx.stroke();
     } else if (projectile.visual === "blood") {
       pveCtx.beginPath();
       pveCtx.moveTo(projectile.radius + 9, 0);
