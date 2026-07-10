@@ -13631,12 +13631,12 @@ const SURVIVAL_WEAPONS = {
   machineGun: { name: "기관총", awakenedName: "불릿 스톰", icon: "Y", color: "#fb923c", item: "gunBarrel", baseCooldown: 420, description: "짧은 시간 여러 발의 기관총 탄환을 퍼붓습니다.", awakenedDescription: "훨씬 많은 탄환이 화면을 가르며 일부가 적을 추적합니다." },
   icicleShot: { name: "고드름", awakenedName: "빙결 창우", icon: "I", color: "#7dd3fc", item: "frostCrystal", baseCooldown: 230, description: "얼음 고드름 두 개를 발사해 적을 느리게 만듭니다.", awakenedDescription: "거대한 고드름들이 관통하며 얼음 파편 폭발을 남깁니다." },
   blizzardEssence: { name: "얼음 정수", awakenedName: "이터널 블리자드", icon: "I", color: "#bae6fd", item: "snowHalo", baseCooldown: 540, description: "느리게 유도되는 얼음 정수를 날려 범위 피해와 둔화를 줍니다.", awakenedDescription: "영롱한 얼음 정수 3개가 적을 추적하고 얼음 폭발을 일으킵니다." },
-  explosionBoost: { name: "익스플로전 부스트", awakenedName: "연쇄 폭압", icon: "X", color: "#fb7185", item: "blastCore", baseCooldown: 210, description: "자신 주변에 폭발을 일으키고 가까운 적을 밀어냅니다.", awakenedDescription: "여러 번의 연쇄 폭발이 자신과 적 주변에서 터집니다." },
-  houserImpact: { name: "하우저 임팩트", awakenedName: "폭격 축제", icon: "X", color: "#f97316", item: "detonator", baseCooldown: 520, description: "무작위 적 주변에 폭발 포격을 떨어뜨립니다.", awakenedDescription: "전장 곳곳에 초대형 폭발 포격이 연속으로 떨어집니다." },
+  explosionBoost: { name: "익스플로전 부스트", awakenedName: "연쇄 폭압", icon: "X", color: "#fb7185", item: "blastCore", baseCooldown: 210, description: "반동으로 튕기며 전방에 폭발 분사와 파편을 쏟아냅니다.", awakenedDescription: "더 많은 폭발 분사와 파편이 넓은 각도로 전장을 찢습니다." },
+  houserImpact: { name: "하우저 임팩트", awakenedName: "폭격 축제", icon: "X", color: "#f97316", item: "detonator", baseCooldown: 520, description: "무작위 적 주변에 하늘에서 떨어지는 폭격 기둥을 호출합니다.", awakenedDescription: "폭격 기둥과 사선 폭발선이 함께 쏟아집니다." },
   ropeStrike: { name: "로프 타격", awakenedName: "와이어 스매시", icon: "O", color: "#d6a35d", item: "ropeHook", baseCooldown: 260, description: "로프를 타고 날아드는 충격파를 발사해 적을 기절시킵니다.", awakenedDescription: "굵은 와이어 타격 3개가 적을 관통하며 강하게 기절시킵니다." },
-  ropeRush: { name: "로프 러쉬", awakenedName: "타잔 러쉬", icon: "O", color: "#fbbf24", item: "swingTotem", baseCooldown: 510, description: "적 주변을 연속 타격하는 로프 충격을 일으킵니다.", awakenedDescription: "퍽퍽 터지는 로프 타격이 여러 적 위치에서 연속 발생합니다." },
-  rouletteShot: { name: "룰렛", awakenedName: "잭팟 룰렛", icon: "?", color: "#fb7185", item: "luckyChip", baseCooldown: 300, description: "무작위 형태의 탄환이나 폭발 공격을 발동합니다.", awakenedDescription: "여러 룰렛 공격이 동시에 터지며 운 좋으면 거대한 잭팟 폭발이 발생합니다." },
-  ultimateRoulette: { name: "궁극 룰렛", awakenedName: "카오스 카지노", icon: "?", color: "#facc15", item: "chaosDice", baseCooldown: 720, description: "서로 다른 무작위 공격을 세 번 연속 발동합니다.", awakenedDescription: "화면을 뒤덮는 룰렛 연쇄 공격이 여섯 번 발동합니다." },
+  ropeRush: { name: "로프 러쉬", awakenedName: "타잔 러쉬", icon: "O", color: "#fbbf24", item: "ropeHook", baseCooldown: 510, description: "적을 중심으로 왕복하는 로프 라인이 연속으로 후려칩니다.", awakenedDescription: "더 길고 굵은 로프 라인이 여러 적을 휘감으며 강타합니다." },
+  rouletteShot: { name: "룰렛", awakenedName: "잭팟 룰렛", icon: "?", color: "#fb7185", item: "luckyChip", baseCooldown: 300, description: "카드 탄환, 별 탄환, 룰렛 광선 중 하나를 무작위로 발동합니다.", awakenedDescription: "잭팟 확률이 크게 올라가며 룰렛 광선과 탄환이 훨씬 화려해집니다." },
+  ultimateRoulette: { name: "궁극 룰렛", awakenedName: "카오스 카지노", icon: "?", color: "#facc15", item: "chaosDice", baseCooldown: 720, description: "카드, 광선, 베기 계열 랜덤 공격을 연속으로 섞어 사용합니다.", awakenedDescription: "여섯 번의 카오스 공격이 서로 다른 형태로 전장을 뒤덮습니다." },
   supernova: { name: "초신성", awakenedName: "은하 붕괴", icon: "U", color: "#818cf8", item: "stardust", baseCooldown: 430, description: "적 주변에 큰 초신성 폭발을 일으킵니다.", awakenedDescription: "별빛 고리가 겹쳐지는 초대형 은하 폭발이 연속 발생합니다." },
   cosmicBlaster: { name: "코스믹 블래스터", awakenedName: "우주 절단포", icon: "U", color: "#a78bfa", item: "cosmicLens", baseCooldown: 560, description: "적 방향으로 넓은 우주 레이저를 발사합니다.", awakenedDescription: "검푸른 우주 광선 여러 줄이 전장을 절단합니다." },
   hackingBullet: { name: "해킹 탄환", awakenedName: "코드 침식", icon: "#", color: "#34d399", item: "codeChip", baseCooldown: 300, description: "빠른 해킹 탄환을 맞힌 뒤 코드 레이저로 추가 피해를 줍니다.", awakenedDescription: "해킹 탄환이 분열하고 코드 레이저가 적을 연속 침식합니다." },
@@ -13671,8 +13671,7 @@ const SURVIVAL_ITEMS = {
   snowHalo: { name: "빙설의 고리", icon: "I", weapon: "blizzardEssence", description: "얼음 정수 폭발 범위와 둔화 효과가 증가합니다.", effect: "정수 폭발 강화" },
   blastCore: { name: "폭압 코어", icon: "X", weapon: "explosionBoost", description: "폭발 계열 공격의 범위와 밀쳐내는 힘이 증가합니다.", effect: "폭발 범위 증가" },
   detonator: { name: "원격 기폭장치", icon: "X", weapon: "houserImpact", description: "포격 폭발 횟수와 폭발 예고 시간이 증가합니다.", effect: "폭격 연쇄 강화" },
-  ropeHook: { name: "강철 갈고리", icon: "O", weapon: "ropeStrike", description: "로프 계열 타격이 더 넓어지고 기절 시간이 증가합니다.", effect: "로프 기절 강화" },
-  swingTotem: { name: "스윙 토템", icon: "O", weapon: "ropeRush", description: "로프 러쉬의 타격 횟수와 타격감이 증가합니다.", effect: "연속 타격 강화" },
+  ropeHook: { name: "강철 갈고리", icon: "O", weapons: ["ropeStrike", "ropeRush"], description: "로프 계열 타격이 더 넓어지고 로프 타격과 로프 러쉬를 모두 각성시킬 수 있습니다.", effect: "로프 계열 각성" },
   luckyChip: { name: "행운 칩", icon: "?", weapon: "rouletteShot", description: "룰렛 공격이 더 강한 결과를 뽑을 확률이 증가합니다.", effect: "룰렛 확률 강화" },
   chaosDice: { name: "혼돈 주사위", icon: "?", weapon: "ultimateRoulette", description: "궁극 룰렛이 더 많은 공격을 섞어 발동합니다.", effect: "룰렛 연쇄 강화" },
   stardust: { name: "별가루", icon: "U", weapon: "supernova", description: "우주 계열 폭발의 범위와 기절 시간이 증가합니다.", effect: "초신성 강화" },
@@ -13692,6 +13691,13 @@ const SURVIVAL_SUBS = [
   { id: "magnet", name: "자기장 확장", icon: "⊙", description: "XP 흡수 범위가 35 증가합니다." },
   { id: "coin", name: "균열 주화", icon: "C", description: "이번 런의 코인 보상에 3C를 추가합니다." }
 ];
+
+function survivalItemWeaponIds(itemId) {
+  const item = SURVIVAL_ITEMS[itemId];
+  if (!item) return [];
+  if (Array.isArray(item.weapons)) return item.weapons;
+  return item.weapon ? [item.weapon] : [];
+}
 
 const SURVIVAL_DIFFICULTIES = {
   easy: {
@@ -15133,6 +15139,25 @@ function fireSurvivalWeapon(id) {
       ...extra
     });
   };
+  const lineAttack = (x1, y1, x2, y2, radius, damage, delay, life, color, extra = {}) => {
+    pveGame.areaAttacks.push({
+      x: (x1 + x2) / 2,
+      y: (y1 + y2) / 2,
+      x1,
+      y1,
+      x2,
+      y2,
+      radius: radius * stats.sizeScale,
+      damage: damage * stats.damageScale,
+      delay,
+      life,
+      hit: false,
+      color,
+      type: "lineLaser",
+      survival: true,
+      ...extra
+    });
+  };
 
   if (id === "pulse") {
     const count = entry.awakened ? 4 : entry.stars >= 4 ? 2 : 1;
@@ -15694,42 +15719,63 @@ function fireSurvivalWeapon(id) {
       });
     }
   } else if (id === "explosionBoost") {
-    const blasts = entry.awakened ? 4 : itemOwned ? 2 : 1;
-    for (let index = 0; index < blasts; index += 1) {
-      const blastAngle = angle + index * Math.PI * 2 / blasts;
-      pveGame.areaAttacks.push({
-        x: player.x + Math.cos(blastAngle) * (index ? 80 : 0),
-        y: player.y + Math.sin(blastAngle) * (index ? 80 : 0),
-        radius: (entry.awakened ? 145 : itemOwned ? 112 : 90) * stats.sizeScale,
-        damage: (entry.awakened ? 18 : 12) * stats.damageScale,
-        delay: index * 7,
-        life: 34 + index * 7,
-        hit: false,
-        color: index % 2 ? "#f97316" : "#fb7185",
-        type: "shockwave",
-        stun: entry.awakened ? 12 : 0,
-        pull: itemOwned ? -48 : -28,
-        survival: true
+    const jets = entry.awakened ? 6 : itemOwned ? 4 : 3;
+    const recoilAngle = angle + Math.PI + (pveRandomIndex(61) - 30) / 100;
+    player.vx += Math.cos(recoilAngle) * (entry.awakened ? 4.8 : 3.2);
+    player.vy += Math.sin(recoilAngle) * (entry.awakened ? 4.8 : 3.2);
+    for (let index = 0; index < jets; index += 1) {
+      const jetAngle = angle + (index - (jets - 1) / 2) * (entry.awakened ? 0.34 : 0.28);
+      const startX = player.x + Math.cos(jetAngle) * 24;
+      const startY = player.y + Math.sin(jetAngle) * 24;
+      const endX = startX + Math.cos(jetAngle) * (entry.awakened ? 260 : 190);
+      const endY = startY + Math.sin(jetAngle) * (entry.awakened ? 260 : 190);
+      lineAttack(startX, startY, endX, endY, entry.awakened ? 22 : 15, entry.awakened ? 11 : 7, index * 3, 28 + index * 3, index % 2 ? "#f97316" : "#fb7185", {
+        stun: entry.awakened ? 10 : 0,
+        pull: itemOwned ? -22 : -12
+      });
+      projectile((index - (jets - 1) / 2) * 0.22, entry.awakened ? 17 : 14, entry.awakened ? 9 : 5, entry.awakened ? 8 : 5, {
+        color: "#facc15",
+        pierce: entry.awakened ? 2 : 0,
+        life: 85,
+        visual: "blastShard",
+        trail: "#fb7185"
       });
     }
   } else if (id === "houserImpact") {
     const targets = pveGame.enemies.filter(enemy => enemy.hp > 0);
-    const count = entry.awakened ? 12 : itemOwned ? 7 : 4;
+    const count = entry.awakened ? 10 : itemOwned ? 6 : 4;
     for (let index = 0; index < count; index += 1) {
       const victim = targets[pveRandomIndex(Math.max(1, targets.length))] || target;
+      const strikeX = clamp(victim.x + pveRandomIndex(241) - 120, 50, pveCanvas.width - 50);
+      const strikeY = clamp(victim.y + pveRandomIndex(201) - 100, 50, pveCanvas.height - 50);
       pveGame.areaAttacks.push({
-        x: clamp(victim.x + pveRandomIndex(181) - 90, 50, pveCanvas.width - 50),
-        y: clamp(victim.y + pveRandomIndex(181) - 90, 50, pveCanvas.height - 50),
-        radius: (entry.awakened ? 115 : 78) * stats.sizeScale,
-        damage: (entry.awakened ? 22 : 14) * stats.damageScale,
-        delay: 22 + index * (entry.awakened ? 5 : 8),
-        life: 56 + index * 7,
+        x: strikeX,
+        y: strikeY,
+        radius: (entry.awakened ? 38 : 26) * stats.sizeScale,
+        damage: (entry.awakened ? 24 : 15) * stats.damageScale,
+        delay: 24 + index * (entry.awakened ? 5 : 8),
+        life: 58 + index * 7,
         hit: false,
         color: index % 3 === 0 ? "#fde68a" : "#f97316",
-        type: "shockwave",
+        type: "laser",
         stun: entry.awakened && index % 3 === 0 ? 14 : 0,
         survival: true
       });
+      if (entry.awakened && index % 2 === 0) {
+        const slashAngle = pveRandomIndex(628) / 100;
+        lineAttack(
+          strikeX - Math.cos(slashAngle) * 120,
+          strikeY - Math.sin(slashAngle) * 120,
+          strikeX + Math.cos(slashAngle) * 120,
+          strikeY + Math.sin(slashAngle) * 120,
+          18,
+          8,
+          34 + index * 5,
+          62 + index * 5,
+          "#facc15",
+          { stun: 8 }
+        );
+      }
     }
   } else if (id === "ropeStrike") {
     const count = entry.awakened ? 3 : 1;
@@ -15749,19 +15795,17 @@ function fireSurvivalWeapon(id) {
     const count = entry.awakened ? 8 : itemOwned ? 5 : 4;
     for (let index = 0; index < count; index += 1) {
       const victim = targets[pveRandomIndex(Math.max(1, targets.length))] || target;
-      pveGame.areaAttacks.push({
-        x: victim.x + Math.cos(index * 2.4) * 45,
-        y: victim.y + Math.sin(index * 2.4) * 45,
-        radius: (entry.awakened ? 74 : 54) * stats.sizeScale,
-        damage: (entry.awakened ? 13 : 8) * stats.damageScale,
-        delay: 12 + index * 9,
-        life: 38 + index * 9,
-        hit: false,
-        color: index % 2 ? "#d6a35d" : "#fbbf24",
-        type: "shockwave",
+      const swingAngle = index * 2.18 + pveGame.tick * 0.02;
+      const radius = entry.awakened ? 112 : 78;
+      const centerX = victim.x;
+      const centerY = victim.y;
+      const x1 = centerX + Math.cos(swingAngle) * radius;
+      const y1 = centerY + Math.sin(swingAngle) * radius;
+      const x2 = centerX + Math.cos(swingAngle + Math.PI) * radius;
+      const y2 = centerY + Math.sin(swingAngle + Math.PI) * radius;
+      lineAttack(x1, y1, x2, y2, entry.awakened ? 18 : 12, entry.awakened ? 12 : 7, 10 + index * 8, 38 + index * 8, index % 2 ? "#d6a35d" : "#fbbf24", {
         stun: 18,
-        pull: itemOwned ? 18 : 0,
-        survival: true
+        pull: itemOwned ? 18 : 0
       });
     }
   } else if (id === "rouletteShot") {
@@ -15780,11 +15824,22 @@ function fireSurvivalWeapon(id) {
         });
       }
     } else if (roll === 1) {
-      pveGame.areaAttacks.push({
-        x: target.x, y: target.y, radius: (jackpot ? 150 : 90) * stats.sizeScale,
-        damage: (jackpot ? 24 : 13) * stats.damageScale, delay: 18, life: 48,
-        hit: false, color: "#facc15", type: "shockwave", stun: jackpot ? 28 : 0, survival: true
-      });
+      const spokes = jackpot ? 6 : 4;
+      for (let spoke = 0; spoke < spokes; spoke += 1) {
+        const spokeAngle = spoke * Math.PI * 2 / spokes + pveRandomIndex(40) / 100;
+        lineAttack(
+          target.x,
+          target.y,
+          target.x + Math.cos(spokeAngle) * (jackpot ? 220 : 150),
+          target.y + Math.sin(spokeAngle) * (jackpot ? 220 : 150),
+          jackpot ? 20 : 13,
+          jackpot ? 9 : 5,
+          16 + spoke * 3,
+          42 + spoke * 3,
+          spoke % 2 ? "#facc15" : "#fb7185",
+          { stun: jackpot ? 18 : 0 }
+        );
+      }
     } else if (roll === 2) {
       projectile(0, 16, jackpot ? 20 : 11, jackpot ? 15 : 10, {
         color: "#22d3ee", homing: true, pierce: jackpot ? 4 : 1, life: 220, visual: "star", trail: "#22d3ee"
@@ -15805,20 +15860,33 @@ function fireSurvivalWeapon(id) {
     for (let index = 0; index < repeats; index += 1) {
       const roll = pveRandomIndex(3);
       const color = ["#facc15", "#fb7185", "#22d3ee"][roll];
-      pveGame.areaAttacks.push({
-        x: roll === 0 ? target.x : pveRandomIndex(pveCanvas.width),
-        y: roll === 0 ? target.y : pveRandomIndex(pveCanvas.height),
-        radius: (entry.awakened ? 130 : 88) * stats.sizeScale,
-        damage: (entry.awakened ? 20 : 12) * stats.damageScale,
-        delay: 12 + index * 11,
-        life: 46 + index * 11,
-        hit: false,
-        color,
-        type: roll === 2 ? "slash" : "shockwave",
-        stun: roll === 1 ? 24 : 0,
-        slow: roll === 2,
-        survival: true
-      });
+      if (roll === 0) {
+        projectile((index - (repeats - 1) / 2) * 0.1, 18, entry.awakened ? 16 : 10, 11, {
+          color,
+          homing: true,
+          pierce: entry.awakened ? 4 : 1,
+          life: 190,
+          visual: "card",
+          label: "7",
+          trail: color
+        });
+      } else {
+        const centerX = roll === 1 ? target.x : pveRandomIndex(pveCanvas.width);
+        const centerY = roll === 1 ? target.y : pveRandomIndex(pveCanvas.height);
+        const spokeAngle = pveRandomIndex(628) / 100;
+        lineAttack(
+          centerX - Math.cos(spokeAngle) * (entry.awakened ? 170 : 115),
+          centerY - Math.sin(spokeAngle) * (entry.awakened ? 170 : 115),
+          centerX + Math.cos(spokeAngle) * (entry.awakened ? 170 : 115),
+          centerY + Math.sin(spokeAngle) * (entry.awakened ? 170 : 115),
+          entry.awakened ? 28 : 18,
+          entry.awakened ? 18 : 10,
+          12 + index * 11,
+          46 + index * 11,
+          color,
+          { stun: roll === 1 ? 20 : 0, slow: roll === 2 }
+        );
+      }
     }
   } else if (id === "supernova") {
     const count = entry.awakened ? 3 : 1;
@@ -16217,9 +16285,10 @@ function describeSurvivalChoice(choice) {
   }
   if (choice.type === "item") {
     const item = SURVIVAL_ITEMS[choice.id];
-    const evolutionWeapons = Object.values(SURVIVAL_WEAPONS)
-      .filter(weapon => weapon.item === choice.id)
-      .map(weapon => weapon.name);
+    const linkedWeaponIds = survivalItemWeaponIds(choice.id);
+    const evolutionWeapons = Object.entries(SURVIVAL_WEAPONS)
+      .filter(([id, weapon]) => linkedWeaponIds.includes(id) || weapon.item === choice.id)
+      .map(([, weapon]) => weapon.name);
     return {
       type: "아이템",
       name: item.name,
@@ -17033,6 +17102,190 @@ function drawSurvivalAreaAttack(attack) {
   pveCtx.shadowColor = attack.color;
   pveCtx.shadowBlur = warning ? 10 : attack.awakened ? 38 : 24;
 
+  if (attack.type === "lineLaser" && (
+    visual.startsWith("explosionBoost")
+    || visual.startsWith("houserImpact")
+    || visual.startsWith("ropeRush")
+    || visual.startsWith("rouletteShot")
+    || visual.startsWith("ultimateRoulette")
+    || visual.startsWith("cosmicBlaster")
+    || visual.startsWith("hackingBullet")
+    || visual.startsWith("hologramLaser")
+    || visual.startsWith("gaiaWall")
+  )) {
+    const dx = attack.x2 - attack.x1;
+    const dy = attack.y2 - attack.y1;
+    const angle = Math.atan2(dy, dx);
+    const length = Math.hypot(dx, dy);
+    pveCtx.translate(attack.x1, attack.y1);
+    pveCtx.rotate(angle);
+    if (visual.startsWith("gaiaWall")) {
+      pveCtx.strokeStyle = warning ? "#a8a29e" : attack.color;
+      pveCtx.lineWidth = attack.radius * (warning ? 0.75 : 1.35);
+      pveCtx.setLineDash(warning ? [12, 8] : []);
+      pveCtx.beginPath();
+      pveCtx.moveTo(0, 0);
+      pveCtx.lineTo(length, 0);
+      pveCtx.stroke();
+      if (!warning) {
+        pveCtx.setLineDash([]);
+        pveCtx.fillStyle = "#292524";
+        for (let chunk = 0; chunk < 9; chunk += 1) {
+          const x = length * (chunk + 0.5) / 9;
+          const h = attack.radius * (1.2 + Math.sin(chunk * 1.7 + pveGame.tick * 0.04) * 0.28);
+          pveCtx.beginPath();
+          pveCtx.moveTo(x, -h);
+          pveCtx.lineTo(x + attack.radius * 0.36, -h * 0.22);
+          pveCtx.lineTo(x + attack.radius * 0.14, h);
+          pveCtx.lineTo(x - attack.radius * 0.32, h * 0.2);
+          pveCtx.closePath();
+          pveCtx.fill();
+          pveCtx.stroke();
+        }
+      }
+    } else if (visual.startsWith("ropeRush")) {
+      pveCtx.strokeStyle = attack.color;
+      pveCtx.lineWidth = warning ? 3 : attack.radius * 0.72;
+      pveCtx.setLineDash([10, 8]);
+      pveCtx.lineDashOffset = -pveGame.tick * 2.2;
+      pveCtx.beginPath();
+      for (let step = 0; step <= 32; step += 1) {
+        const t = step / 32;
+        const x = length * t;
+        const y = Math.sin(t * Math.PI * 5 + pveGame.tick * 0.18) * attack.radius * 0.32;
+        if (step === 0) pveCtx.moveTo(x, y);
+        else pveCtx.lineTo(x, y);
+      }
+      pveCtx.stroke();
+      if (!warning) {
+        pveCtx.setLineDash([]);
+        pveCtx.fillStyle = "#fff7ed";
+        pveCtx.beginPath();
+        pveCtx.arc(length * 0.5, 0, attack.radius * 0.32, 0, Math.PI * 2);
+        pveCtx.fill();
+      }
+    } else if (visual.startsWith("explosionBoost")) {
+      const jet = pveCtx.createLinearGradient(0, 0, length, 0);
+      jet.addColorStop(0, "#fff7ed");
+      jet.addColorStop(0.22, "#facc15");
+      jet.addColorStop(0.58, attack.color);
+      jet.addColorStop(1, "rgba(127,29,29,0)");
+      pveCtx.fillStyle = jet;
+      pveCtx.beginPath();
+      pveCtx.moveTo(0, -attack.radius * 0.55);
+      pveCtx.lineTo(length, -attack.radius * 0.16);
+      pveCtx.lineTo(length, attack.radius * 0.16);
+      pveCtx.lineTo(0, attack.radius * 0.55);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.strokeStyle = "#fde68a";
+      pveCtx.lineWidth = 2;
+      pveCtx.setLineDash([14, 9]);
+      pveCtx.lineDashOffset = -pveGame.tick * 2;
+      pveCtx.stroke();
+    } else if (visual.startsWith("hackingBullet") || visual.startsWith("hologramLaser")) {
+      pveCtx.strokeStyle = attack.color;
+      pveCtx.lineWidth = warning ? 2 : attack.radius * 0.72;
+      pveCtx.setLineDash(warning ? [5, 9] : [10, 5, 2, 5]);
+      pveCtx.lineDashOffset = -pveGame.tick * 3;
+      for (let lane = -1; lane <= 1; lane += 1) {
+        pveCtx.globalAlpha = alpha * (lane === 0 ? 1 : 0.52);
+        pveCtx.beginPath();
+        pveCtx.moveTo(0, lane * attack.radius * 0.38);
+        pveCtx.lineTo(length, lane * attack.radius * 0.38);
+        pveCtx.stroke();
+      }
+      if (!warning) {
+        pveCtx.setLineDash([]);
+        pveCtx.fillStyle = "#d1fae5";
+        for (let node = 0; node < 5; node += 1) {
+          const x = length * (node + 0.5) / 5;
+          pveCtx.fillRect(x - 3, -attack.radius * 0.75, 6, 6);
+          pveCtx.fillRect(x - 3, attack.radius * 0.75 - 6, 6, 6);
+        }
+      }
+    } else if (visual.startsWith("cosmicBlaster")) {
+      const beam = pveCtx.createLinearGradient(0, 0, length, 0);
+      beam.addColorStop(0, "rgba(255,255,255,0.88)");
+      beam.addColorStop(0.18, "#312e81");
+      beam.addColorStop(0.52, attack.color);
+      beam.addColorStop(1, "rgba(2,6,23,0)");
+      pveCtx.fillStyle = beam;
+      pveCtx.beginPath();
+      pveCtx.ellipse(length * 0.5, 0, length * 0.52, attack.radius * 1.05, 0, 0, Math.PI * 2);
+      pveCtx.fill();
+      pveCtx.strokeStyle = "#c4b5fd";
+      pveCtx.lineWidth = 2;
+      for (let arc = 0; arc < 3; arc += 1) {
+        pveCtx.globalAlpha = alpha * (0.6 - arc * 0.12);
+        pveCtx.beginPath();
+        pveCtx.moveTo(0, Math.sin(pveGame.tick * 0.08 + arc) * attack.radius * 0.3);
+        for (let step = 0; step <= 18; step += 1) {
+          const t = step / 18;
+          pveCtx.lineTo(length * t, Math.sin(t * Math.PI * 4 + pveGame.tick * 0.07 + arc) * attack.radius * (0.35 + arc * 0.22));
+        }
+        pveCtx.stroke();
+      }
+    } else {
+      pveCtx.strokeStyle = attack.color;
+      pveCtx.lineWidth = warning ? 3 : attack.radius * 1.15;
+      pveCtx.setLineDash(warning ? [10, 8] : [18, 10]);
+      pveCtx.lineDashOffset = -pveGame.tick * 2.4;
+      pveCtx.beginPath();
+      pveCtx.moveTo(0, 0);
+      pveCtx.lineTo(length, 0);
+      pveCtx.stroke();
+      if (!warning) {
+        pveCtx.strokeStyle = "#fff7ed";
+        pveCtx.lineWidth = 2;
+        pveCtx.setLineDash([4, 12]);
+        pveCtx.beginPath();
+        pveCtx.moveTo(0, -attack.radius * 0.55);
+        pveCtx.lineTo(length, attack.radius * 0.55);
+        pveCtx.stroke();
+      }
+    }
+    pveCtx.restore();
+    return;
+  }
+
+  if (visual.startsWith("houserImpact")) {
+    pveCtx.translate(attack.x, attack.y);
+    if (warning) {
+      pveCtx.strokeStyle = attack.color;
+      pveCtx.lineWidth = 3;
+      pveCtx.setLineDash([8, 8]);
+      pveCtx.beginPath();
+      pveCtx.moveTo(-attack.radius * 1.4, 0);
+      pveCtx.lineTo(attack.radius * 1.4, 0);
+      pveCtx.moveTo(0, -attack.radius * 1.4);
+      pveCtx.lineTo(0, attack.radius * 1.4);
+      pveCtx.stroke();
+    } else {
+      const flare = pveCtx.createLinearGradient(0, -pveCanvas.height * 0.5, 0, pveCanvas.height * 0.5);
+      flare.addColorStop(0, "rgba(255,255,255,0)");
+      flare.addColorStop(0.35, "#fde68a");
+      flare.addColorStop(0.52, attack.color);
+      flare.addColorStop(1, "rgba(127,29,29,0)");
+      pveCtx.fillStyle = flare;
+      pveCtx.beginPath();
+      pveCtx.moveTo(-attack.radius * 0.75, -pveCanvas.height * 0.5);
+      pveCtx.lineTo(attack.radius * 0.75, -pveCanvas.height * 0.5);
+      pveCtx.lineTo(attack.radius * 1.35, pveCanvas.height * 0.5);
+      pveCtx.lineTo(-attack.radius * 1.35, pveCanvas.height * 0.5);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.strokeStyle = "#fff7ed";
+      pveCtx.lineWidth = 2;
+      pveCtx.beginPath();
+      pveCtx.moveTo(0, -pveCanvas.height * 0.5);
+      pveCtx.lineTo(0, pveCanvas.height * 0.5);
+      pveCtx.stroke();
+    }
+    pveCtx.restore();
+    return;
+  }
+
   if (attack.type === "lineLaser") {
     if (warning) {
       pveCtx.strokeStyle = attack.color;
@@ -17547,6 +17800,24 @@ function drawSurvivalPve() {
       pveCtx.lineTo(length * 0.08, projectile.radius * 0.82);
       pveCtx.closePath();
       pveCtx.fill();
+    } else if (projectile.visual === "blastShard") {
+      const length = projectile.radius * 3.2;
+      const shard = pveCtx.createLinearGradient(-length * 0.5, 0, length * 0.6, 0);
+      shard.addColorStop(0, "rgba(127,29,29,0)");
+      shard.addColorStop(0.28, "#fb7185");
+      shard.addColorStop(0.62, "#facc15");
+      shard.addColorStop(1, "#fff7ed");
+      pveCtx.fillStyle = shard;
+      pveCtx.beginPath();
+      pveCtx.moveTo(length * 0.62, 0);
+      pveCtx.lineTo(-length * 0.24, -projectile.radius * 0.92);
+      pveCtx.lineTo(-length * 0.52, -projectile.radius * 0.18);
+      pveCtx.lineTo(-length * 0.3, projectile.radius * 0.72);
+      pveCtx.closePath();
+      pveCtx.fill();
+      pveCtx.strokeStyle = "#fff7ed";
+      pveCtx.lineWidth = 1.5;
+      pveCtx.stroke();
     } else if (projectile.visual === "rockShard") {
       const length = projectile.radius * 2.9;
       pveCtx.fillStyle = "#7c4a18";
