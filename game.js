@@ -273,6 +273,17 @@ const ui = {
 };
 
 const patchNoticeVersions = {
+  "beta-v1.7": {
+    title: "beta v1.7 업데이트",
+    items: [
+      "PVE 무기 각성 구조 개선 - 같은 캐릭터에서 나온 무기들은 하나의 아이템으로 함께 각성할 수 있습니다.",
+      "PVE 10분 이후 적 피해량을 낮추고 경험치 획득량을 증가시켰습니다.",
+      "은신하는 색히 - 은신 지속시간과 암살 쿨타임을 조정했습니다.",
+      "개쳐맞는 색히 - 증장갑, 메탈 벨트, 기사 방패 구조로 리워크했습니다.",
+      "칼쓰는 색히 - 원형 검무, 칼날 난무, 절공 검무 전투 구조를 재조정했습니다.",
+      "그림그리는 색히, 폭발하는 색히, 총쏘는 색히 밸런스와 도감 설명을 갱신했습니다."
+    ]
+  },
   "beta-v1.6": {
     title: "beta v1.6 업데이트",
     items: [
@@ -656,7 +667,7 @@ const skillNames = {
   poker: { normal: "드로우", ultimate: "힐 다이스" },
   stealth: { normal: "암살", ultimate: "하이퍼 히든" },
   enhancer: { normal: "용광로", ultimate: "갓 웨폰" },
-  tank: { normal: "도발", ultimate: "기사의 방패" },
+  tank: { normal: "메탈 벨트", ultimate: "기사의 방패" },
   beamer: { normal: "슬로우 빔", ultimate: "절멸자" },
   wild: { normal: "추격", ultimate: "야생의 본능" },
   vampire: { normal: "블러드 버스터", ultimate: "핏빛 서곡" },
@@ -666,7 +677,7 @@ const skillNames = {
   summoner: { normal: "체제 전환", ultimate: "강림" },
   swordsman: { normal: "제 1식", ultimate: "제 2식" },
   demon: { normal: "데빌 버스트", ultimate: "로스트 엔젤" },
-  artist: { normal: "드로잉", ultimate: "예술의 혼" },
+  artist: { normal: "드로잉", ultimate: "내면의 평화" },
   believer: { normal: "주신을 위해", ultimate: "커져가는신앙" },
   archmage: { attack: "벼락", normal: "작열", ultimate: "창해" },
   gunner: { normal: "기관총", ultimate: "리로드" },
@@ -711,9 +722,9 @@ const characterGuide = {
     ultimate: ["갓 웨폰", "5초", "현재 공격력을 가진 무기를 추가 소환하고 공격력을 0으로 초기화합니다. 각 무기는 5초마다 공격합니다."]
   },
   tank: {
-    attack: ["중장갑", "1초", "받는 모든 피해가 20% 감소합니다. 피해를 받을 때마다 주변 좁은 범위에 충격파를 터트려 5의 피해와 0.5초 기절을 줍니다."],
-    normal: ["도발", "14초", "10의 피해를 주고 적의 이동 궤적을 자신에게 향하게 하며 2초 동안 스킬을 막습니다."],
-    ultimate: ["기사의 방패", "35초", "3초 동안 움직이지 못하지만 피해가 90% 감소합니다. 종료 시 넓은 범위에 50의 피해와 3초 기절을 줍니다."]
+    attack: ["증장갑", "패시브", "받는 모든 피해가 20% 감소하며, 적에게 닿으면 자신의 체력을 1 회복합니다."],
+    normal: ["메탈 벨트", "30초", "3초에 걸쳐 10 + 잃은 체력의 20%만큼 회복합니다. 회복하는 동안 받는 피해가 추가로 10% 감소합니다."],
+    ultimate: ["기사의 방패", "20초", "4초 동안 방패를 둘러 받는 피해가 90% 감소하고, 적이 자신에게 입히려던 원래 피해량의 25%를 되돌려줍니다. 자신에게 닿은 투사체는 피해를 받지 않고 자신의 탄환으로 바꿔 날리지만, 이동속도가 50% 감소합니다."]
   },
   beamer: {
     attack: ["천공 레이저", "3초", "적의 위치를 지정한후 잠시후에 레이저를 포격해 45의 피해를 줍니다."],
@@ -751,9 +762,9 @@ const characterGuide = {
     ultimate: ["강림", "50초", "현재 체제의 강화 소환수를 부릅니다. 강화 전사는 체력이 높으며,강화 궁수는 튕기는 화살을 발사합니다."]
   },
   swordsman: {
-    attack: ["기본 공격", "2.5초", "적의 위치로 순간이동하며 검으로 원형 모양으로 10의 회전 베기 피해를 줍니다. 기본적으로 움직이지 않습니다."],
-    normal: ["제 1식", "14초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 1초간 멈추고, 멈춘 동안 0.1초마다 1의 피해를 받습니다."],
-    ultimate: ["제 2식", "60초", "0.3초마다 적을 바라보는 방향의 벽 끝으로 5회 순간이동하며, 회당 20의 피해를 주고 벤 자리에 검흔을 남깁니다."]
+    attack: ["원형 검무", "1초", "적의 위치로 순간이동하며 원형으로 베어 5의 피해를 입힙니다. 기본적으로 움직이지 않습니다."],
+    normal: ["제 1식 : 칼날 난무", "6초", "3초간 사라진 뒤 원래 위치로 돌아옵니다. 적은 0.5초간 멈추고, 멈춘 동안 0.1초마다 1의 피해를 받습니다."],
+    ultimate: ["제 2식 : 절공 검무", "60초", "0.15초마다 적을 바라보는 방향의 벽 끝으로 10회 순간이동하며, 회당 7.5의 피해를 주고 벤 자리에 0.7초 동안 검흔을 남깁니다."]
   },
   demon: {
     attack: ["데스 소드", "3.5초", "적을 관통하는 암흑 레이저로 5의 피해를 줍니다. 표식이 없으면 5초 표식을 남기고, 표식이 있으면 1개를 지워 5의 추가 피해와 2초 둔화를 줍니다. 악마의 표식은 터질 때마다 추가로 5의 피해를 줍니다."],
@@ -776,7 +787,7 @@ const characterGuide = {
     ultimate: ["창해", "23초", "맵 전체를 5초간 심해로 만듭니다. 물은 적을 느리게 만들며 초당 2의 피해를 주고 습기 원소를 부착합니다."]
   },
   gunner: {
-    attack: ["권총", "1초", "적에게 총알을 발사해 7.5의 피해를 입힙니다. 5번 쏠 때마다 3초 동안 장전합니다."],
+    attack: ["권총", "1초", "적에게 총알을 발사해 7의 피해를 입힙니다. 5번 쏠 때마다 3초 동안 장전합니다."],
     normal: ["기관총", "10초", "2.5초 동안 기관총 상태가 됩니다. 0.1초마다 1의 피해를 가진 탄환을 난사합니다."],
     ultimate: ["리로드", "3초", "앞으로 순간이동합니다. 순간이동한 위치에서 탄환을 발사하여 맞은 적에게 5의 피해를 입힙니다."]
   },
@@ -1247,7 +1258,7 @@ function setupCodexActualPreviewSkill(previewGame, kind, skillIndex) {
     addRift(caster, dummy.x - 88, dummy.y + 64);
   }
   if (kind === "stealth") {
-    caster.stealthTime = skillIndex === 1 ? 180 : 0;
+    caster.stealthTime = skillIndex === 1 ? 210 : 0;
   }
   scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex);
   caster.skillTimer = Infinity;
@@ -1293,6 +1304,13 @@ function configureCodexPreviewScene(previewGame, kind, skillIndex) {
     caster.y = dummy.y = h * 0.55;
     caster.vx = dummy.vx = 0;
     caster.vy = dummy.vy = 0;
+    caster.hp = caster.maxHp * 0.72;
+  }
+  if (kind === "tank" && skillIndex === 1) {
+    caster.hp = caster.maxHp * 0.42;
+  }
+  if (kind === "tank" && skillIndex === 2) {
+    caster.hp = caster.maxHp * 0.72;
   }
   if (kind === "brawler") {
     caster.x = w * 0.42;
@@ -1405,8 +1423,19 @@ function scheduleCodexPreviewSkill(previewGame, caster, dummy, kind, skillIndex)
     return;
   }
   if (kind === "tank" && skillIndex === 0) {
-    addCodexPreviewEvent(previewGame, 40, () => damage(caster, 12, dummy));
-    addCodexPreviewEvent(previewGame, 120, () => damage(caster, 12, dummy));
+    addCodexPreviewEvent(previewGame, 40, () => {
+      dummy.x = caster.x + caster.radius + dummy.radius - 2;
+      dummy.y = caster.y;
+    });
+    addCodexPreviewEvent(previewGame, 85, () => {
+      dummy.x = caster.x + caster.radius + dummy.radius - 2;
+      dummy.y = caster.y;
+    });
+    return;
+  }
+  if (kind === "tank" && skillIndex === 2) {
+    addCodexPreviewEvent(previewGame, 10, () => triggerUltimate(caster));
+    addCodexPreviewEvent(previewGame, 50, () => fireStraightBullet(dummy, { damage: 20, speed: 12, radius: 8, color: "#e5e7eb", gunBullet: true }));
     return;
   }
   if (kind === "grabber" && skillIndex === 2) {
@@ -2714,10 +2743,15 @@ function drawCodexPreviewEffect(ctx, kind, skillIndex, mode, t, caster, dummy, w
   if (kind === "tank") {
     if (skillIndex === 0) {
       const pose = { ...caster, x: caster.x + (dummy.x - caster.x - 50) * Math.min(1, t * 1.25) };
-      return { caster: pose, dummyState: { hpRate: 0.66 } };
+      drawCodexHeal(ctx, pose, t, accent);
+      return { caster: pose, casterState: { shield: true }, dummyState: { hpRate: 0.86 } };
+    }
+    if (skillIndex === 1) {
+      drawCodexHeal(ctx, caster, t, accent);
+      drawCodexAura(ctx, caster, t, color, accent, 74);
+      return { casterState: { shield: true, hpRate: 0.75 } };
     }
     drawCodexAura(ctx, caster, t, color, accent, skillIndex === 2 ? 112 : 70);
-    if (skillIndex !== 2) drawCodexLaser(ctx, caster, dummy, t, accent, false);
     return { casterState: { shield: skillIndex === 2 }, dummyState: { hpRate: skillIndex === 2 ? 0.42 : 0.66 } };
   }
 
@@ -3456,8 +3490,8 @@ function switchLobbyTab(tabName) {
   if (tabName === "ranking") loadRankings();
 }
 
-function renderPatchNotice(version = "beta-v1.5") {
-  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.5"];
+function renderPatchNotice(version = "beta-v1.7") {
+  const notice = patchNoticeVersions[version] || patchNoticeVersions["beta-v1.7"];
   if (!ui.patchVersionTitle || !ui.patchVersionContent) return;
 
   ui.patchVersionTitle.textContent = notice.title;
@@ -3472,7 +3506,7 @@ function renderPatchNotice(version = "beta-v1.5") {
 }
 
 function setPatchNotesOpen(open) {
-  if (open) renderPatchNotice("beta-v1.5");
+  if (open) renderPatchNotice("beta-v1.7");
   ui.patchNoteModal.classList.toggle("is-active", open);
   ui.patchNoteModal.setAttribute("aria-hidden", open ? "false" : "true");
 }
@@ -5186,9 +5220,9 @@ function normalSkillCooldown(kind) {
     charger: 600,
     grabber: 540,
     poker: 600,
-    stealth: 1020,
+    stealth: 900,
     enhancer: 600,
-    tank: 840,
+    tank: 1800,
     beamer: 720,
     wild: 1080,
     vampire: 900,
@@ -5196,7 +5230,7 @@ function normalSkillCooldown(kind) {
     timekeeper: 540,
     riftmaker: 600,
     summoner: 720,
-    swordsman: 840,
+    swordsman: 360,
     demon: 540,
     artist: 180,
     believer: 1200,
@@ -5220,7 +5254,7 @@ function ultimateCooldown(kind) {
     poker: 2400,
     stealth: 2700,
     enhancer: 300,
-    tank: 2100,
+    tank: 1200,
     beamer: 3600,
     wild: 0,
     vampire: 3000,
@@ -5313,6 +5347,10 @@ function makeCharacterCombatState(kind) {
     damageReduction: kind === "tank" ? 0.2 : 0,
     tankCounterShockLock: false,
     tankCounterShockCooldown: 0,
+    tankContactHealCooldown: 0,
+    metalBeltTime: 0,
+    metalBeltTick: 0,
+    metalBeltHealPerTick: 0,
     shieldTime: 0,
     shieldBlastPending: false,
     silenceTime: 0,
@@ -5339,7 +5377,7 @@ function makeCharacterCombatState(kind) {
     riftWallCooldown: 0,
     summonTimer: kind === "summoner" ? 240 : Infinity,
     summonMode: "warrior",
-    swordTimer: kind === "swordsman" ? 150 : Infinity,
+    swordTimer: kind === "swordsman" ? 60 : Infinity,
     swordDanceTime: 0,
     swordDanceTimer: 0,
     swordDanceHits: 0,
@@ -5595,7 +5633,9 @@ function damage(fighter, amount, attacker = null, options = {}) {
   if (fighter.phaseTime > 0) return;
   let finalAmount = amount;
   if (fighter.mageDamageAmpTime > 0) finalAmount *= 1.1;
-  const reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
+  let reduction = fighter.shieldTime > 0 ? 0.9 : fighter.damageReduction;
+  if (fighter.shieldTime <= 0 && fighter.metalBeltTime > 0) reduction += 0.1;
+  reduction = clamp(reduction, 0, 0.95);
   finalAmount *= 1 - reduction;
   finalAmount = Math.max(0, finalAmount);
   const actualDamage = Math.min(fighter.hp, finalAmount);
@@ -5607,7 +5647,10 @@ function damage(fighter, amount, attacker = null, options = {}) {
   if (fighterActsLike(attacker, "vampire")) {
     heal(attacker, finalAmount * 0.3);
   }
-  if (actualDamage > 0 && !options.noTankCounter && attacker && attacker !== fighter) {
+  if (actualDamage > 0 && fighter.kind === "tank" && fighter.shieldTime > 0 && attacker && attacker !== fighter && !options.noShieldReflect) {
+    damageCombatTarget(attacker, amount * 0.25, fighter, { noTankCounter: true, noShieldReflect: true });
+  }
+  if (actualDamage > 0 && fighter.kind !== "tank" && !options.noTankCounter && attacker && attacker !== fighter) {
     triggerTankCounterShock(fighter, attacker);
   }
   updateHud();
@@ -5686,6 +5729,14 @@ function contactDamagePair(a, b) {
   }
   if (fighterActsLike(a, "wild")) createWildSlashes(a);
   if (fighterActsLike(b, "wild")) createWildSlashes(b);
+  if (a.kind === "tank" && a.tankContactHealCooldown <= 0) {
+    heal(a, 1);
+    a.tankContactHealCooldown = 20;
+  }
+  if (b.kind === "tank" && b.tankContactHealCooldown <= 0) {
+    heal(b, 1);
+    b.tankContactHealCooldown = 20;
+  }
   if (fighterActsLike(a, "wild") && a.chaseTime > 0) {
     const angle = Math.atan2(a.y - b.y, a.x - b.x);
     a.vx = Math.cos(angle) * 10;
@@ -6739,9 +6790,34 @@ function dodgesProjectile(target) {
   return !target?.owner && target?.kind === "roper" && target.roperDodgeTime > 0;
 }
 
+function convertProjectileByShield(ball, target) {
+  if (!ball || !target || target.kind !== "tank" || target.shieldTime <= 0 || ball.owner === target) return false;
+  const newTarget = nearestEnemyTarget(target);
+  const angle = Math.atan2(newTarget.y - target.y, newTarget.x - target.x);
+  const speed = ball.speed || Math.hypot(ball.vx, ball.vy) || 12;
+  ball.owner = target;
+  ball.x = target.x + Math.cos(angle) * (target.radius + ball.radius + 8);
+  ball.y = target.y + Math.sin(angle) * (target.radius + ball.radius + 8);
+  ball.vx = Math.cos(angle) * speed;
+  ball.vy = Math.sin(angle) * speed;
+  ball.hitCooldown = 14;
+  ball.color = target.accent || ball.color;
+  addVisualEffect({
+    type: "rope-hit",
+    x1: target.x,
+    y1: target.y,
+    x2: ball.x,
+    y2: ball.y,
+    color: target.accent,
+    life: 18,
+    maxLife: 18
+  });
+  return true;
+}
+
 function startStealth(fighter) {
   const hyper = fighter.hyperStealthNext;
-  fighter.stealthTime = hyper ? 240 : 180;
+  fighter.stealthTime = hyper ? 240 : 210;
   fighter.stealthDamage = hyper ? 10 : 15;
   fighter.hyperStealthActive = hyper;
   fighter.hyperStealthNext = false;
@@ -7441,7 +7517,7 @@ function triggerNormalSkill(fighter) {
   if (fighter.kind === "stealth") {
     if (fighter.stealthTime <= 0) return;
     assassinate(fighter);
-    fighter.skillTimer = 1020;
+    fighter.skillTimer = 900;
     return;
   }
 
@@ -7453,17 +7529,12 @@ function triggerNormalSkill(fighter) {
   }
 
   if (fighter.kind === "tank") {
-    const target = nearestEnemyTarget(fighter);
-    damageCombatTarget(target, 10, fighter);
-    if (!target.owner) {
-      const angle = Math.atan2(fighter.y - target.y, fighter.x - target.x);
-      const speed = Math.hypot(target.vx, target.vy) || 6.8;
-      target.vx = Math.cos(angle) * speed;
-      target.vy = Math.sin(angle) * speed;
-      target.silenceTime = Math.max(target.silenceTime, 120);
-    }
+    const totalHeal = 10 + Math.max(0, fighter.maxHp - fighter.hp) * 0.2;
+    fighter.metalBeltTime = 180;
+    fighter.metalBeltTick = 1;
+    fighter.metalBeltHealPerTick = totalHeal / 6;
     addSkillPulse(fighter, fighter.accent);
-    fighter.skillTimer = 840;
+    fighter.skillTimer = 1800;
     return;
   }
 
@@ -7657,10 +7728,10 @@ function triggerUltimate(fighter) {
   }
 
   if (fighter.kind === "tank") {
-    fighter.shieldTime = 180;
-    fighter.shieldBlastPending = true;
+    fighter.shieldTime = 240;
+    fighter.shieldBlastPending = false;
     addSkillPulse(fighter, fighter.accent);
-    fighter.ultimateTimer = 2100;
+    fighter.ultimateTimer = 1200;
     return;
   }
 
@@ -7976,6 +8047,7 @@ function moveFighter(fighter, dt) {
   if (fighter.timeHistory.length > 181) fighter.timeHistory.shift();
   if (fighter.phaseTime > 0) fighter.phaseTime -= dt;
   if (fighter.tankCounterShockCooldown > 0) fighter.tankCounterShockCooldown -= dt;
+  if (fighter.tankContactHealCooldown > 0) fighter.tankContactHealCooldown -= dt;
   if (fighter.frozenTime > 0) fighter.frozenTime -= dt;
   if (fighter.hackingMarkTime > 0) fighter.hackingMarkTime -= dt;
   updateHackingLaserEntity(fighter, dt);
@@ -7991,6 +8063,18 @@ function moveFighter(fighter, dt) {
     if (fighter.demonMarkTime <= 0) {
       fighter.demonMarkCount = 0;
       fighter.demonMarkTime = 0;
+    }
+  }
+  if (fighter.metalBeltTime > 0) {
+    fighter.metalBeltTime -= dt;
+    fighter.metalBeltTick -= dt;
+    while (fighter.metalBeltTick <= 0 && fighter.metalBeltTime > 0 && fighter.hp > 0 && !game.over) {
+      heal(fighter, fighter.metalBeltHealPerTick);
+      fighter.metalBeltTick += 30;
+    }
+    if (fighter.metalBeltTime <= 0) {
+      fighter.metalBeltTime = 0;
+      fighter.metalBeltHealPerTick = 0;
     }
   }
   if (fighter.artSoulTime > 0) fighter.artSoulTime -= dt;
@@ -8146,9 +8230,9 @@ function moveFighter(fighter, dt) {
     updateSkills(fighter, dt);
     if (wasVanished && fighter.swordDanceTime <= 0) {
       const target = swordEnemyTarget(fighter);
-      if (!target.owner) target.stunTime = Math.max(target.stunTime || 0, 60);
+      if (!target.owner) target.stunTime = Math.max(target.stunTime || 0, 30);
       fighter.swordDanceTimer = 0;
-      fighter.phaseTime = Math.max(fighter.phaseTime, 60);
+      fighter.phaseTime = Math.max(fighter.phaseTime, 30);
       addVisualEffect({
         type: "sword-ring",
         x: target.x,
@@ -8199,8 +8283,8 @@ function moveFighter(fighter, dt) {
         color: fighter.swordDanceHits % 2 ? fighter.accent : "#f7fbff",
         life: 28,
         maxLife: 28,
-        index: 10 - fighter.swordDanceHits,
-        total: 10
+        index: 5 - fighter.swordDanceHits,
+        total: 5
       });
       if (fighter.swordDanceHits <= 0) {
         fighter.swordDanceTimer = 0;
@@ -8217,10 +8301,11 @@ function moveFighter(fighter, dt) {
     fighter.vy = 0;
     updateSkills(fighter, dt);
     if (fighter.swordUltimateTimer <= 0) {
-      const hitIndex = 5 - fighter.swordUltimateHits;
-      performSwordDash(fighter, 20, hitIndex, 5, true);
+      const totalHits = 10;
+      const hitIndex = totalHits - fighter.swordUltimateHits;
+      performSwordDash(fighter, 7.5, hitIndex, totalHits, true);
       fighter.swordUltimateHits -= 1;
-      fighter.swordUltimateTimer = 18;
+      fighter.swordUltimateTimer = 9;
     }
     return;
   }
@@ -8419,7 +8504,7 @@ function moveFighter(fighter, dt) {
     }
     return;
   }
-  if (fighter.shieldTime <= 0 && fighter.kind !== "swordsman" && !fighter.cosmicBlasterActive) {
+  if ((fighter.shieldTime <= 0 || fighter.kind === "tank") && fighter.kind !== "swordsman" && !fighter.cosmicBlasterActive) {
     fighter.x += fighter.vx * dt;
     fighter.y += fighter.vy * dt;
   } else if (fighter.kind === "swordsman" || fighter.cosmicBlasterActive) {
@@ -8444,6 +8529,7 @@ function moveFighter(fighter, dt) {
     * (fighter.chaseTime > 0 ? 3 : 1)
     * (fighter.explosionRushTime > 0 ? 3.2 : 1)
     * (fighter.bloodPreludeTime > 0 ? 2 : 1)
+    * (fighter.kind === "tank" && fighter.shieldTime > 0 ? 0.5 : 1)
     * wildInstinct
     * brawlerBoost;
   if (fighter.cosmicBlasterActive) {
@@ -8536,8 +8622,10 @@ function moveFighter(fighter, dt) {
 
   if (fighter.shieldTime > 0 && (fighterActsLike(fighter, "tank") || fighter.shieldBlastPending)) {
     fighter.shieldTime -= dt;
-    fighter.vx = 0;
-    fighter.vy = 0;
+    if (fighter.kind !== "tank") {
+      fighter.vx = 0;
+      fighter.vy = 0;
+    }
     if (fighter.shieldTime <= 0 && fighter.shieldBlastPending) {
       fighter.shieldBlastPending = false;
       createTankBlast(fighter);
@@ -8605,7 +8693,7 @@ function moveFighter(fighter, dt) {
     fighter.swordTimer -= dt;
     if (fighter.swordTimer <= 0) {
       useSwordBasic(fighter);
-      fighter.swordTimer = 150;
+      fighter.swordTimer = 60;
     }
   }
 
@@ -8872,7 +8960,7 @@ function useSwordBasic(owner) {
   owner.y = clamp(target.y, owner.radius, canvas.height - owner.radius);
   owner.vx = 0;
   owner.vy = 0;
-  applySwordCircle(owner, 10, 88);
+  applySwordCircle(owner, 5, 88);
   addVisualEffect({
     type: "sword-step",
     x1: fromX,
@@ -8918,8 +9006,8 @@ function performSwordDash(owner, damageAmount, orbitIndex = 0, total = 1, ultima
     x2: end.x,
     y2: end.y,
     color: owner.accent,
-    life: ultimate ? 180 : 34,
-    maxLife: ultimate ? 180 : 34,
+    life: ultimate ? 42 : 34,
+    maxLife: ultimate ? 42 : 34,
     index: orbitIndex,
     total
   });
@@ -8936,13 +9024,13 @@ function beginSwordDance(owner) {
   owner.phaseTime = 180;
   owner.swordDanceTime = 180;
   owner.swordDanceTimer = 180;
-  owner.swordDanceHits = 10;
-  owner.skillTimer = 840;
+  owner.swordDanceHits = 5;
+  owner.skillTimer = 360;
   addSkillPulse(owner, owner.accent);
 }
 
 function beginSwordUltimate(owner) {
-  owner.swordUltimateHits = 5;
+  owner.swordUltimateHits = 10;
   owner.swordUltimateTimer = 1;
   owner.ultimateTimer = 3600;
   addSkillPulse(owner, "#f7fbff");
@@ -9951,6 +10039,7 @@ function updateBalls(dt) {
       const dy = target.y - ball.y;
       if (Math.hypot(dx, dy) < target.radius + ball.radius && ball.hitCooldown <= 0) {
         if (target !== ball.owner) {
+          if (convertProjectileByShield(ball, target)) return true;
           if (dodgesProjectile(target)) {
             addVisualEffect({
               type: "rope-hit",
@@ -11383,7 +11472,7 @@ function drawArtOrbs() {
       ctx.strokeStyle = trailColor;
       ctx.shadowColor = trailColor;
       ctx.shadowBlur = boosted ? 6 : 2;
-      ctx.lineWidth = current.radius * (boosted ? 0.46 : 0.28);
+      ctx.lineWidth = current.radius * (boosted ? 0.55 : 0.34);
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(previous.x, previous.y);
@@ -11420,7 +11509,7 @@ function drawDrawingFlash(effect) {
   ctx.shadowColor = trailColor;
   ctx.shadowBlur = 6;
   ctx.strokeStyle = trailColor;
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 6;
   const boldStride = Math.max(3, Math.ceil(trail.length / 220));
   for (let index = boldStride; index < trail.length; index += boldStride) {
     const previous = trail[index - boldStride];
@@ -11432,7 +11521,7 @@ function drawDrawingFlash(effect) {
   }
   ctx.globalAlpha = alpha * 0.18;
   ctx.strokeStyle = trailColor;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.4;
   const fineStride = Math.max(2, Math.ceil(trail.length / 360));
   for (let index = fineStride; index < trail.length; index += fineStride) {
     const previous = trail[index - fineStride];
@@ -12408,7 +12497,7 @@ function fireStraightBullet(owner, options = {}) {
   });
 }
 
-function firePistol(owner, damageAmount = 7.5) {
+function firePistol(owner, damageAmount = 7) {
   fireStraightBullet(owner, { damage: damageAmount, speed: 15.5, radius: 6, color: "#f8fafc", gunBullet: true });
   owner.gunAmmo -= 1;
   if (owner.gunAmmo <= 0) {
@@ -12567,11 +12656,18 @@ function triggerExplosionBoost(owner) {
 function explosionBounceAngle(owner) {
   const margin = owner.radius + 76;
   const random = combatRandom(owner, "explosion-boost-bounce", game.tick);
-  if (owner.y < margin) return Math.PI * (0.18 + random * 0.64);
-  if (owner.y > canvas.height - margin) return Math.PI * (1.18 + random * 0.64);
-  if (owner.x < margin) return Math.PI * (-0.32 + random * 0.64);
-  if (owner.x > canvas.width - margin) return Math.PI * (0.68 + random * 0.64);
-  return random * Math.PI * 2;
+  let angle;
+  if (owner.y < margin) angle = Math.PI * (0.18 + random * 0.64);
+  else if (owner.y > canvas.height - margin) angle = Math.PI * (1.18 + random * 0.64);
+  else if (owner.x < margin) angle = Math.PI * (-0.32 + random * 0.64);
+  else if (owner.x > canvas.width - margin) angle = Math.PI * (0.68 + random * 0.64);
+  else angle = random * Math.PI * 2;
+  const sin = Math.abs(Math.sin(angle));
+  const cos = Math.abs(Math.cos(angle));
+  if (sin < 0.22 || cos < 0.22) {
+    angle += (random < 0.5 ? -1 : 1) * 0.42;
+  }
+  return angle;
 }
 
 function beginMegaBoom(owner) {
@@ -13628,21 +13724,21 @@ const SURVIVAL_WEAPONS = {
   mageFire: { name: "작열", awakenedName: "멸화 운석", icon: "火", color: "#fb923c", item: "akashicTome", baseCooldown: 480, description: "잠시 후 적 위치에 커다란 파이어 볼을 떨어뜨립니다.", awakenedDescription: "거대한 운석 3개가 넓은 범위를 불태웁니다." },
   mageSea: { name: "창해", awakenedName: "심해 성역", icon: "海", color: "#38bdf8", item: "akashicTome", baseCooldown: 600, description: "전장에 심해의 물결을 일으켜 적을 느리게 만들고 피해를 줍니다.", awakenedDescription: "맵 전체에 강한 심해 파동이 반복적으로 밀려옵니다." },
   pistol: { name: "권총 난사", awakenedName: "황금 탄막", icon: "Y", color: "#f59e0b", item: "quickLoader", baseCooldown: 150, description: "가장 가까운 적에게 빠른 총알을 연속 발사합니다.", awakenedDescription: "황금 총알이 부채꼴로 쏟아지고 적을 관통합니다." },
-  machineGun: { name: "기관총", awakenedName: "불릿 스톰", icon: "Y", color: "#fb923c", item: "gunBarrel", baseCooldown: 420, description: "짧은 시간 여러 발의 기관총 탄환을 퍼붓습니다.", awakenedDescription: "훨씬 많은 탄환이 화면을 가르며 일부가 적을 추적합니다." },
+  machineGun: { name: "기관총", awakenedName: "불릿 스톰", icon: "Y", color: "#fb923c", item: "quickLoader", baseCooldown: 420, description: "짧은 시간 여러 발의 기관총 탄환을 퍼붓습니다.", awakenedDescription: "훨씬 많은 탄환이 화면을 가르며 일부가 적을 추적합니다." },
   icicleShot: { name: "고드름", awakenedName: "빙결 창우", icon: "I", color: "#7dd3fc", item: "frostCrystal", baseCooldown: 230, description: "얼음 고드름 두 개를 발사해 적을 느리게 만듭니다.", awakenedDescription: "거대한 고드름들이 관통하며 얼음 파편 폭발을 남깁니다." },
-  blizzardEssence: { name: "얼음 정수", awakenedName: "이터널 블리자드", icon: "I", color: "#bae6fd", item: "snowHalo", baseCooldown: 540, description: "느리게 유도되는 얼음 정수를 날려 범위 피해와 둔화를 줍니다.", awakenedDescription: "영롱한 얼음 정수 3개가 적을 추적하고 얼음 폭발을 일으킵니다." },
+  blizzardEssence: { name: "얼음 정수", awakenedName: "이터널 블리자드", icon: "I", color: "#bae6fd", item: "frostCrystal", baseCooldown: 540, description: "느리게 유도되는 얼음 정수를 날려 범위 피해와 둔화를 줍니다.", awakenedDescription: "영롱한 얼음 정수 3개가 적을 추적하고 얼음 폭발을 일으킵니다." },
   explosionBoost: { name: "익스플로전 부스트", awakenedName: "연쇄 폭압", icon: "X", color: "#fb7185", item: "blastCore", baseCooldown: 210, description: "반동으로 튕기며 전방에 폭발 분사와 파편을 쏟아냅니다.", awakenedDescription: "더 많은 폭발 분사와 파편이 넓은 각도로 전장을 찢습니다." },
-  houserImpact: { name: "하우저 임팩트", awakenedName: "폭격 축제", icon: "X", color: "#f97316", item: "detonator", baseCooldown: 520, description: "무작위 적 주변에 하늘에서 떨어지는 폭격 기둥을 호출합니다.", awakenedDescription: "폭격 기둥과 사선 폭발선이 함께 쏟아집니다." },
+  houserImpact: { name: "하우저 임팩트", awakenedName: "폭격 축제", icon: "X", color: "#f97316", item: "blastCore", baseCooldown: 520, description: "무작위 적 주변에 하늘에서 떨어지는 폭격 기둥을 호출합니다.", awakenedDescription: "폭격 기둥과 사선 폭발선이 함께 쏟아집니다." },
   ropeStrike: { name: "로프 타격", awakenedName: "와이어 스매시", icon: "O", color: "#d6a35d", item: "ropeHook", baseCooldown: 260, description: "로프를 타고 날아드는 충격파를 발사해 적을 기절시킵니다.", awakenedDescription: "굵은 와이어 타격 3개가 적을 관통하며 강하게 기절시킵니다." },
   ropeRush: { name: "로프 러쉬", awakenedName: "타잔 러쉬", icon: "O", color: "#fbbf24", item: "ropeHook", baseCooldown: 510, description: "적을 중심으로 왕복하는 로프 라인이 연속으로 후려칩니다.", awakenedDescription: "더 길고 굵은 로프 라인이 여러 적을 휘감으며 강타합니다." },
   rouletteShot: { name: "룰렛", awakenedName: "잭팟 룰렛", icon: "?", color: "#fb7185", item: "luckyChip", baseCooldown: 300, description: "카드 탄환, 별 탄환, 룰렛 광선 중 하나를 무작위로 발동합니다.", awakenedDescription: "잭팟 확률이 크게 올라가며 룰렛 광선과 탄환이 훨씬 화려해집니다." },
-  ultimateRoulette: { name: "궁극 룰렛", awakenedName: "카오스 카지노", icon: "?", color: "#facc15", item: "chaosDice", baseCooldown: 720, description: "카드, 광선, 베기 계열 랜덤 공격을 연속으로 섞어 사용합니다.", awakenedDescription: "여섯 번의 카오스 공격이 서로 다른 형태로 전장을 뒤덮습니다." },
+  ultimateRoulette: { name: "궁극 룰렛", awakenedName: "카오스 카지노", icon: "?", color: "#facc15", item: "luckyChip", baseCooldown: 720, description: "카드, 광선, 베기 계열 랜덤 공격을 연속으로 섞어 사용합니다.", awakenedDescription: "여섯 번의 카오스 공격이 서로 다른 형태로 전장을 뒤덮습니다." },
   supernova: { name: "초신성", awakenedName: "은하 붕괴", icon: "U", color: "#818cf8", item: "stardust", baseCooldown: 430, description: "적 주변에 큰 초신성 폭발을 일으킵니다.", awakenedDescription: "별빛 고리가 겹쳐지는 초대형 은하 폭발이 연속 발생합니다." },
-  cosmicBlaster: { name: "코스믹 블래스터", awakenedName: "우주 절단포", icon: "U", color: "#a78bfa", item: "cosmicLens", baseCooldown: 560, description: "적 방향으로 넓은 우주 레이저를 발사합니다.", awakenedDescription: "검푸른 우주 광선 여러 줄이 전장을 절단합니다." },
+  cosmicBlaster: { name: "코스믹 블래스터", awakenedName: "우주 절단포", icon: "U", color: "#a78bfa", item: "stardust", baseCooldown: 560, description: "적 방향으로 넓은 우주 레이저를 발사합니다.", awakenedDescription: "검푸른 우주 광선 여러 줄이 전장을 절단합니다." },
   hackingBullet: { name: "해킹 탄환", awakenedName: "코드 침식", icon: "#", color: "#34d399", item: "codeChip", baseCooldown: 300, description: "빠른 해킹 탄환을 맞힌 뒤 코드 레이저로 추가 피해를 줍니다.", awakenedDescription: "해킹 탄환이 분열하고 코드 레이저가 적을 연속 침식합니다." },
-  hologramLaser: { name: "홀로그램", awakenedName: "다중 홀로그램", icon: "#", color: "#22d3ee", item: "holoCore", baseCooldown: 620, description: "가상 분신 위치에서 해킹 레이저를 발사합니다.", awakenedDescription: "여러 홀로그램이 동시에 교차 레이저를 쏩니다." },
+  hologramLaser: { name: "홀로그램", awakenedName: "다중 홀로그램", icon: "#", color: "#22d3ee", item: "codeChip", baseCooldown: 620, description: "가상 분신 위치에서 해킹 레이저를 발사합니다.", awakenedDescription: "여러 홀로그램이 동시에 교차 레이저를 쏩니다." },
   rockShard: { name: "지각파편", awakenedName: "암석 난류", icon: "G", color: "#a16207", item: "stoneShard", baseCooldown: 240, description: "투박한 바위 파편을 적에게 발사합니다.", awakenedDescription: "거대한 암석 파편들이 적을 관통하고 묵직한 파열을 남깁니다." },
-  gaiaWall: { name: "데스오브가이아", awakenedName: "가이아 성벽", icon: "G", color: "#78716c", item: "gaiaRune", baseCooldown: 500, description: "적 앞에 세로로 솟는 바위벽을 세워 피해를 줍니다.", awakenedDescription: "여러 개의 거대한 바위벽이 전장을 갈라버립니다." }
+  gaiaWall: { name: "데스오브가이아", awakenedName: "가이아 성벽", icon: "G", color: "#78716c", item: "stoneShard", baseCooldown: 500, description: "적 앞에 세로로 솟는 바위벽을 세워 피해를 줍니다.", awakenedDescription: "여러 개의 거대한 바위벽이 전장을 갈라버립니다." }
 };
 
 const SURVIVAL_ITEMS = {
@@ -13665,21 +13761,14 @@ const SURVIVAL_ITEMS = {
   prismInk: { name: "프리즘 물감", icon: "A", weapon: "artOrbit", description: "예술 구체의 수와 유지 시간이 증가합니다.", effect: "궤도 구체 강화" },
   holyRelic: { name: "성스러운 유물", icon: "H", weapon: "growingFaith", description: "신앙 계열 공격이 발동할 때 회복량과 빛의 횟수가 증가합니다.", effect: "신앙 회복 강화" },
   akashicTome: { name: "아카식 기록서", icon: "Z", weapon: "mageLightning", description: "대마법 계열 무기의 범위와 타격 횟수가 증가합니다.", effect: "원소 마법 강화" },
-  quickLoader: { name: "고속 탄창", icon: "Y", weapon: "pistol", description: "권총 계열 탄환 수와 탄속이 증가합니다.", effect: "권총 탄막 강화" },
-  gunBarrel: { name: "냉각 총열", icon: "Y", weapon: "machineGun", description: "기관총 계열 탄환이 더 오래 유지되고 일부가 관통합니다.", effect: "기관총 지속 강화" },
-  frostCrystal: { name: "서리 결정", icon: "I", weapon: "icicleShot", description: "얼음 탄환이 더 넓게 퍼지고 둔화가 강해집니다.", effect: "고드름 강화" },
-  snowHalo: { name: "빙설의 고리", icon: "I", weapon: "blizzardEssence", description: "얼음 정수 폭발 범위와 둔화 효과가 증가합니다.", effect: "정수 폭발 강화" },
-  blastCore: { name: "폭압 코어", icon: "X", weapon: "explosionBoost", description: "폭발 계열 공격의 범위와 밀쳐내는 힘이 증가합니다.", effect: "폭발 범위 증가" },
-  detonator: { name: "원격 기폭장치", icon: "X", weapon: "houserImpact", description: "포격 폭발 횟수와 폭발 예고 시간이 증가합니다.", effect: "폭격 연쇄 강화" },
+  quickLoader: { name: "고속 탄창", icon: "Y", weapons: ["pistol", "machineGun"], description: "총기 계열 공격의 탄환 수와 탄속이 증가하며 권총과 기관총을 모두 각성시킬 수 있습니다.", effect: "총기 계열 각성" },
+  frostCrystal: { name: "서리 결정", icon: "I", weapons: ["icicleShot", "blizzardEssence"], description: "얼음 계열 공격이 더 넓고 영롱하게 퍼지며 고드름과 얼음 정수를 모두 각성시킬 수 있습니다.", effect: "얼음 계열 각성" },
+  blastCore: { name: "폭압 코어", icon: "X", weapons: ["explosionBoost", "houserImpact"], description: "폭발 계열 공격의 범위와 밀쳐내는 힘이 증가하며 부스트와 폭격을 모두 각성시킬 수 있습니다.", effect: "폭발 계열 각성" },
   ropeHook: { name: "강철 갈고리", icon: "O", weapons: ["ropeStrike", "ropeRush"], description: "로프 계열 타격이 더 넓어지고 로프 타격과 로프 러쉬를 모두 각성시킬 수 있습니다.", effect: "로프 계열 각성" },
-  luckyChip: { name: "행운 칩", icon: "?", weapon: "rouletteShot", description: "룰렛 공격이 더 강한 결과를 뽑을 확률이 증가합니다.", effect: "룰렛 확률 강화" },
-  chaosDice: { name: "혼돈 주사위", icon: "?", weapon: "ultimateRoulette", description: "궁극 룰렛이 더 많은 공격을 섞어 발동합니다.", effect: "룰렛 연쇄 강화" },
-  stardust: { name: "별가루", icon: "U", weapon: "supernova", description: "우주 계열 폭발의 범위와 기절 시간이 증가합니다.", effect: "초신성 강화" },
-  cosmicLens: { name: "우주 렌즈", icon: "U", weapon: "cosmicBlaster", description: "코스믹 블래스터가 더 넓어지고 검푸른 잔광을 남깁니다.", effect: "우주 광선 강화" },
-  codeChip: { name: "코드 칩", icon: "#", weapon: "hackingBullet", description: "해킹 탄환이 더 빨라지고 레이저 타격 수가 증가합니다.", effect: "코드 침식 강화" },
-  holoCore: { name: "홀로 코어", icon: "#", weapon: "hologramLaser", description: "홀로그램 레이저의 발사 위치가 늘어납니다.", effect: "분신 레이저 강화" },
-  stoneShard: { name: "압축 암편", icon: "G", weapon: "rockShard", description: "지각파편의 피해와 관통력이 증가합니다.", effect: "암석 파편 강화" },
-  gaiaRune: { name: "가이아 룬", icon: "G", weapon: "gaiaWall", description: "바위벽이 더 크게 솟고 여러 줄로 갈라집니다.", effect: "바위벽 강화" }
+  luckyChip: { name: "행운 칩", icon: "?", weapons: ["rouletteShot", "ultimateRoulette"], description: "룰렛 공격이 더 강한 결과를 뽑을 확률이 증가하며 룰렛과 궁극 룰렛을 모두 각성시킬 수 있습니다.", effect: "룰렛 계열 각성" },
+  stardust: { name: "별가루", icon: "U", weapons: ["supernova", "cosmicBlaster"], description: "우주 계열 공격의 범위와 잔광이 강화되며 초신성과 코스믹 블래스터를 모두 각성시킬 수 있습니다.", effect: "우주 계열 각성" },
+  codeChip: { name: "코드 칩", icon: "#", weapons: ["hackingBullet", "hologramLaser"], description: "해킹 계열 공격이 더 빠르고 화려해지며 해킹 탄환과 홀로그램 레이저를 모두 각성시킬 수 있습니다.", effect: "해킹 계열 각성" },
+  stoneShard: { name: "압축 암편", icon: "G", weapons: ["rockShard", "gaiaWall"], description: "바위 계열 공격의 피해와 압박력이 증가하며 지각파편과 가이아 벽을 모두 각성시킬 수 있습니다.", effect: "바위 계열 각성" }
 };
 
 const SURVIVAL_SUBS = [
@@ -13916,17 +14005,14 @@ function damagePvePlayer(amount) {
   if (!pveGame || pveGame.over) return;
   const player = pveGame.player;
   if (player.stealthTime > 0) return;
-  const reduction = player.shieldTime > 0 ? 0.9 : player.kind === "tank" ? 0.2 : 0;
+  let reduction = player.shieldTime > 0 ? 0.9 : player.kind === "tank" ? 0.2 : 0;
+  if (player.kind === "tank" && player.shieldTime <= 0 && player.metalBeltTime > 0) reduction += 0.1;
   amount *= 1 - reduction;
   const actualDamage = Math.min(player.hp, amount);
   player.hp = Math.max(0, player.hp - amount);
   player.damageTaken += actualDamage;
   pveGame.player.hitFlash = 10;
   addPveDamage(player.x, player.y - 36, Math.round(amount * 10) / 10);
-  if (actualDamage > 0 && player.kind === "tank" && player.tankCounterShockCooldown <= 0) {
-    player.tankCounterShockCooldown = 60;
-    createPveAreaAttack(player.x, player.y, 82, 5, 0, player.accent, "shockwave", 30);
-  }
   if (player.hp <= 0) finishPve(false);
 }
 
@@ -14140,16 +14226,12 @@ function usePveSkill(type) {
       player.skillTimer = 600;
       addPveFloating("용광로!", player.accent);
     } else if (player.kind === "tank") {
-      if (target) {
-        damagePveEnemy(target, 10);
-        const angle = Math.atan2(player.y - target.y, player.x - target.x);
-        const speed = Math.hypot(target.vx, target.vy) || target.baseSpeed || 5;
-        target.vx = Math.cos(angle) * speed;
-        target.vy = Math.sin(angle) * speed;
-        target.silenceTime = 120;
-      }
-      player.skillTimer = 720;
-      addPveFloating("도발!", player.accent);
+      const totalHeal = 10 + Math.max(0, player.maxHp - player.hp) * 0.2;
+      player.metalBeltTime = 180;
+      player.metalBeltTick = 1;
+      player.metalBeltHealPerTick = totalHeal / 6;
+      player.skillTimer = 1800;
+      addPveFloating("메탈 벨트!", player.accent);
     } else if (player.kind === "beamer") {
       firePveSlowBeam();
       player.stunTime = Math.max(player.stunTime, 18);
@@ -14203,9 +14285,9 @@ function usePveSkill(type) {
       player.ultimateTimer = 300;
       addPveFloating("갓 웨폰!", player.accent);
     } else if (player.kind === "tank") {
-      player.shieldTime = 180;
-      player.shieldBlastPending = true;
-      player.ultimateTimer = 2100;
+      player.shieldTime = 240;
+      player.shieldBlastPending = false;
+      player.ultimateTimer = 1200;
       addPveFloating("기사의 방패!", player.accent);
     } else if (player.kind === "beamer") {
       player.annihilatorTime = 180;
@@ -14334,6 +14416,14 @@ function stepPve() {
   if (player.bloodPreludeTime > 0) player.bloodPreludeTime -= 1;
   if (player.chaseTime > 0) player.chaseTime -= 1;
   if (player.pokerReveal > 0) player.pokerReveal -= 1;
+  if (player.metalBeltTime > 0) {
+    player.metalBeltTime -= 1;
+    player.metalBeltTick -= 1;
+    while (player.metalBeltTick <= 0 && player.metalBeltTime > 0 && player.hp > 0 && !pveGame.over) {
+      healPvePlayer(player.metalBeltHealPerTick);
+      player.metalBeltTick += 30;
+    }
+  }
   if (player.shieldTime > 0) {
     player.shieldTime -= 1;
     if (player.shieldTime <= 0 && player.shieldBlastPending) {
@@ -14347,7 +14437,7 @@ function stepPve() {
     if (player.stealthTimer <= 0) {
       player.hyperStealthActive = player.hyperStealthNext;
       player.hyperStealthNext = false;
-      player.stealthTime = player.hyperStealthActive ? 240 : 180;
+      player.stealthTime = player.hyperStealthActive ? 240 : 210;
       player.stealthTimer = 420;
       addPveFloating(player.hyperStealthActive ? "하이퍼 은신!" : "은신", player.accent);
     }
@@ -14383,6 +14473,7 @@ function stepPve() {
     * (player.bloodPreludeTime > 0 ? 2 : 1)
     * (player.unstoppableTime > 0 ? 3.525 : 1)
     * (player.chaseTime > 0 ? 3 : 1)
+    * (player.kind === "tank" && player.shieldTime > 0 ? 0.5 : 1)
     * (player.kind === "brawler" ? 1 + player.idleAttackTime / 60 * 0.06 : 1);
   const targetSpeed = characterBaseSpeed(player) * speedMultiplier;
   const currentSpeed = Math.hypot(player.vx, player.vy);
@@ -14394,7 +14485,7 @@ function stepPve() {
     player.vx = velocity.vx;
     player.vy = velocity.vy;
   }
-  if (!playerStunned && player.shieldTime <= 0 && player.unstoppableWindup <= 0) {
+  if (!playerStunned && (player.shieldTime <= 0 || player.kind === "tank") && player.unstoppableWindup <= 0) {
     player.x += player.vx;
     player.y += player.vy;
   } else if (playerStunned) {
@@ -14536,10 +14627,10 @@ function stepPve() {
       if (enemy.contactCooldown <= 0) {
         damagePvePlayer(enemy.contactDamage);
         const contactDamage = player.kind === "charger" ? 10
-          : player.kind === "tank" ? 5
-            : player.kind === "enhancer" ? player.attackPower
-              : 0;
+          : player.kind === "enhancer" ? player.attackPower
+            : 0;
         if (contactDamage > 0) damagePveEnemy(enemy, contactDamage);
+        if (player.kind === "tank") healPvePlayer(1);
         if (player.kind === "wild") {
           for (let index = 0; index < 3; index += 1) {
             createPveAreaAttack(enemy.x + (index - 1) * 32, enemy.y, 58, 20, index * 6, player.accent, "slash");
@@ -16057,6 +16148,8 @@ function spawnSurvivalEnemy() {
   const earlyScale = earlySurvivalNerfScale(seconds);
   const lateSurge = seconds >= 420 ? 1.25 + Math.min(0.75, (seconds - 420) / 360) : 1;
   const endgameSurge = seconds >= 600 ? 1.85 + Math.min(1.35, (seconds - 600) / 300) : 1;
+  const endgameDamageScale = seconds >= 600 ? 0.85 : 1;
+  const endgameXpScale = seconds >= 600 ? 1.5 : 1;
   const edge = pveRandomIndex(4);
   const margin = 30;
   const x = edge === 0 ? margin : edge === 1 ? pveCanvas.width - margin : 50 + pveRandomIndex(pveCanvas.width - 100);
@@ -16100,8 +16193,9 @@ function spawnSurvivalEnemy() {
     maxHp: base.hp * difficulty * lateSurge * endgameSurge * mode.enemyHp * earlyScale,
     contactDamage: base.damage * mode.enemyDamage
       * Math.min(4.2, (1 + Math.max(0, seconds - 60) / 420) * lateSurge * Math.sqrt(endgameSurge))
-      * earlyScale,
-    xpValue: base.xp * mode.enemyXp,
+      * earlyScale
+      * endgameDamageScale,
+    xpValue: base.xp * mode.enemyXp * endgameXpScale,
     color: base.color,
     contactCooldown: 0,
     attackTimer: type === "thrower" ? 150
@@ -16830,7 +16924,8 @@ function stepSurvivalPve() {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     if (distance < player.radius + enemy.radius && enemy.contactCooldown <= 0) {
       if (player.invulnerableTime <= 0) damagePvePlayer(enemy.contactDamage);
-      damageSurvivalEnemy(enemy, 5);
+      if (player.kind === "tank") healPvePlayer(1);
+      else damageSurvivalEnemy(enemy, 5);
       const nx = (enemy.x - player.x) / (distance || 1);
       const ny = (enemy.y - player.y) / (distance || 1);
       const overlap = player.radius + enemy.radius - distance;
