@@ -722,9 +722,9 @@ const characterGuide = {
     ultimate: ["갓 웨폰", "5초", "현재 공격력을 가진 무기를 추가 소환하고 공격력을 0으로 초기화합니다. 각 무기는 5초마다 공격합니다."]
   },
   tank: {
-    attack: ["증장갑", "패시브", "받는 모든 피해가 20% 감소하며, 적에게 닿으면 자신의 체력을 1 회복합니다."],
+    attack: ["증장갑", "패시브", "받는 모든 피해가 20% 감소하며, 적에게 닿으면 1의 피해를 주고 자신의 체력을 1 회복합니다."],
     normal: ["메탈 벨트", "30초", "3초에 걸쳐 10 + 잃은 체력의 20%만큼 회복합니다. 회복하는 동안 받는 피해가 추가로 10% 감소합니다."],
-    ultimate: ["기사의 방패", "20초", "4초 동안 방패를 둘러 받는 피해가 90% 감소하고, 적이 자신에게 입히려던 원래 피해량의 25%를 되돌려줍니다. 자신에게 닿은 투사체는 피해를 받지 않고 자신의 탄환으로 바꿔 날리지만, 이동속도가 50% 감소합니다."]
+    ultimate: ["기사의 방패", "20초", "4초 동안 방패를 둘러 받는 피해가 90% 감소하고, 적이 자신에게 입히려던 원래 피해량의 25%를 되돌려줍니다. 자신에게 닿은 투사체는 피해를 받지 않고 자신의 유도 탄환으로 바꿔 날리지만, 이동속도가 50% 감소합니다."]
   },
   beamer: {
     attack: ["천공 레이저", "3초", "적의 위치를 지정한후 잠시후에 레이저를 포격해 45의 피해를 줍니다."],
@@ -797,9 +797,9 @@ const characterGuide = {
     ultimate: ["이터널 블리자드", "30초", "1.5초 동안 얼음의 정수를 모은 뒤 적에게 유도되는 정수를 발사합니다. 맞은 적은 15의 피해를 받고 3초 동안 얼어붙어 행동할 수 없습니다."]
   },
   bomberman: {
-    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 10의 피해를 받습니다. 폭발 후 랜덤한 방향으로 튕겨나가며, 발동할 때마다 자신은 2의 피해를 받습니다."],
+    attack: ["익스플로전 부스트", "0.5초", "벽이나 캐릭터에 닿을 때마다 주변에 폭발을 일으킵니다. 범위 안의 모든 캐릭터는 빠르게 튕겨나가고 적은 7의 피해를 받습니다. 폭발 후 다양한 방향으로 강하게 튕겨나가며, 발동할 때마다 자신은 1의 피해를 받습니다."],
     normal: ["메가 붐", "12초", "1.5초 동안 멈춰 선 뒤 맵 전체에 25의 피해를 줍니다. 폭발하는 색히는 10의 피해를 받습니다."],
-    ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 이후 0.1초마다 맵의 무작위 위치를 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
+    ultimate: ["하우저 임팩트", "35초", "3초 동안 하늘로 날아올라 무적과 지정 불가 상태가 됩니다. 0.1초마다 맵의 무작위 위치를 더 넓게 폭발시켜 범위 안의 적에게 15의 피해를 줍니다. 종료 시 자신은 12의 피해를 받고 이동속도가 30% 감소합니다."]
   },
   roper: {
     attack: ["로프", "2.5초", "게임 시작 시 적에게 로프를 걸고 적 주변을 계속 돕니다. 일반공격 쿨타임마다 적에게 달려들어 5의 피해를 주고 기절시킵니다."],
@@ -5765,8 +5765,8 @@ function contactDamagePair(a, b) {
     a.mageTransfer = { ...transfer, time: 180 };
     b.mageTransfer = null;
   }
-  const aDamage = a.gamblerBodyDamageTime > 0 ? a.gamblerBodyDamage : a.kind === "enhancer" ? a.attackPower : a.contactDamage;
-  const bDamage = b.gamblerBodyDamageTime > 0 ? b.gamblerBodyDamage : b.kind === "enhancer" ? b.attackPower : b.contactDamage;
+  const aDamage = a.gamblerBodyDamageTime > 0 ? a.gamblerBodyDamage : a.kind === "enhancer" ? a.attackPower : a.kind === "tank" ? 1 : a.contactDamage;
+  const bDamage = b.gamblerBodyDamageTime > 0 ? b.gamblerBodyDamage : b.kind === "enhancer" ? b.attackPower : b.kind === "tank" ? 1 : b.contactDamage;
   if (a.kind === "charger" && b.kind === "charger" && a.hp <= bDamage && b.hp <= aDamage) {
     const damageToA = Math.min(a.hp, bDamage);
     const damageToB = Math.min(b.hp, aDamage);
@@ -6293,6 +6293,20 @@ function updateSummons(dt) {
       summon.x += summon.vx * dt;
       summon.y += summon.vy * dt;
       bounceOnWalls(summon);
+      if (enemyFighter?.hp > 0) {
+        const contactDistance = Math.hypot(enemyFighter.x - summon.x, enemyFighter.y - summon.y);
+        if (contactDistance < enemyFighter.radius + summon.radius && summon.fighterContactCooldown <= 0) {
+          const contactDamage = enemyFighter.gamblerBodyDamageTime > 0 ? enemyFighter.gamblerBodyDamage
+            : enemyFighter.kind === "enhancer" ? enemyFighter.attackPower
+              : enemyFighter.kind === "tank" ? 1
+                : enemyFighter.contactDamage;
+          if (contactDamage > 0) damageSummon(summon, contactDamage, enemyFighter);
+          summon.fighterContactCooldown = 24;
+          const angle = Math.atan2(summon.y - enemyFighter.y, summon.x - enemyFighter.x);
+          summon.vx = Math.cos(angle) * Math.max(5.5, Math.hypot(summon.vx, summon.vy));
+          summon.vy = Math.sin(angle) * Math.max(5.5, Math.hypot(summon.vx, summon.vy));
+        }
+      }
       if (game.tick % 24 === 0) {
         addVisualEffect({ type: "hacking-glitch", x: summon.x, y: summon.y, color: "#22d3ee", life: 18, maxLife: 18 });
       }
@@ -6802,6 +6816,9 @@ function convertProjectileByShield(ball, target) {
   ball.vy = Math.sin(angle) * speed;
   ball.hitCooldown = 14;
   ball.color = target.accent || ball.color;
+  ball.homing = true;
+  ball.homeTarget = newTarget;
+  ball.homingTime = 120;
   addVisualEffect({
     type: "rope-hit",
     x1: target.x,
@@ -7343,7 +7360,7 @@ function useRouletteNormal(owner) {
     target.lockOnPulse = 0;
   } else if (kind === "grabber") {
     createShockwave(owner, {
-      range: 184,
+      range: 221,
       damage: 5,
       stun: 120,
       bonusDamage: 5,
@@ -7497,7 +7514,7 @@ function triggerNormalSkill(fighter) {
 
   if (fighter.kind === "grabber") {
     createShockwave(fighter, {
-      range: 184,
+      range: 221,
       damage: 5,
       stun: 120,
       bonusDamage: 5,
@@ -10255,8 +10272,12 @@ function updateAreaAttacks(dt) {
           const distance = Math.hypot(hitTarget.x - attack.x, hitTarget.y - attack.y);
           if (distance >= hitTarget.radius + attack.radius) return;
           if (hitTarget !== attack.owner) damageCombatTarget(hitTarget, attack.damage, attack.owner);
-          const angle = Math.atan2(hitTarget.y - attack.y, hitTarget.x - attack.x);
-          const force = attack.knockback || 18;
+          const angle = hitTarget === attack.owner && Number.isFinite(attack.owner?.lastExplosionBounceAngle)
+            ? attack.owner.lastExplosionBounceAngle
+            : Math.atan2(hitTarget.y - attack.y, hitTarget.x - attack.x);
+          const force = hitTarget === attack.owner && attack.type === "explosion-boost"
+            ? 11.7
+            : attack.knockback || 18;
           hitTarget.vx = Math.cos(angle) * force;
           hitTarget.vy = Math.sin(angle) * force;
         });
@@ -12638,16 +12659,17 @@ function explodeAt(owner, x, y, radius, damageAmount, options = {}) {
 }
 
 function triggerExplosionBoost(owner) {
-  explodeAt(owner, owner.x, owner.y, 118, 10, {
+  explodeAt(owner, owner.x, owner.y, 118, 7, {
     type: "explosion-boost",
     color: "#fb923c",
     knockback: 24,
     affectsOwner: true
   });
-  selfDamage(owner, 2);
+  selfDamage(owner, 1);
   const angle = explosionBounceAngle(owner);
-  owner.vx = Math.cos(angle) * 9;
-  owner.vy = Math.sin(angle) * 9;
+  owner.lastExplosionBounceAngle = angle;
+  owner.vx = Math.cos(angle) * 11.7;
+  owner.vy = Math.sin(angle) * 11.7;
   owner.explosionRushTime = 28;
   owner.explosionTimer = 30;
   owner.explosionHitCooldown = 12;
@@ -12656,18 +12678,32 @@ function triggerExplosionBoost(owner) {
 function explosionBounceAngle(owner) {
   const margin = owner.radius + 76;
   const random = combatRandom(owner, "explosion-boost-bounce", game.tick);
+  const random2 = combatRandom(owner, "explosion-boost-bounce-alt", game.tick + 17);
   let angle;
   if (owner.y < margin) angle = Math.PI * (0.18 + random * 0.64);
   else if (owner.y > canvas.height - margin) angle = Math.PI * (1.18 + random * 0.64);
   else if (owner.x < margin) angle = Math.PI * (-0.32 + random * 0.64);
   else if (owner.x > canvas.width - margin) angle = Math.PI * (0.68 + random * 0.64);
   else angle = random * Math.PI * 2;
-  const sin = Math.abs(Math.sin(angle));
-  const cos = Math.abs(Math.cos(angle));
-  if (sin < 0.22 || cos < 0.22) {
-    angle += (random < 0.5 ? -1 : 1) * 0.42;
+  const normalize = value => {
+    let next = value % (Math.PI * 2);
+    if (next < 0) next += Math.PI * 2;
+    return next;
+  };
+  const angleDistance = (a, b) => {
+    const diff = Math.abs(normalize(a) - normalize(b));
+    return Math.min(diff, Math.PI * 2 - diff);
+  };
+  for (let tries = 0; tries < 5; tries += 1) {
+    const sin = Math.abs(Math.sin(angle));
+    const cos = Math.abs(Math.cos(angle));
+    const tooStraight = sin < 0.34 || cos < 0.34;
+    const tooSimilar = Number.isFinite(owner.lastExplosionBounceAngle)
+      && (angleDistance(angle, owner.lastExplosionBounceAngle) < 0.75 || Math.abs(angleDistance(angle, owner.lastExplosionBounceAngle) - Math.PI) < 0.38);
+    if (!tooStraight && !tooSimilar) break;
+    angle = normalize(angle + (random < 0.5 ? -1 : 1) * (0.68 + random2 * 0.42) + tries * 0.37);
   }
-  return angle;
+  return normalize(angle);
 }
 
 function beginMegaBoom(owner) {
@@ -12714,7 +12750,7 @@ function createHouserStrike(owner) {
   const index = Math.floor((180 - owner.houserStrikeTime) / 6);
   const x = 80 + combatRandom(owner, "houser-x", index) * (canvas.width - 160);
   const y = 80 + combatRandom(owner, "houser-y", index) * (canvas.height - 160);
-  explodeAt(owner, x, y, 92, 15, {
+  explodeAt(owner, x, y, 110, 15, {
     type: "houser-strike",
     color: index % 2 ? "#fb923c" : "#facc15",
     knockback: 22,
@@ -14203,7 +14239,7 @@ function usePveSkill(type) {
       player.skillTimer = 600;
       addPveFloating("격노!", player.accent);
     } else if (player.kind === "grabber") {
-      createPveAreaAttack(player.x, player.y, 184, 5, 0, player.accent, "shockwave", 120);
+      createPveAreaAttack(player.x, player.y, 221, 5, 0, player.accent, "shockwave", 120);
       player.skillTimer = 540;
       addPveFloating("충격파!", player.accent);
     } else if (player.kind === "poker") {
@@ -15170,10 +15206,10 @@ function survivalWeaponStats(id) {
   const definition = SURVIVAL_WEAPONS[id];
   const stars = entry.stars;
   return {
-    damageScale: (1 + (stars - 1) * 0.3) * pveGame.player.damageMultiplier * (entry.awakened ? 1.85 : 1),
+    damageScale: (1 + (stars - 1) * 0.34) * pveGame.player.damageMultiplier * (entry.awakened ? 2.18 : 1),
     cooldown: Math.max(15, definition.baseCooldown * (1 - (stars - 1) * 0.085)
-      * pveGame.player.cooldownMultiplier * (entry.awakened ? 0.58 : 1)),
-    sizeScale: 1 + (stars - 1) * 0.075 + (entry.awakened ? 0.45 : 0)
+      * pveGame.player.cooldownMultiplier * (entry.awakened ? 0.48 : 1)),
+    sizeScale: 1 + (stars - 1) * 0.09 + (entry.awakened ? 0.68 : 0)
   };
 }
 
@@ -15199,6 +15235,17 @@ function spawnSurvivalProjectile(options) {
     explosionRadius: options.explosionRadius || 0,
     explosionDamage: options.explosionDamage || 0,
     pullStrength: options.pullStrength || 0,
+    chainRadius: options.chainRadius || 0,
+    chainDamage: options.chainDamage || 0,
+    forkCount: options.forkCount || 0,
+    forkDamage: options.forkDamage || 0,
+    fieldRadius: options.fieldRadius || 0,
+    fieldDamage: options.fieldDamage || 0,
+    fieldLife: options.fieldLife || 0,
+    fieldInterval: options.fieldInterval || 20,
+    fieldType: options.fieldType || "",
+    healOnHit: options.healOnHit || 0,
+    knockback: options.knockback || 0,
     cardEffect: options.cardEffect || "",
     sourceWeaponId: options.sourceWeaponId || pveGame.activeWeaponId || "",
     repeatHits: Boolean(options.repeatHits),
@@ -16988,6 +17035,14 @@ function stepSurvivalPve() {
           enemy.x += Math.cos(pullAngle) * projectile.pullStrength;
           enemy.y += Math.sin(pullAngle) * projectile.pullStrength;
         }
+        if (projectile.knockback) {
+          const knockAngle = Math.atan2(enemy.y - projectile.y, enemy.x - projectile.x);
+          enemy.x += Math.cos(knockAngle) * projectile.knockback;
+          enemy.y += Math.sin(knockAngle) * projectile.knockback;
+          enemy.vx += Math.cos(knockAngle) * projectile.knockback * 0.08;
+          enemy.vy += Math.sin(knockAngle) * projectile.knockback * 0.08;
+        }
+        if (projectile.healOnHit) healPvePlayer(hitDamage * projectile.healOnHit);
         if (projectile.explosionRadius > 0) {
           pveGame.areaAttacks.push({
             x: enemy.x,
@@ -17000,6 +17055,70 @@ function stepSurvivalPve() {
             color: projectile.color,
             type: "shockwave",
             stun: 0,
+            sourceWeaponId: projectile.sourceWeaponId,
+            survival: true
+          });
+        }
+        if (projectile.chainRadius > 0 && projectile.chainDamage > 0) {
+          const chainTargets = pveGame.enemies
+            .filter(item => !item.dead && item.id !== enemy.id && Math.hypot(item.x - enemy.x, item.y - enemy.y) < projectile.chainRadius)
+            .sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y))
+            .slice(0, projectile.pierce > 2 ? 3 : 1);
+          chainTargets.forEach((chainTarget, chainIndex) => {
+            damageSurvivalEnemy(chainTarget, projectile.chainDamage * (1 - chainIndex * 0.18), projectile.sourceWeaponId);
+            pveGame.areaAttacks.push({
+              x: (enemy.x + chainTarget.x) / 2,
+              y: (enemy.y + chainTarget.y) / 2,
+              x1: enemy.x,
+              y1: enemy.y,
+              x2: chainTarget.x,
+              y2: chainTarget.y,
+              radius: Math.max(8, projectile.radius * 0.72),
+              damage: 0,
+              delay: 0,
+              life: 18,
+              hit: true,
+              color: projectile.color,
+              type: "lineLaser",
+              visual: "chainArc",
+              survival: true
+            });
+          });
+        }
+        if (projectile.forkCount > 0 && projectile.forkDamage > 0) {
+          for (let fork = 0; fork < projectile.forkCount; fork += 1) {
+            const forkAngle = fork * Math.PI * 2 / projectile.forkCount + pveGame.tick * 0.013;
+            spawnSurvivalProjectile({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(forkAngle) * 10.5,
+              vy: Math.sin(forkAngle) * 10.5,
+              damage: projectile.forkDamage,
+              radius: Math.max(4, projectile.radius * 0.45),
+              life: 55,
+              color: projectile.color,
+              pierce: 0,
+              visual: projectile.visual === "rockShard" ? "rockShard" : "pulse",
+              trail: projectile.trail || projectile.color,
+              sourceWeaponId: projectile.sourceWeaponId
+            });
+          }
+        }
+        if (projectile.fieldRadius > 0 && projectile.fieldDamage > 0) {
+          pveGame.areaAttacks.push({
+            x: enemy.x,
+            y: enemy.y,
+            radius: projectile.fieldRadius,
+            damage: projectile.fieldDamage,
+            delay: 0,
+            life: projectile.fieldLife || 90,
+            tickInterval: projectile.fieldInterval || 20,
+            tickTimer: 0,
+            hit: false,
+            color: projectile.color,
+            type: projectile.fieldType || "shockwave",
+            visual: projectile.fieldType || projectile.visual,
+            slow: projectile.slow,
             sourceWeaponId: projectile.sourceWeaponId,
             survival: true
           });
@@ -17018,8 +17137,13 @@ function stepSurvivalPve() {
   pveGame.areaAttacks = pveGame.areaAttacks.filter(attack => {
     attack.delay -= 1;
     attack.life -= 1;
-    if (attack.delay <= 0 && !attack.hit) {
+    if (attack.tickInterval && attack.delay <= 0) {
+      attack.tickTimer = (attack.tickTimer ?? 0) - 1;
+    }
+    const canTick = attack.tickInterval && attack.delay <= 0 && (attack.tickTimer ?? 0) <= 0;
+    if (attack.delay <= 0 && (!attack.hit || canTick)) {
       attack.hit = true;
+      if (canTick) attack.tickTimer = attack.tickInterval;
       pveGame.enemies.forEach(enemy => {
         if (enemy.dead) return;
         let hit;
