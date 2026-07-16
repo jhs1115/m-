@@ -15307,6 +15307,10 @@ function fireSurvivalWeapon(id) {
         life: 150,
         visual: "pulse",
         trail: "#67e8f9",
+        chainRadius: itemOwned ? 135 : 0,
+        chainDamage: itemOwned ? 4 * stats.damageScale : 0,
+        forkCount: entry.awakened ? 5 : 0,
+        forkDamage: entry.awakened ? 3.5 * stats.damageScale : 0,
         explosionRadius: entry.awakened ? 52 : 0,
         explosionDamage: entry.awakened ? 6 * stats.damageScale : 0
       });
@@ -15321,6 +15325,11 @@ function fireSurvivalWeapon(id) {
         life: entry.awakened ? 720 : 480,
         visual: "star",
         trail: "#fde68a",
+        fieldRadius: itemOwned ? (entry.awakened ? 82 : 48) * stats.sizeScale : 0,
+        fieldDamage: itemOwned ? (entry.awakened ? 3.5 : 1.6) * stats.damageScale : 0,
+        fieldLife: entry.awakened ? 150 : 80,
+        fieldInterval: entry.awakened ? 12 : 20,
+        fieldType: "supernova",
         bounce: entry.awakened,
         repeatHits: entry.awakened
       });
@@ -15334,6 +15343,7 @@ function fireSurvivalWeapon(id) {
         life: 68,
         visual: "ram",
         trail: "#fb7185",
+        knockback: itemOwned ? 38 : 18,
         explosionRadius: entry.awakened ? 64 : 0,
         explosionDamage: entry.awakened ? 8 * stats.damageScale : 0
       });
@@ -15346,7 +15356,13 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 99 : 5,
         life: entry.awakened ? 110 : 80,
         visual: "ram",
-        trail: "#ff304f"
+        trail: "#ff304f",
+        knockback: entry.awakened ? 58 : itemOwned ? 36 : 22,
+        fieldRadius: entry.awakened ? 80 * stats.sizeScale : 0,
+        fieldDamage: entry.awakened ? 3 * stats.damageScale : 0,
+        fieldLife: 72,
+        fieldInterval: 15,
+        fieldType: "explosionBoost"
       });
     }
   } else if (id === "grapple") {
@@ -15356,7 +15372,10 @@ function fireSurvivalWeapon(id) {
       life: 95,
       visual: "lance",
       trail: "#c4b5fd",
-      pullStrength: entry.awakened ? 34 : 0
+      stun: itemOwned ? 18 : 0,
+      pullStrength: entry.awakened ? 48 : itemOwned ? 24 : 0,
+      chainRadius: entry.awakened ? 170 : 0,
+      chainDamage: entry.awakened ? 5 * stats.damageScale : 0
     });
   } else if (id === "grapplePlus") {
     const count = entry.awakened ? 3 : 1;
@@ -15367,7 +15386,13 @@ function fireSurvivalWeapon(id) {
         life: 115,
         visual: "lance",
         trail: "#ddd6fe",
-        pullStrength: entry.awakened ? 42 : 12
+        stun: entry.awakened ? 32 : itemOwned ? 18 : 0,
+        pullStrength: entry.awakened ? 56 : 18,
+        fieldRadius: entry.awakened ? 62 * stats.sizeScale : 0,
+        fieldDamage: entry.awakened ? 2.4 * stats.damageScale : 0,
+        fieldLife: 90,
+        fieldInterval: 18,
+        fieldType: "void"
       });
     }
   } else if (id === "poker") {
@@ -15383,6 +15408,10 @@ function fireSurvivalWeapon(id) {
         visual: "card",
         label: rank,
         cardEffect: rank,
+        chainRadius: entry.awakened && rank === "A" ? 130 : 0,
+        chainDamage: entry.awakened && rank === "A" ? 5 * stats.damageScale : 0,
+        forkCount: entry.awakened && rank === "JOKER" ? 4 : 0,
+        forkDamage: entry.awakened && rank === "JOKER" ? 3.5 * stats.damageScale : 0,
         trail: critical ? "#fbbf24" : "#fda4af"
       });
     }
@@ -15400,6 +15429,11 @@ function fireSurvivalWeapon(id) {
         visual: "card",
         label: rank,
         cardEffect: rank,
+        fieldRadius: entry.awakened && (rank === "Q" || rank === "K") ? 58 * stats.sizeScale : 0,
+        fieldDamage: entry.awakened && (rank === "Q" || rank === "K") ? 2.6 * stats.damageScale : 0,
+        fieldLife: 95,
+        fieldInterval: 18,
+        fieldType: "rouletteShot",
         trail: critical ? "#fbbf24" : "#fb7185"
       });
     }
@@ -15408,14 +15442,14 @@ function fireSurvivalWeapon(id) {
     pveGame.areaAttacks.push({
       x: target.x, y: target.y, radius, damage: 24 * stats.damageScale,
       delay: 8, life: 30, hit: false, color: "#60a5fa", type: "slash",
-      stun: 0, survival: true
+      stun: 0, slow: itemOwned, survival: true
     });
     if (itemOwned) player.invulnerableTime = Math.max(player.invulnerableTime, 24);
     if (entry.awakened) {
       pveGame.areaAttacks.push({
         x: player.x, y: player.y, radius: 130, damage: 20 * stats.damageScale,
         delay: 18, life: 42, hit: false, color: "#8b5cf6", type: "slash",
-        stun: 0, survival: true
+        stun: 0, tickInterval: 11, tickTimer: 0, survival: true
       });
     }
   } else if (id === "temper") {
@@ -15424,6 +15458,10 @@ function fireSurvivalWeapon(id) {
       color: "#fdba74",
       pierce: entry.awakened ? 10 : 2,
       life: 135,
+      visual: entry.awakened ? "blastShard" : "ram",
+      knockback: entry.awakened ? 28 : 10,
+      forkCount: entry.awakened ? 6 : 0,
+      forkDamage: entry.awakened ? elapsedPower * 0.18 * stats.damageScale : 0,
       explosionRadius: entry.awakened ? 80 : 0,
       explosionDamage: entry.awakened ? elapsedPower * 0.45 * stats.damageScale : 0
     });
@@ -15436,7 +15474,9 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 3 : 1,
         life: 220,
         visual: "blade",
-        trail: "#fbbf24"
+        trail: "#fbbf24",
+        chainRadius: entry.awakened ? 150 : itemOwned ? 85 : 0,
+        chainDamage: entry.awakened ? 5 * stats.damageScale : itemOwned ? 2.5 * stats.damageScale : 0
       });
     }
   } else if (id === "shock") {
@@ -15444,21 +15484,24 @@ function fireSurvivalWeapon(id) {
       x: player.x, y: player.y,
       radius: (entry.awakened ? 240 : 145) * stats.sizeScale,
       damage: 18 * stats.damageScale, delay: 0, life: 34, hit: false,
-      color: "#94a3b8", type: "shockwave", stun: itemOwned ? 36 : 0, survival: true
+      color: "#94a3b8", type: "shockwave", stun: itemOwned ? 36 : 0,
+      tickInterval: entry.awakened ? 14 : 0, tickTimer: 0, pull: entry.awakened ? -34 : 0, survival: true
     });
   } else if (id === "taunt") {
     pveGame.areaAttacks.push({
       x: player.x, y: player.y, radius: (entry.awakened ? 520 : 125) * stats.sizeScale,
       damage: 10 * stats.damageScale, delay: 0, life: 28, hit: false,
       color: "#cbd5e1", type: "shockwave", stun: entry.awakened ? 45 : 0,
-      slow: true, pull: entry.awakened ? 90 : 0, survival: true
+      slow: true, pull: entry.awakened ? 120 : itemOwned ? 45 : 0,
+      tickInterval: entry.awakened ? 20 : 0, tickTimer: 0, survival: true
     });
   } else if (id === "shield") {
     player.invulnerableTime = Math.max(player.invulnerableTime, entry.awakened ? 120 : 55);
     pveGame.areaAttacks.push({
       x: player.x, y: player.y, radius: (entry.awakened ? 290 : 205) * stats.sizeScale,
       damage: 34 * stats.damageScale, delay: 28, life: 62, hit: false,
-      color: "#e2e8f0", type: "shockwave", stun: itemOwned ? 60 : 30, survival: true
+      color: "#e2e8f0", type: "shockwave", stun: itemOwned ? 60 : 30,
+      tickInterval: entry.awakened ? 18 : 0, tickTimer: 0, pull: entry.awakened ? -52 : 0, survival: true
     });
   } else if (id === "beam") {
     const count = entry.awakened ? 3 : itemOwned ? 2 : 1;
@@ -15469,6 +15512,24 @@ function fireSurvivalWeapon(id) {
         damage: (itemOwned ? 20 : 28) * stats.damageScale, delay: 45 + index * 12, life: 72 + index * 12,
         hit: false, color: "#38bdf8", type: "laser", stun: 0, survival: true
       });
+      if (entry.awakened) {
+        pveGame.areaAttacks.push({
+          x: target.x + (index - (count - 1) / 2) * 82,
+          y: target.y,
+          radius: 92 * stats.sizeScale,
+          damage: 5 * stats.damageScale,
+          delay: 63 + index * 12,
+          life: 72 + index * 12,
+          hit: false,
+          color: "#7dd3fc",
+          type: "shockwave",
+          visual: "mageLightning-awakened",
+          slow: true,
+          tickInterval: 16,
+          tickTimer: 0,
+          survival: true
+        });
+      }
     }
   } else if (id === "slowBeam") {
     const count = entry.awakened ? 3 : 1;
@@ -15490,6 +15551,7 @@ function fireSurvivalWeapon(id) {
         color: "#7dd3fc",
         type: "lineLaser",
         slow: true,
+        pull: entry.awakened ? 28 : itemOwned ? 14 : 0,
         stun: 0,
         survival: true
       });
@@ -15506,6 +15568,23 @@ function fireSurvivalWeapon(id) {
         delay: 16 + index * 5, life: 42 + index * 5, hit: false,
         color: "#a3e635", type: "slash", stun: 0, survival: true
       });
+      if (entry.awakened && index % 2 === 0) {
+        pveGame.areaAttacks.push({
+          x: victim.x,
+          y: victim.y,
+          radius: 92 * stats.sizeScale,
+          damage: 4 * stats.damageScale * execute,
+          delay: 26 + index * 5,
+          life: 72 + index * 5,
+          tickInterval: 15,
+          tickTimer: 0,
+          hit: false,
+          color: "#84cc16",
+          type: "slash",
+          visual: "wild-awakened",
+          survival: true
+        });
+      }
     }
   } else if (id === "blood") {
     const missing = 1 - player.hp / player.maxHp;
@@ -15517,7 +15596,10 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 8 : 3,
         life: 230,
         visual: "blood",
-        trail: "#f43f5e"
+        trail: "#f43f5e",
+        healOnHit: itemOwned ? 0.18 : 0.08,
+        chainRadius: entry.awakened ? 145 : 0,
+        chainDamage: entry.awakened ? 4 * stats.damageScale : 0
       });
     }
   } else if (id === "fist") {
@@ -15533,6 +15615,8 @@ function fireSurvivalWeapon(id) {
       color: "#fb923c",
       type: "shockwave",
       stun: 0,
+      tickInterval: entry.awakened ? 10 : 0,
+      tickTimer: 0,
       survival: true
     });
   } else if (id === "clock") {
@@ -15555,6 +15639,8 @@ function fireSurvivalWeapon(id) {
         color: "#67e8f9",
         type: "lineLaser",
         slow: true,
+        tickInterval: entry.awakened ? 12 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15573,6 +15659,8 @@ function fireSurvivalWeapon(id) {
         color: "#f2c14e",
         type: "shockwave",
         slow: true,
+        tickInterval: entry.awakened ? 13 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15600,6 +15688,8 @@ function fireSurvivalWeapon(id) {
         color: "#a78bfa",
         type: "lineLaser",
         pull: itemOwned ? 24 : 0,
+        tickInterval: entry.awakened ? 14 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15618,6 +15708,8 @@ function fireSurvivalWeapon(id) {
         type: "shockwave",
         pull: itemOwned ? 80 : 38,
         stun: entry.awakened ? 18 : 0,
+        tickInterval: entry.awakened ? 16 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15642,6 +15734,8 @@ function fireSurvivalWeapon(id) {
         color: "#bae6fd",
         type: "slash",
         stun: entry.awakened ? 10 : 0,
+        tickInterval: entry.awakened ? 9 : 0,
+        tickTimer: 0,
         survival: true
       });
       if (entry.awakened) {
@@ -15660,6 +15754,8 @@ function fireSurvivalWeapon(id) {
           hit: false,
           color: "#e0f2fe",
           type: "lineLaser",
+          tickInterval: 12,
+          tickTimer: 0,
           survival: true
         });
       }
@@ -15684,6 +15780,8 @@ function fireSurvivalWeapon(id) {
         color: index % 2 ? "#7c2d12" : "#38bdf8",
         type: "lineLaser",
         slow: itemOwned || entry.awakened,
+        tickInterval: entry.awakened ? 12 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15704,7 +15802,12 @@ function fireSurvivalWeapon(id) {
         pierce: 99,
         repeatHits: true,
         visual: "orb",
-        trail: "#f9a8d4"
+        trail: "#f9a8d4",
+        fieldRadius: entry.awakened ? 72 * stats.sizeScale : itemOwned ? 42 * stats.sizeScale : 0,
+        fieldDamage: entry.awakened ? 2.8 * stats.damageScale : itemOwned ? 1.4 * stats.damageScale : 0,
+        fieldLife: entry.awakened ? 140 : 80,
+        fieldInterval: entry.awakened ? 12 : 20,
+        fieldType: "artOrbit"
       });
     }
   } else if (id === "growingFaith") {
@@ -15727,6 +15830,8 @@ function fireSurvivalWeapon(id) {
         hit: false,
         color: "#facc15",
         type: "lineLaser",
+        tickInterval: entry.awakened ? 14 : 0,
+        tickTimer: 0,
         survival: true
       });
       pveGame.areaAttacks.push({
@@ -15743,6 +15848,8 @@ function fireSurvivalWeapon(id) {
         hit: false,
         color: "#fde68a",
         type: "lineLaser",
+        tickInterval: entry.awakened ? 14 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15763,6 +15870,8 @@ function fireSurvivalWeapon(id) {
         color: "#facc15",
         type: "laser",
         stun: itemOwned || entry.awakened ? 8 : 0,
+        tickInterval: entry.awakened ? 10 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15781,6 +15890,9 @@ function fireSurvivalWeapon(id) {
         color: "#fb923c",
         type: "shockwave",
         stun: 0,
+        slow: itemOwned,
+        tickInterval: entry.awakened ? 18 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15799,6 +15911,8 @@ function fireSurvivalWeapon(id) {
         type: "shockwave",
         slow: true,
         pull: itemOwned || entry.awakened ? 32 : 0,
+        tickInterval: entry.awakened ? 16 : itemOwned ? 24 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -15810,7 +15924,11 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 3 : itemOwned ? 1 : 0,
         life: 95,
         visual: "bullet",
-        trail: entry.awakened ? "#fef3c7" : "#f59e0b"
+        trail: entry.awakened ? "#fef3c7" : "#f59e0b",
+        chainRadius: entry.awakened ? 120 : 0,
+        chainDamage: entry.awakened ? 2.4 * stats.damageScale : 0,
+        forkCount: entry.awakened && index % 2 === 0 ? 2 : 0,
+        forkDamage: entry.awakened ? 2 * stats.damageScale : 0
       });
     }
   } else if (id === "machineGun") {
@@ -15823,7 +15941,12 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 1 : itemOwned && index % 3 === 0 ? 1 : 0,
         life: 105 + index * 2,
         visual: "bullet",
-        trail: "#fb923c"
+        trail: "#fb923c",
+        fieldRadius: entry.awakened && index % 5 === 0 ? 38 * stats.sizeScale : 0,
+        fieldDamage: entry.awakened ? 1.2 * stats.damageScale : 0,
+        fieldLife: 55,
+        fieldInterval: 10,
+        fieldType: "explosionBoost"
       });
     }
   } else if (id === "icicleShot") {
@@ -15836,6 +15959,11 @@ function fireSurvivalWeapon(id) {
         slow: true,
         visual: "iceShard",
         trail: "#bae6fd",
+        fieldRadius: itemOwned ? (entry.awakened ? 68 : 34) * stats.sizeScale : 0,
+        fieldDamage: itemOwned ? (entry.awakened ? 2.4 : 1.1) * stats.damageScale : 0,
+        fieldLife: entry.awakened ? 120 : 70,
+        fieldInterval: entry.awakened ? 14 : 20,
+        fieldType: "mageSea",
         explosionRadius: entry.awakened ? 48 : itemOwned ? 26 : 0,
         explosionDamage: entry.awakened ? 4 * stats.damageScale : itemOwned ? 2 * stats.damageScale : 0
       });
@@ -15852,6 +15980,11 @@ function fireSurvivalWeapon(id) {
         stun: entry.awakened ? 42 : itemOwned ? 20 : 0,
         visual: "iceShard",
         trail: "#e0f2fe",
+        fieldRadius: (entry.awakened ? 135 : itemOwned ? 92 : 0) * stats.sizeScale,
+        fieldDamage: (entry.awakened ? 3.2 : itemOwned ? 1.8 : 0) * stats.damageScale,
+        fieldLife: entry.awakened ? 160 : 95,
+        fieldInterval: entry.awakened ? 14 : 20,
+        fieldType: "mageSea",
         explosionRadius: (entry.awakened ? 120 : itemOwned ? 82 : 58) * stats.sizeScale,
         explosionDamage: (entry.awakened ? 12 : 7) * stats.damageScale
       });
@@ -15876,7 +16009,10 @@ function fireSurvivalWeapon(id) {
         pierce: entry.awakened ? 2 : 0,
         life: 85,
         visual: "blastShard",
-        trail: "#fb7185"
+        trail: "#fb7185",
+        forkCount: entry.awakened ? 3 : 0,
+        forkDamage: entry.awakened ? 2.4 * stats.damageScale : 0,
+        knockback: entry.awakened ? 30 : 14
       });
     }
   } else if (id === "houserImpact") {
@@ -15897,6 +16033,8 @@ function fireSurvivalWeapon(id) {
         color: index % 3 === 0 ? "#fde68a" : "#f97316",
         type: "laser",
         stun: entry.awakened && index % 3 === 0 ? 14 : 0,
+        tickInterval: entry.awakened ? 12 : 0,
+        tickTimer: 0,
         survival: true
       });
       if (entry.awakened && index % 2 === 0) {
@@ -15925,7 +16063,10 @@ function fireSurvivalWeapon(id) {
         visual: "rope",
         trail: "#fbbf24",
         stun: entry.awakened ? 36 : itemOwned ? 24 : 14,
-        pullStrength: itemOwned || entry.awakened ? 18 : 0
+        pullStrength: itemOwned || entry.awakened ? 18 : 0,
+        knockback: entry.awakened ? 26 : itemOwned ? 16 : 0,
+        chainRadius: entry.awakened ? 120 : 0,
+        chainDamage: entry.awakened ? 4 * stats.damageScale : 0
       });
     }
   } else if (id === "ropeRush") {
@@ -15943,7 +16084,9 @@ function fireSurvivalWeapon(id) {
       const y2 = centerY + Math.sin(swingAngle + Math.PI) * radius;
       lineAttack(x1, y1, x2, y2, entry.awakened ? 18 : 12, entry.awakened ? 12 : 7, 10 + index * 8, 38 + index * 8, index % 2 ? "#d6a35d" : "#fbbf24", {
         stun: 18,
-        pull: itemOwned ? 18 : 0
+        pull: itemOwned ? 18 : 0,
+        tickInterval: entry.awakened ? 12 : 0,
+        tickTimer: 0
       });
     }
   } else if (id === "rouletteShot") {
@@ -15958,7 +16101,9 @@ function fireSurvivalWeapon(id) {
           life: 140,
           visual: "card",
           label: "?",
-          trail: "#facc15"
+          trail: "#facc15",
+          chainRadius: jackpot ? 130 : 0,
+          chainDamage: jackpot ? 4 * stats.damageScale : 0
         });
       }
     } else if (roll === 1) {
@@ -15980,7 +16125,12 @@ function fireSurvivalWeapon(id) {
       }
     } else if (roll === 2) {
       projectile(0, 16, jackpot ? 20 : 11, jackpot ? 15 : 10, {
-        color: "#22d3ee", homing: true, pierce: jackpot ? 4 : 1, life: 220, visual: "star", trail: "#22d3ee"
+        color: "#22d3ee", homing: true, pierce: jackpot ? 4 : 1, life: 220, visual: "star", trail: "#22d3ee",
+        fieldRadius: jackpot ? 70 * stats.sizeScale : 0,
+        fieldDamage: jackpot ? 2.2 * stats.damageScale : 0,
+        fieldLife: 95,
+        fieldInterval: 16,
+        fieldType: "supernova"
       });
     } else {
       const length = Math.hypot(pveCanvas.width, pveCanvas.height);
@@ -16006,7 +16156,9 @@ function fireSurvivalWeapon(id) {
           life: 190,
           visual: "card",
           label: "7",
-          trail: color
+          trail: color,
+          forkCount: entry.awakened ? 3 : 0,
+          forkDamage: entry.awakened ? 3 * stats.damageScale : 0
         });
       } else {
         const centerX = roll === 1 ? target.x : pveRandomIndex(pveCanvas.width);
@@ -16041,6 +16193,8 @@ function fireSurvivalWeapon(id) {
         color: index % 2 ? "#22d3ee" : "#818cf8",
         type: "shockwave",
         stun: itemOwned || entry.awakened ? 42 : 24,
+        tickInterval: entry.awakened ? 14 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -16061,6 +16215,9 @@ function fireSurvivalWeapon(id) {
         color: index % 2 ? "#4c1d95" : "#a78bfa",
         type: "lineLaser",
         slow: itemOwned || entry.awakened,
+        tickInterval: entry.awakened ? 8 : itemOwned ? 13 : 0,
+        tickTimer: 0,
+        pull: entry.awakened ? 18 : 0,
         survival: true
       });
     }
@@ -16074,6 +16231,10 @@ function fireSurvivalWeapon(id) {
         life: 140,
         visual: "hacking",
         trail: "#22c55e",
+        chainRadius: itemOwned || entry.awakened ? 150 : 0,
+        chainDamage: (itemOwned || entry.awakened ? 3.5 : 0) * stats.damageScale,
+        forkCount: entry.awakened ? 4 : 0,
+        forkDamage: entry.awakened ? 3 * stats.damageScale : 0,
         explosionRadius: entry.awakened ? 52 : 0,
         explosionDamage: entry.awakened ? 5 * stats.damageScale : 0
       });
@@ -16091,6 +16252,8 @@ function fireSurvivalWeapon(id) {
       color: "#34d399",
       type: "lineLaser",
       slow: itemOwned,
+      tickInterval: entry.awakened ? 9 : itemOwned ? 16 : 0,
+      tickTimer: 0,
       survival: true
     });
     healPvePlayer((entry.awakened ? 2.4 : 1.2) * stats.damageScale);
@@ -16114,6 +16277,8 @@ function fireSurvivalWeapon(id) {
         hit: false,
         color: index % 2 ? "#22d3ee" : "#34d399",
         type: "lineLaser",
+        tickInterval: entry.awakened ? 11 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -16126,6 +16291,14 @@ function fireSurvivalWeapon(id) {
         life: 180,
         visual: "rockShard",
         trail: "#a16207",
+        knockback: itemOwned ? 30 : 12,
+        forkCount: entry.awakened ? 3 : 0,
+        forkDamage: entry.awakened ? 3.6 * stats.damageScale : 0,
+        fieldRadius: itemOwned ? (entry.awakened ? 76 : 42) * stats.sizeScale : 0,
+        fieldDamage: itemOwned ? (entry.awakened ? 2.8 : 1.2) * stats.damageScale : 0,
+        fieldLife: entry.awakened ? 125 : 70,
+        fieldInterval: entry.awakened ? 16 : 22,
+        fieldType: "gaiaWall",
         explosionRadius: entry.awakened ? 58 : 0,
         explosionDamage: entry.awakened ? 6 * stats.damageScale : 0
       });
@@ -16152,6 +16325,9 @@ function fireSurvivalWeapon(id) {
         color: index % 2 ? "#a16207" : "#78716c",
         type: "lineLaser",
         stun: itemOwned || entry.awakened ? 18 : 0,
+        pull: entry.awakened ? -36 : itemOwned ? -18 : 0,
+        tickInterval: entry.awakened ? 16 : 0,
+        tickTimer: 0,
         survival: true
       });
     }
@@ -16174,7 +16350,10 @@ function fireSurvivalWeapon(id) {
         homing: itemOwned || entry.awakened,
         pierce: entry.awakened ? 3 : 0,
         visual: "lance",
-        trail: index % 2 ? "#facc15" : "#4ade80"
+        trail: index % 2 ? "#facc15" : "#4ade80",
+        stun: entry.awakened && index % 3 === 0 ? 16 : 0,
+        chainRadius: entry.awakened ? 125 : 0,
+        chainDamage: entry.awakened ? 3.2 * stats.damageScale : 0
       });
     }
   }
@@ -16683,6 +16862,7 @@ function updateSurvivalHud() {
 }
 
 function damageSurvivalEnemy(enemy, amount, sourceWeaponId = "") {
+  if (amount <= 0) return;
   const actual = Math.min(enemy.hp, amount);
   enemy.hp -= actual;
   pveGame.player.damageDealt += actual;
@@ -17331,6 +17511,7 @@ function drawSurvivalAreaAttack(attack) {
     || visual.startsWith("hackingBullet")
     || visual.startsWith("hologramLaser")
     || visual.startsWith("gaiaWall")
+    || visual.startsWith("chainArc")
   )) {
     const dx = attack.x2 - attack.x1;
     const dy = attack.y2 - attack.y1;
