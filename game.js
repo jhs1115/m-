@@ -16544,6 +16544,7 @@ function gainSurvivalXp(amount) {
 
 function survivalChoicePool() {
   const ownedWeaponIds = Object.keys(pveGame.weapons);
+  const ownedItemIds = Object.keys(pveGame.items);
   const weaponIds = Object.keys(SURVIVAL_WEAPONS).filter(id => {
     const owned = pveGame.weapons[id];
     return owned ? owned.stars < 5 : ownedWeaponIds.length < 6;
@@ -16552,13 +16553,22 @@ function survivalChoicePool() {
     !pveGame.items[id]
     && Object.keys(pveGame.items).length < 6);
   const relatedItemIds = new Set(ownedWeaponIds.map(id => SURVIVAL_WEAPONS[id]?.item).filter(Boolean));
+  const relatedWeaponIds = new Set(ownedItemIds.flatMap(id => survivalItemWeaponIds(id)));
   const pool = [];
   weaponIds.forEach(id => {
-    const weight = pveGame.weapons[id] ? 110 : 100;
+    const itemId = SURVIVAL_WEAPONS[id]?.item;
+    const hasLinkedItem = relatedWeaponIds.has(id) || Boolean(itemId && pveGame.items[itemId]);
+    const sameFamilyOwned = itemId && ownedWeaponIds.some(ownedId => ownedId !== id && SURVIVAL_WEAPONS[ownedId]?.item === itemId);
+    const weight = pveGame.weapons[id]
+      ? hasLinkedItem ? 170 : 125
+      : hasLinkedItem ? 150
+        : sameFamilyOwned ? 122
+          : 92;
     for (let count = 0; count < weight; count += 10) pool.push({ type: "weapon", id });
   });
   itemIds.forEach(id => {
-    const weight = relatedItemIds.has(id) ? 46 : 38;
+    const hasLinkedWeapon = relatedItemIds.has(id);
+    const weight = hasLinkedWeapon ? 18 : 9;
     for (let count = 0; count < weight; count += 1) pool.push({ type: "item", id });
   });
   SURVIVAL_SUBS.forEach(sub => pool.push({ type: "sub", id: sub.id }));
